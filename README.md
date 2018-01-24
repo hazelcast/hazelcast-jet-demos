@@ -1,5 +1,7 @@
 # jet-demos
-Demonstration applications using Hazelcast Jet
+These are Demonstration applications using Hazelcast Jet. Each is a full application and demonstrates how you can use Jet to solve real real-world problems.
+
+For smaller, feature specific samples see https://github.com/hazelcast/hazelcast-jet-code-samples
 
 Application List:
 
@@ -12,4 +14,6 @@ Application List:
 * Asim/Sancar/Basri/Talha/Mustafa -  Bitcoin Sentiment Real-Time Analysis
 
 * Viliam/Ali - Online Training Traffic Predictor
+
+* Ben - Jet Leopard
 
