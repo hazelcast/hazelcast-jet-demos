@@ -13,7 +13,7 @@ Application List:
 
 * Asim/Sancar/Basri/Talha/Mustafa -  Bitcoin Sentiment Real-Time Analysis
 
-* Viliam/Ali - Online Training Traffic Predictor
+* [Online Training Traffic Predictor](./online-training-traffic-predictor) - Viliam/Ali
 
 * Ben - Jet Leopard
 
