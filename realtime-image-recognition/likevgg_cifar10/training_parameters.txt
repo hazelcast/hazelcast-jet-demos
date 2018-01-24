@@ -1,0 +1,7 @@
+learningRate 0.29106
+momentum 0.00152
+weightDecay 0
+learningRateDecay 0
+size full
+model version005
+search sgd

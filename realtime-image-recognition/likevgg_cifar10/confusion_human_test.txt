@@ -1,0 +1,14 @@
+ConfusionMatrix:
+[[     881       3      24      10       1       3       1       9      55      11]   88.277% 	[class: airplane]
+ [       4     962       0       2       1       1       1       0      10      18]   96.296% 	[class: automobile]
+ [      25       0     874      22      24      25      15       5       7       2]   87.487% 	[class: bird]
+ [       9       1      39     783      32      80      26      16       8       3]   78.536% 	[class: cat]
+ [       9       2      22      18     898      14      11      21       4       1]   89.800% 	[class: deer]
+ [       2       0      30      92      24     823       4      21       1       0]   82.548% 	[class: dog]
+ [       3       2      31      33       8       7     909       1       3       3]   90.900% 	[class: frog]
+ [       5       1      13      18      18      13       1     923       3       2]   92.578% 	[class: horse]
+ [      16       8       4       1       0       1       0       3     957       7]   95.988% 	[class: ship]
+ [      10      46       3       4       1       0       3       4      15     914]]  91.400% 	[class: truck]
+ + average row correct: 89.380927681923% 
+ + average rowUcol correct (VOC measure): 81.097561120987% 
+ + global correct: 89.383012820513%
