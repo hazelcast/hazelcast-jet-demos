@@ -139,11 +139,11 @@ With the data loaded into IMDG we can now construct a description of the analysi
 Unlike the Java 8 APIs, in Jet we construct a single object (a Pipeline) that represents the entire data operation.
 
 The Pipeline is constructed in a declarative way, by using an intermediate class called a ComputeStage.
-First, we create an empty Pipeline, and then add an initial data source to it, by using methods such as ++drawFrom()++ to indicate where objects should be taken from.
+First, we create an empty Pipeline, and then add an initial data source to it, by using methods such as `drawFrom()`` to indicate where objects should be taken from.
 These methods return a ComputeStage object, which can then be used as an intermediate object in functional operations.
 
 The ComputeStage is somewhat similar to a Java 8 Stream or a Spark RDD and represents a step in a Jet computation - a node in the DAG representation.
-Just as with Java 8 Streams, a DAG calculation needs to be terminated, and Jet provides methods such as ++drainTo()++ to complete the calculation.
+Just as with Java 8 Streams, a DAG calculation needs to be terminated, and Jet provides methods such as `drainTo()` to complete the calculation.
 However, unlike Java 8 Streams, in Jet the whole calculation (represented as a DAG) is an object of interest in its own right and can be declared ahead of use and passed around, composed, etc.
 
 As a result, it is considered best practice to use a factory method for the Pipeline and hide any explicit ComputeStage instances inside the method used to construct the overall DAG.
@@ -170,12 +170,12 @@ This pipeline features a source, a sink and one intermediate grouping stage.
 
 The intermediate ComputeStage object, c, is relatively simple, so let's tackle that first. 
 It represents a data flow consisting of all major race winners.
-This flow is then used in a ++groupBy()++ construct to accumulate horses together, before filtering the data pipeline to include only multiple winners.
+This flow is then used in a `groupBy()` construct to accumulate horses together, before filtering the data pipeline to include only multiple winners.
 
 This final data set is then to be drained back into a new IMap in IMDG.
 
 To complete the picture, let's turn to the source generation.
-++Sources.map()++ takes three parameters:
+`Sources.map()` takes three parameters:
 
 * A string - the name of the map to source from
 
@@ -183,9 +183,9 @@ To complete the picture, let's turn to the source generation.
 
 * A projection function - a mapper that takes in elements of the map (as entries) and emits a mapped value
 
-In this case, we are drawing from the EVENTS_BY_NAME and taking everything (using the constant lambda t -> true) before doing some data transformation on the way in, via the HORSE_FROM_EVENT helper function.
+In this case, we are drawing from the EVENTS_BY_NAME and taking everything (using the constant lambda `t -> true`) before doing some data transformation on the way in, via the HORSE_FROM_EVENT helper function.
 
-This function takes in an ++Entry<String, Event>++ and returns a ++Horse++, the winner of the first race of the day, and is defined by a couple of simple static helpers:
+This function takes in an `Entry<String, Event>` and returns a `Horse`, the winner of the first race of the day, and is defined by a couple of simple static helpers:
 
 ----
     public final static Function<Event, Horse> FIRST_PAST_THE_POST = e -> e.getRaces().get(0).getWinner().orElse(Horse.PALE);
@@ -202,10 +202,10 @@ Overall, the Pipelines API is the highest-level API that Jet provides, and this 
     jet.newJob(p).join();
 ----
 
-The call to ++newJob()++ begins executing immediately in an asynchronous manner, and returns a Job object.
+The call to `newJob()` begins executing immediately in an asynchronous manner, and returns a Job object.
 This construct holds a simple status and a CompletableFuture on the actual computation - so the job's progress can be queried or cancelled after some time period.
 
-In this simple example, we don't want to do anything asynchronous with the computation and so we call ++join()++ on the job immediately, and just block for completion.
+In this simple example, we don't want to do anything asynchronous with the computation and so we call `join()` on the job immediately, and just block for completion.
 With this done, Jet has produced the filtered data set for the result, put it into the results IMap and this can then be output in a simple loop like this:
 
 ----
@@ -219,7 +219,7 @@ With this done, Jet has produced the filtered data set for the result, put it in
 Given the actual size of the data set under consideration in this example, there is of course no need to involve a distributed framework such as Jet.
 However, the clean nature of the Jet API means that the clear construction of the code can be made out regardless of the actual size of the data being processed.
 
-=== Porting the live betting calculation to JetLeopard
+###Porting the live betting calculation to JetLeopard
 
 Let's take the basic Jet concepts from the previous section and see how to apply them to a version of the live betting calculation present in the original BetLeopard.
 
@@ -245,10 +245,10 @@ As a result, the main loop for JetLeopard is very similar to the BetLeopard case
     }
 ----
 
-In terms of execution then, as before, we use ++join()++ to force synchronous execution of the Jet job.
+In terms of execution then, as before, we use `join()` to force synchronous execution of the Jet job.
 
-The real difference hides in the ++pipeline++ field on the main application object.
-This is, unsurprisingly, set up in a method called ++buildPipeline()++, which is slightly more complex than the previous example:
+The real difference hides in the `pipeline` field on the main application object.
+This is, unsurprisingly, set up in a method called `buildPipeline()`, which is slightly more complex than the previous example:
 
 ----
     public static Pipeline buildPipeline() {
@@ -259,8 +259,8 @@ This is, unsurprisingly, set up in a method called ++buildPipeline()++, which is
 ----
 
 Once again, we see the creation of a Pipeline object, which draws data from a Hazelcast IMDG IMap.
-The ++USER_ID++ IMap maps userids to users, and so in this case the projection function needs to simply take the value of each ++Entry<Long, User>++ object it's handed.
-Note that we must provide explicit values for the type parameters on ++map()++.
+The `USER_ID` IMap maps userids to users, and so in this case the projection function needs to simply take the value of each `Entry<Long, User>` object it's handed.
+Note that we must provide explicit values for the type parameters on `map()`.
 Alternatively, this could also be written:
 
 ----
@@ -285,13 +285,13 @@ To keep it simple, we'll only consider single bets:
 ----        
 
 There are two aspects of the above code that make it differ slightly from regular Java 8 streams code.
-The first is the call to ++traverseStream()++ - a minor bit of boilerplate to fit stream code into Jet.
-The other is the appearance of ++Tuple3++ - Hazelcast's own implementation of a tuple type containing 3 elements.
+The first is the call to `traverseStream()` - a minor bit of boilerplate to fit stream code into Jet.
+The other is the appearance of `Tuple3` - Hazelcast's own implementation of a tuple type containing 3 elements.
 
 Apart from these minor new features, this code should be readable as normal, functionally-styled Java.
 
 To complete the picture, we need to take the compute stage and perform an aggregation upon it.
-We achieve this by using a ++groupBy()++ to produce a compute stage of entry objects.
+We achieve this by using a `groupBy()` to produce a compute stage of entry objects.
 The key of the entries is the race, and the value is an aggregated map of the possible payouts that would be necessary if each horse was to win:
 
 ----
@@ -312,7 +312,7 @@ The key of the entries is the race, and the value is an aggregated map of the po
     }
 ----
 
-The key to this is the ++AggregateOperations.toMap()++ call, which requires three operations to be passed to it:
+The key to this is the `AggregateOperations.toMap()` call, which requires three operations to be passed to it:
 
 * A function to produce the map key from an input value
 
@@ -320,13 +320,13 @@ The key to this is the ++AggregateOperations.toMap()++ call, which requires thre
 
 * A merge function to combine two mapped values together for the same key
 
-From these three functions, ++toMap()++ produces the aggregation operation that is used to implement the grouping.
+From these three functions, `toMap()` produces the aggregation operation that is used to implement the grouping.
 
 All that's left after that is to drain the resulting maps back into the IMDG instance.
 
 As before, we return the DAG we've built for use at a later time - no actual computation has been performed - we've merely built up a declaration of what we want to have done when the job runs.
 
-Returning to the ++run()++ method, we can see that after a synchronous execution of the job, the code calls a helper method that calculates largest possible loss and the results that caused that outcome:
+Returning to the `run()` method, we can see that after a synchronous execution of the job, the code calls a helper method that calculates largest possible loss and the results that caused that outcome:
 
 ----
     public void outputPossibleLosses() {
