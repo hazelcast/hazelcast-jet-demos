@@ -58,8 +58,6 @@ public class MarkovChainGenerator {
 
             IStreamMap<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
             printTransitions(transitions);
-
-            // calculate cumulative initial state probabilities
             String chain = generateMarkovChain(1000, transitions);
             System.out.println(chain);
         } finally {
