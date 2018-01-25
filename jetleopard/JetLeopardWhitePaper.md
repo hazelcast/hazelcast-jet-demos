@@ -13,11 +13,13 @@ To get the most from this white paper it should be read after the previous one, 
 Hazelcast Jet is a general purpose distributed streaming data processing engine built on Hazelcast IMDG and based on directed acyclic graphs (DAGs) as a model for data flow.
 
 The project started in 2015 and had its first release in Feb 2017.
-It is based on JVM technology, runs on Java 8 only and is a Java-first technology.
-Hazelcast regard it as an early-stage technology and it has only a Java client API for now, in contrast to Hazelcast IMDG.
+It is based on JVM technology, runs on Java 8 and later and is a Java-first technology.
 
 Jet is a processing engine that uses a true streaming model, rather than the batch model.
 It is optimized for latency as a primary non-functional characteristic, with throughput being a secondary requirement.
+
+Compared to Hazelcast IMDG, Jet is relatively early in its lifecycle (e.g. it currently only has a Java client API, although others are expected soon).
+However, Hazelcast regard it as a technology that is production-ready today and it is fully supported.
 
 It has full integration with Hazelcast IMDG, and also supports the following list of additional sources and sinks:
 
@@ -28,6 +30,9 @@ It has full integration with Hazelcast IMDG, and also supports the following lis
 * Sockets
 
 This list is expected to grow significantly as the technology matures. 
+
+Release 0.5 brings major enhancements to Jet - the documentation is much more complete, the API has been nicely rounded out with several "missing" methods and classes provided.
+In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
 
 At its heart, the core technology of Jet is based on a DAG model. 
 A DAG is based upon vertices and edges, and in Jet a vertex is a Processor (aka tasklet).
@@ -260,7 +265,10 @@ Note that we must provide explicit values for the type parameters on ++map()++.
 Alternatively, this could also be written:
 
 ----
-        ComputeStage<User> users = pipeline.drawFrom(Sources.map(USER_ID, e -> true, Entry<Long, User>::getValue));
+        ComputeStage<User> users =
+        	pipeline.drawFrom(
+        		Sources.map(USER_ID, e -> true, 
+        			Entry<Long, User>::getValue));
 ----
 
 Now we have a compute stage for all the users, let's use that to build a view of the bets backing each horse, in each race. 
@@ -271,7 +279,8 @@ To keep it simple, we'll only consider single bets:
         ComputeStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
                 user.getKnownBets().stream()
                     .filter(Bet::single)
-                    .flatMap(bet -> bet.getLegs().stream().map(leg -> tuple3(leg.getRace(), leg.getBacking(), bet)))
+                    .flatMap(bet -> bet.getLegs().stream()
+                    .map(leg -> tuple3(leg.getRace(), leg.getBacking(), bet)))
             )
         );
 ----        
@@ -404,6 +413,13 @@ Spark, on the other hand, prefers to confront the developer with the fact that t
 ____
 
 This gives Spark seemless access to the naturally functional aspects of Scala's collections, but at the expense of making Spark less of a natural fit for Java programmers, and introducing  additional complexity overhead and learning curve when Java developers first begin to work with Spark.
+
+One side-effect of Spark's Scala-first approach is that Java programmers are faced with the necessity of including the Scala runtime and dependencies into their Java projects.
+The Scala world does not place the same emphasis on strict binary compatability that many Java programmers take for granted.
+This means that Java-based Spark applications may exhibit occasional stability problems (especially when upgrading or adding to the Scala libraries present in the project dependency graph).
+
+Jet, being a Java-first tech that does not require the Scala runtime, does not suffer from these stability issues, and in the field did not exhibit the sort of runtime linkage failures sometimes seen when working with Spark.
+For simple applications, adding Jet to a project can be as simple as "drop in the Jet jar, and if IMDG is already in use, ensure that the version matches the version Jet needs".
 
 The other major axis that distinguishes Spark and Jet can be thought of as whether the implementation is fundamentally based around batches (Spark) or optimized for streamed data (Jet).
 From a certain perspective, Spark can be seen as "Hadoop 2.0" that is capable of approximating streaming behaviour over a certain performance domain.
