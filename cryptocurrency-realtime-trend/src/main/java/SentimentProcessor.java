@@ -32,7 +32,6 @@ public class SentimentProcessor extends AbstractProcessor {
         TimestampedEntry<String, Double> result = new TimestampedEntry<>(entry.getTimestamp(), coinType, score);
 //        System.out.println(tweetText + " " + result.getKey() + " " + score);
         System.out.println(result.getKey() + " " + score);
-        tryEmit(result);
-        return true;
+        return tryEmit(result);
     }
 }

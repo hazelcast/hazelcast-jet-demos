@@ -81,6 +81,10 @@
 
     <repositories>
         <repository>
+            <id>10</id>
+            <url>https://jcenter.bintray.com</url>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
