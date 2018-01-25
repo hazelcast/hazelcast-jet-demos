@@ -37,7 +37,9 @@ public class JetCoinTrend {
         WindowDefinition slidingWindowDef5Min = WindowDefinition.slidingWindowDef(300000, 60000);
         WindowDefinition slidingWindowDef15Min = WindowDefinition.slidingWindowDef(900000, 300000);
 
-        WatermarkGenerationParams<TimestampedEntry<String, Double>> params = WatermarkGenerationParams.wmGenParams((DistributedToLongFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getTimestamp, withFixedLag(5000), emitByFrame(slidingWindowDef1Min), 60000);
+        WatermarkGenerationParams<TimestampedEntry<String, Double>> params = WatermarkGenerationParams
+                .wmGenParams((DistributedToLongFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getTimestamp,
+                        withFixedLag(5000), emitByFrame(slidingWindowDef1Min), 60000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(params);
 
         Vertex insertWm = dag.newVertex("insertWm", insertWMP).localParallelism(1);
