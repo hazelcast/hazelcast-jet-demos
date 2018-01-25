@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="hazelcast-jet-core" />
+    <orderEntry type="module" module-name="hazelcast-jet-client-protocol" />
+    <orderEntry type="library" name="Maven: com.hazelcast:hazelcast-client:3.9" level="project" />
+    <orderEntry type="library" name="Maven: com.hazelcast:hazelcast:3.9" level="project" />
+    <orderEntry type="module-library">
+      <library name="Maven: sample-person:com.sample:1.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../hazelcast-jet/hazelcast-jet-core/src/test/resources/sample-pojo-1.0-person.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j:2.7" level="project" />
+  </component>
+</module>
