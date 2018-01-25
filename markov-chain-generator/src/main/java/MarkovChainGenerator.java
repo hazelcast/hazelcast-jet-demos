@@ -43,7 +43,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 
 public class MarkovChainGenerator {
 
-    private static final String INPUT_FILE = "books";
+    private static final String INPUT_FILE = MarkovChainGenerator.class.getResource("books").getPath();
     private static final Random RANDOM = new Random();
 
     public static void main(String[] args) {
