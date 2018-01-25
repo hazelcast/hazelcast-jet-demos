@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,6 +52,13 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+/**
+ * The training data is obtained from:
+ * https://catalog.data.gov/dataset/nys-thruway-origin-and-destination-points-for-all-vehicles-15-minute-intervals-2016-q1
+ *
+ * We've grouped the data by date and location and sorted
+ *
+ */
 public class Main {
 
     private static final long GRANULARITY_STEP_MS = MINUTES.toMillis(15);
@@ -60,15 +68,16 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        final Path sourceFile = Paths.get(args[0]);
-        final String targetDirectory = args[1];
+
+        Path sourceFile = getSourcePath();
+        final String targetDirectory = "predictions";
 
         DAG dag = new DAG();
         WindowDefinition windowDef = slidingWindowDef(MINUTES.toMillis(120), MINUTES.toMillis(15));
 
         Vertex source = dag.newVertex("source",
                 readFilesP(sourceFile.getParent().toString(), StandardCharsets.UTF_8, sourceFile.getFileName().toString()))
-                .localParallelism(1);
+                           .localParallelism(1);
         Vertex map = dag.newVertex("map", mapP(item -> {
             String[] line = ((String) item).split(",");
             long time = LocalDateTime.parse(line[0]).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -91,12 +100,12 @@ public class Main {
         // 2nd path: use the trends
         Vertex useTrend = dag.newVertex("useTrend", PredictionP::new);
         Vertex storePredictions = dag.newVertex("storePredictions", writeFileP(targetDirectory))
-                .localParallelism(1);
-        
+                                     .localParallelism(1);
+
         dag.edge(between(source, map))
            .edge(between(map, insertWm))
            .edge(between(insertWm, calcTrend)
-                .partitioned(CarCount::getLocation))
+                   .partitioned(CarCount::getLocation))
            .edge(between(calcTrend, mapTrend))
            .edge(between(mapTrend, storeTrend))
            // 2nd path
@@ -112,6 +121,14 @@ public class Main {
         } finally {
             Jet.shutdownAll();
         }
+    }
+
+    private static Path getSourcePath() {
+        URL resource = Main.class.getClassLoader().getResource("15-minute-counts-sorted.csv");
+        if (resource == null) {
+            throw new IllegalArgumentException("No resource is found");
+        }
+        return Paths.get(resource.getFile());
     }
 
     private static class PredictionP extends AbstractProcessor {
