@@ -3,7 +3,7 @@ These are Demonstration applications using Hazelcast Jet. Each is a full applica
 
 For smaller, feature specific samples see https://github.com/hazelcast/hazelcast-jet-code-samples
 
-Application List:
+## Application Demos
 
 * Riaz - PMML Model Importer and Executor
 
@@ -21,3 +21,6 @@ Application List:
 
 * Can - Markov Trees
 
+## External Demos
+
+* [Real-Time Trade Processing](https://github.com/oliversalmon/imcs-demo) Oliver Buckley-Salmon. Reads from a Kafka topic with Jet and then storage to HBase and Hazelcast IMDG. Shows enrichment and streaming aggregations. Jet 0.4. 
