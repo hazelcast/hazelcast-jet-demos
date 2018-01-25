@@ -78,10 +78,7 @@ The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains deta
 
 JetLeopard uses the same domain model as BetLeopard in terms of races, horses, bets and users.
 
-.Simple view of BetLeopard's model of events and races
-image::betleopard-model.png[]
-
-JetLeopard is based on the Pipelines API and represents a step towards a real-time performance test with a non-trivial application.
+![Simple view of BetLeopard's model of events and races](betleopard-model.png "JetLeopard")
 
 As JetLeopard depends on BetLeopard, we need to arrange the Maven dependency stanzas somewhat carefully, like this:
 
@@ -121,7 +118,7 @@ This is because BetLeopard also depends on Hazelcast IMDG and there is a real ri
 We want JetLeopard to use Jet's version of Hazelcast IMDG and so we explicitly exclude the dependency from transitively being included from BetLeopard.
 
 With the project set up we can now replicate the historical analysis application from BetLeopard very simply.
-This warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
+JetLeopard is based on the Pipelines API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
 
 ----
     public void setup() {
