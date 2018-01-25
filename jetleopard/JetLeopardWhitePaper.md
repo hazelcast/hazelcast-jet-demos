@@ -405,7 +405,7 @@ Of the two distributed computing libraries we're considering, Hazelcast Jet make
 This provides the advantages of being familiar to Java programmers, at the expense of carrying over some of the boilerplate and API cruft present in Java 8 streams into the Jet API.
 Jet also needs to plug some of the holes in the Collections API, e.g. by providing tuple classes and working around the problems caused by Java's view of maps.
 
-On the other hand, Spark is firmly a Scala-native library, as we discussed in the BetLeopard white paper:
+Spark has, from its inception, been a firmly Scala-native library, as we discussed in the BetLeopard white paper:
 
 ____
 Spark, on the other hand, prefers to confront the developer with the fact that they are working with a new abstraction that doesn't fit the Java Collections model.
