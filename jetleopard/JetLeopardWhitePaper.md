@@ -139,7 +139,7 @@ With the data loaded into IMDG we can now construct a description of the analysi
 Unlike the Java 8 APIs, in Jet we construct a single object (a Pipeline) that represents the entire data operation.
 
 The Pipeline is constructed in a declarative way, by using an intermediate class called a ComputeStage.
-First, we create an empty Pipeline, and then add an initial data source to it, by using methods such as `drawFrom()`` to indicate where objects should be taken from.
+First, we create an empty Pipeline, and then add an initial data source to it, by using methods such as `drawFrom()` to indicate where objects should be taken from.
 These methods return a ComputeStage object, which can then be used as an intermediate object in functional operations.
 
 The ComputeStage is somewhat similar to a Java 8 Stream or a Spark RDD and represents a step in a Jet computation - a node in the DAG representation.
