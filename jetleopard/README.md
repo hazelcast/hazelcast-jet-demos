@@ -23,10 +23,9 @@ mvn clean install
 Then you can build JetLeopard.
 
 
-## The White Paper
+## The JetLeopard White Paper
 
-Included in this distribution is a white paper describing the Jetleopard application in
-detail and how it should be understood.
+Included in this demo is a [white paper](./JetLeopardWhitePaper.md).
 
 Full details are in the whitepaper, which is in the Asciidoc file jetleopard-wp.adoc 
 
