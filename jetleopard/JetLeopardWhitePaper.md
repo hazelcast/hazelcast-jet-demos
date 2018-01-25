@@ -25,7 +25,6 @@ It has full integration with Hazelcast IMDG, and also supports the following lis
 
 * HDFS
 * Apache Kafka
-* Aeron
 * Files
 * Sockets
 
@@ -34,9 +33,13 @@ This list is expected to grow significantly as the technology matures.
 Release 0.5 brings major enhancements to Jet - the documentation is much more complete, the API has been nicely rounded out with several "missing" methods and classes provided.
 In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
 
+As Jet is intended to be used as a distributed, streaming processing engine, it has all of the core features that are typical for such systems, such as snapshots and fault-tolerance within the processing grid, and windowing of data streams.
+This white paper focuses on the core technology and a developer-friendly introduction, and further material should be consulted on the detail of the operation of a production Jet grid.
+
 At its heart, the core technology of Jet is based on a DAG model. 
-A DAG is based upon vertices and edges, and in Jet a vertex is a Processor (aka tasklet).
-This is best thought of a small piece of simple, "functional Java" code, although this is purely a conceptual description and nothing in the programming model enforces this.
+A DAG is based upon vertices and edges, and in Jet a vertex in the DAG is a group of Processor (aka tasklet) objects in one JVM.
+Having a vertex correspond to several processors allows a vertex to be parallelized, even within a single Jet node.
+A Processor is best thought of a small piece of simple, "functional Java" code, although this is purely a conceptual description and nothing in the programming model enforces this.
 
 Under the hood, the anticipation is that tasklets are small units of work (understood to be bounded and non-blocking) and that as they are "smaller" than a thread then they can be scheduled in a custom manner without the involvement of the operating system.
 Accordingly, tasklets are scheduled on a constrained number of execution threads, just as in other co-operative execution frameworks (such as actors).
@@ -51,14 +54,13 @@ The queues are not the standard java.util.concurrent queues and instead use wait
 
 The end result is that Jet provides several different APIs to the programmer:
 
-* Distributed java.util.stream
-* DAG
-* Processor
 * Pipelines
+* Distributed java.util.stream
+* DAG (and Processors)
 
-Of these, the Pipelines API is by far the easiest to program.
-The distributed Stream API has additional complexity that many programmers may find a hinderance.
-The DAG API has existed for longer, but is not necessary (and is much too low-level) for most applications of Jet.
+Of these, the Pipelines API is the easiest to program for the newcomer to distributed computing.
+The distributed Stream API has additional complexity that many programmers may find a hinderance at first.
+The DAG API has existed for longer, but is not necessary (and is too low-level) for many applications of Jet - but for the power user, it provides capabilities not easily accessible by the other APIs.
 
 In the rest of this white paper, we use the Pipelines API exclusively.
 
@@ -203,7 +205,7 @@ Overall, the Pipelines API is the highest-level API that Jet provides, and this 
     jet.newJob(p).join();
 ----
 
-The call to ++newJob()++ begins executing immediately in an asynchcronous manner, and returns a Job object.
+The call to ++newJob()++ begins executing immediately in an asynchronous manner, and returns a Job object.
 This construct holds a simple status and a CompletableFuture on the actual computation - so the job's progress can be queried or cancelled after some time period.
 
 In this simple example, we don't want to do anything asynchronous with the computation and so we call ++join()++ on the job immediately, and just block for completion.
@@ -393,16 +395,16 @@ Some of the design choices present in the Collections API that make it a less-th
 
 * The Map type is viewed only as an associative lookup, and not as a set of key-value pairs
 
-Java treats backwards compatability as a first class virtue, and so the decisions made at the time cannot easily be revised (and some cannot be changes at all).
+Java treats backwards compatibility as a first class virtue, and so the decisions made at the time cannot easily be revised (and some cannot be changes at all).
 
 In this context, one primary goal of Java 8 streams was to offer an alternative API that could be used in a more functional style.
 The drawback is that this alternative API is just that - an alternative that is auxiliary to the primary data structures.
 The functional aspects are not, and will never be, reflected on the main data structures.
 
 The design of the Scala collections, on the other hand, embraces functional programming as a first-class programming paradigm.
-This choice comes at the cost of losing compatability with Java Collections.
+This choice comes at the cost of losing compatibility with Java Collections.
 
-Of the two distributed computing libraries we're considering, Hazlecast Jet makes the design choice to be Java-first.
+Of the two distributed computing libraries we're considering, Hazelcast Jet makes the design choice to be Java-first.
 This provides the advantages of being familiar to Java programmers, at the expense of carrying over some of the boilerplate and API cruft present in Java 8 streams into the Jet API.
 Jet also needs to plug some of the holes in the Collections API, e.g. by providing tuple classes and working around the problems caused by Java's view of maps.
 
@@ -412,10 +414,10 @@ ____
 Spark, on the other hand, prefers to confront the developer with the fact that they are working with a new abstraction that doesn't fit the Java Collections model.
 ____
 
-This gives Spark seemless access to the naturally functional aspects of Scala's collections, but at the expense of making Spark less of a natural fit for Java programmers, and introducing  additional complexity overhead and learning curve when Java developers first begin to work with Spark.
+This gives Spark seamless access to the naturally functional aspects of Scala's collections, but at the expense of making Spark less of a natural fit for Java programmers, and introducing  additional complexity overhead and learning curve when Java developers first begin to work with Spark.
 
 One side-effect of Spark's Scala-first approach is that Java programmers are faced with the necessity of including the Scala runtime and dependencies into their Java projects.
-The Scala world does not place the same emphasis on strict binary compatability that many Java programmers take for granted.
+The Scala world does not place the same emphasis on strict binary compatibility that many Java programmers take for granted.
 This means that Java-based Spark applications may exhibit occasional stability problems (especially when upgrading or adding to the Scala libraries present in the project dependency graph).
 
 Jet, being a Java-first tech that does not require the Scala runtime, does not suffer from these stability issues, and in the field did not exhibit the sort of runtime linkage failures sometimes seen when working with Spark.
@@ -428,7 +430,7 @@ By contrast, Jet's internal architecture is designed for true streaming, with la
 ### Conclusion
 
 With the release of version 0.5 of Hazelcast Jet, it is ready for production use, and is competitive with Apache Spark across a wide set of use cases that Spark covers.
-This is positive news for developers, as it improves the available open-source toolkits and provides a range of options for stream processing techology.
+This is positive news for developers, as it improves the available open-source toolkits and provides a range of options for stream processing technology.
 
 The tools are now there, but developers must properly analyse their domain and requirements.
 When considering these two technologies for a software project, a lot will depend upon the details of the system under consideration.
