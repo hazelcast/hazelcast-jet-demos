@@ -9,17 +9,17 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 * Neil - Market Data Distributor
 
-* Emin - Image Classifier
+* Real-time Image Classifier
 
-* Asim/Sancar/Basri/Talha/Mustafa -  Bitcoin Sentiment Real-Time Analysis
+* [Bitcoin Sentiment Real-Time Analysis](./cryptocurrency-realtime-trend) - 
 
-* [Online Training Traffic Predictor](./online-training-traffic-predictor) - Viliam/Ali
+* [Online Training Traffic Predictor](./online-training-traffic-predictor) 
 
 * [Jet Leopard](./jetleopard) - Ben Evans. This is a simple example of a sports book and is a good introduction to the Pipeline API. It also uses Hazelcast IMDG as an in-memory data store.
 
 * [Flight Telemetry](./flight-telemetry) - Reads a stream of telemetry data from ADB-S on all commercial aircraft flying anywhere in the world. There is typically 5,000 - 6,000 aircraft at any point in time. This is then filtered, aggregated and certain features are enriched and displayed in Grafana.
 
-* Can - Markov Trees
+*  Markov Chain Generator
 
 ## External Demos
 
