@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.rlab</groupId>
+	<artifactId>tele_data_loader</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>TelecomDataLoader</name>
+	<description>Chaching Option for springBoot</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.3.RELEASE</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+
+		<bigmemory.version>4.3.0.0.26</bigmemory.version>
+		<ehcache-ee.version>2.10.0.0.26</ehcache-ee.version>
+		<toolkit.version>4.3.0.0.26</toolkit.version>
+
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>terracotta-repository</id>
+			<url>http://www.terracotta.org/download/reflector/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<!-- spring-kafka -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-batch</artifactId> 
+		<version>2.1.0.RELEASE</version> 
+		
+			</dependency> -->
+
+		<!-- JSR-107 API (uncomment to try the JCache support) -->
+
+		<!-- <dependency> <groupId>javax.cache</groupId> <artifactId>cache-api</artifactId> 
+			</dependency> -->
+
+		<!-- Additional cache providers (uncomment to try them) <dependency> <groupId>net.sf.ehcache</groupId> 
+			<artifactId>ehcache</artifactId> </dependency> <dependency> <groupId>org.terracotta</groupId> 
+			<artifactId>terracotta-toolkit-runtime-ee</artifactId> <version>${toolkit.version}</version> 
+			</dependency> <dependency> <groupId>hsqldb</groupId> <artifactId>hsqldb</artifactId> 
+			<version>1.8.0.7</version> </dependency> -->
+
+
+		<!-- <dependency> <groupId>org.ehcache</groupId> <artifactId>ehcache</artifactId> 
+			</dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.hazelcast/hazelcast -->
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast-all</artifactId>
+			<version>3.9</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.hazelcast/hazelcast-spring -->
+
+
+
+		<!-- -->
+		<!-- <dependency> <groupId>org.infinispan</groupId> <artifactId>infinispan-spring4-embedded</artifactId> 
+			</dependency> <dependency> <groupId>org.infinispan</groupId> <artifactId>infinispan-jcache</artifactId> 
+			</dependency> -->
+		<!-- <dependency> <groupId>com.couchbase.client</groupId> <artifactId>java-client</artifactId> 
+			</dependency> <dependency> <groupId>com.couchbase.client</groupId> <artifactId>couchbase-spring-cache</artifactId> 
+			</dependency> -->
+		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-data-redis</artifactId> 
+			</dependency> -->
+		<!-- <dependency> <groupId>com.github.ben-manes.caffeine</groupId> <artifactId>caffeine</artifactId> 
+			</dependency> -->
+
+
+      <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+ <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.7.4</version>
+    </dependency>
+
+    <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.7.4</version>
+    </dependency>
+
+    <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.7.4</version>
+    </dependency>
+      
+
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+
+</project>
