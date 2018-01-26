@@ -13,7 +13,7 @@
         <module>customer-churn-predictor</module>
         <module>cryptocurrency-realtime-trend</module>
         <module>flight-telemetry</module>
-        <module>image-recognition</module>
+        <module>realtime-image-recognition</module>
         <module>jetleopard</module>
         <module>markov-chain-generator</module>
         <module>online-training-traffic-predictor</module>
