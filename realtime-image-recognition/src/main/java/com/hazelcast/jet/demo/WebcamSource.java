@@ -1,4 +1,4 @@
-package projectx;
+package com.hazelcast.jet.demo;
 
 import boofcv.gui.image.ImagePanel;
 import boofcv.gui.image.ShowImages;
@@ -10,6 +10,7 @@ import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -21,14 +22,16 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 
 /**
- * date: 1/23/18
- * author: emindemirci
+ * A source that emits the frames captured from webcam stream.
+ * Also creates an GUI to show current captures.
  */
 public class WebcamSource extends AbstractProcessor implements Closeable {
 
-    private Traverser<BufferedImage> traverser;
+    private Traverser<TimestampedEntry> traverser;
     private Webcam webcam;
     private ImagePanel gui;
+    private long lastPoll;
+    private long intervalMillis = 500;
 
     @Override
     protected void init(Context context) throws Exception {
@@ -36,21 +39,20 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
         webcam = UtilWebcamCapture.openDefault(640, 480);
         gui = new ImagePanel();
         gui.setPreferredSize(webcam.getViewSize());
-
         ShowImages.showWindow(gui, "Webcam Input", true);
-
     }
 
     @Override
     public boolean complete() {
         if (traverser == null) {
-            BufferedImage image = webcam.getImage();
-            gui.setImageRepaint(image);
-            traverser = Traverser.over(image);
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            long now = System.currentTimeMillis();
+            if (now > lastPoll + intervalMillis) {
+                lastPoll = now;
+                BufferedImage image = webcam.getImage();
+                gui.setImageRepaint(image);
+                traverser = Traverser.over(new TimestampedEntry<>(now, new SerializableBufferedImage(image), null));
+            } else {
+                return false;
             }
         }
         if (emitFromTraverser(traverser)) {
@@ -86,7 +88,7 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
 
         @Override
         public void init(Context context) {
-            String partitionKey = StringPartitioningStrategy.getPartitionKey("gui");
+            String partitionKey = StringPartitioningStrategy.getPartitionKey("webcam");
             ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
                                   .getPartition(partitionKey).getOwner().getAddress();
         }

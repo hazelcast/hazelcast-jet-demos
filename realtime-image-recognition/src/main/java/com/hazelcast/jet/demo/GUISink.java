@@ -1,4 +1,4 @@
-package projectx;
+package com.hazelcast.jet.demo;
 
 
 import boofcv.abst.scene.ImageClassifier.Score;
@@ -12,15 +12,13 @@ import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Map.Entry;
 
 import static java.util.Collections.singletonList;
 
 /**
- * date: 1/24/18
- * author: emindemirci
+ * A GUI which will show the frames with the maximum classification scores.
  */
 public class GUISink extends AbstractProcessor {
 
@@ -34,14 +32,13 @@ public class GUISink extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) throws Exception {
-        System.out.println("ordinal = [" + ordinal + "], item = [" + item + "]");
-        TimestampedEntry<String, Entry<BufferedImage, Entry<String, Double>>> timestampedEntry = (TimestampedEntry<String, Entry<BufferedImage, Entry<String, Double>>>) item;
-        Entry<BufferedImage, Entry<String, Double>> imageEntry = timestampedEntry.getValue();
-        BufferedImage image = imageEntry.getKey();
+        TimestampedEntry<String, Entry<SerializableBufferedImage, Entry<String, Double>>> timestampedEntry = (TimestampedEntry<String, Entry<SerializableBufferedImage, Entry<String, Double>>>) item;
+        Entry<SerializableBufferedImage, Entry<String, Double>> imageEntry = timestampedEntry.getValue();
+        SerializableBufferedImage image = imageEntry.getKey();
         Entry<String, Double> category = imageEntry.getValue();
         Score score = new Score();
         score.set(category.getValue(), 0);
-        panel.addImage(image, timestampedEntry.getKey() + timestampedEntry.getTimestamp(), singletonList(score), singletonList(category.getKey()));
+        panel.addImage(image.getImage(), timestampedEntry.getKey() + timestampedEntry.getTimestamp(), singletonList(score), singletonList(category.getKey()));
         return true;
     }
 

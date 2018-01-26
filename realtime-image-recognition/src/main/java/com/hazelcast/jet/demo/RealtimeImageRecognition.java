@@ -1,4 +1,4 @@
-package demo;
+package com.hazelcast.jet.demo;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;

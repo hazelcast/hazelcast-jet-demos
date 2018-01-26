@@ -1,4 +1,4 @@
-package demo;
+package com.hazelcast.jet.demo;
 
 import boofcv.abst.scene.ImageClassifier;
 import boofcv.abst.scene.ImageClassifier.Score;
