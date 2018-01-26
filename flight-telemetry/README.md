@@ -12,7 +12,7 @@ The demo will calculate following metrics and publish them in Grafana
 - Based on the plane type and phase of the flight provides information about maximum noise levels nearby to the airport and estimated C02 emissions for a region
 
 
-#Prerequisites
+# Prerequisites
 
 This demo application will output it's results to a Graphite database for visualization with Grafana.
 
@@ -38,6 +38,6 @@ cd target
 
 Then run the application with : 
 ```bash
-java -jar jet-demo-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar flight-telemetry-0.1-SNAPSHOT-jar-with-dependencies.jar
 ```
 
