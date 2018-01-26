@@ -12,3 +12,32 @@ The demo will calculate following metrics and publish them in Grafana
 - Based on the plane type and phase of the flight provides information about maximum noise levels nearby to the airport and estimated C02 emissions for a region
 
 
+#Prerequisites
+
+This demo application will output it's results to a Graphite database for visualization with Grafana.
+
+You can easily start a Graphite and Grafana setup from the following repository.
+
+**Please follow the instructions on the [Grafana and Graphite Docker Image](https://github.com/eminn/docker-grafana-graphite) 
+repository to run Grafana and Graphite then run this application.**
+
+# Building the Application
+
+To build and package the application, run :
+
+```bash
+mvn clean package
+```
+
+# Running the Application
+
+After building the application, navigate to `target` folder by :
+```bash
+cd target
+```
+
+Then run the application with : 
+```bash
+java -jar jet-demo-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
