@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>customer churn predictor | Riaz M | </title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+	<link rel="stylesheet" href="/bootstrap.min.css" media="screen"/>
+</head>
+<body>
+	<div class="container">
+      <div class="page-header" id="banner">
+        <div class="row">
+          <div class="col-lg-8 col-md-7 col-sm-6">
+            <h1>customer</h1>
+            
+            <form class="form-horizontal" th:action="@{/customer/{id}/items(id=${customer.customerId})}" method="post" enctype="multipart/form-data" >
+            	<fieldset>
+            		<div class="form-group">
+	                    <label class="col-lg-2 control-label">customer Name</label>
+	                    <div class="col-lg-6">
+	                    	<input type="text" class="form-control" disabled="disabled" 
+	                    		th:value="${customer.customerName}"/>
+	                    </div>
+                	</div>
+            		
+            		<div class="form-group">
+	                    <label class="col-lg-2 control-label">Items</label>
+	                    <div class="col-lg-10">
+	                    <table class="table table-stripe]d table-hover">
+	                    <thread>
+	                    <tr>
+	                        <th> Item ID </th>
+	                        <th> Type </th>
+	                        <th> Code</th>
+	                        <th> Name</th>
+	                        <th> Unit Price </th>
+	                        <th> Qty </th>
+	                        <th> Price</th>
+	                     </tr>
+	                     <tbody>
+	                          <tr th:each="item : ${customer.items}">
+					    	      <td th:text="${item.itemId}"></td>
+					    	      <td th:text="${item.type}"></td>
+					    	      <td th:text="${item.instrumentCode}"></td>
+					    	      <td th:text="${item.instrumentName}"></td>
+					    	      <td th:text="${item.unitPrice}"></td>
+					    	       <td th:text="${item.qty}"></td>
+					    	      <td th:text="${item.consideration}"></td>
+				              </tr>
+	                     </tbody>
+	                     </thread>
+	                    </table>
+							
+	                    </div>
+	                </div>
+	               
+            		<div class="form-group">
+            		     <div class="form-group">
+	                         <label class="col-lg-3 control-label">Quantity</label>
+	                         <div class="col-lg-3">
+	                    	   <input type="text" class="form-control" name="qty"/>
+	                        </div>
+                	
+	                    <div class="col-lg-6 col-lg-offset-2">
+							<div class="input-group">
+								<select name="instrument" class="form-control">
+									<option th:each="instrument : ${instruments}" 
+										th:value="${instrument}" 
+										th:text="${instrument.instrumentName}">Item</option>
+								</select>
+								<span class="input-group-btn">
+									<button type="submit" class="btn btn-default">Add/Update Item</button>
+								</span>
+							</div>
+	                    </div>
+	                    </div>
+                	</div>
+            	</fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+	</div>
+
+</body>
+</html>

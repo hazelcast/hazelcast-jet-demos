@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head> 
+    <title>Churn Predictor | Riaz Mohammed |</title> 
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+	<link rel="stylesheet" href="/bootstrap.min.css" media="screen"/>
+</head>
+<body>
+	<div class="container">
+      <div class="page-header" id="banner">
+        <div class="row">
+          <div class="col-lg-6 col-md-7 col-sm-6">
+            <h1>Check Customer</h1>
+
+			<form th:action="@{/churnpredictorMain}" method="post" enctype="multipart/form-data" class="form-horizontal">
+            	<fieldset>
+            		<div class="form-group">
+	                    <label class="col-lg-3 control-label">Area Code</label>
+	                    <div class="col-lg-9">
+	                    	<input type="text" class="form-control" name="areaCode"/>
+	                    </div>
+                	</div>
+                	<div class="form-group">
+	                    <label class="col-lg-3 control-label">Phone</label>
+	                    <div class="col-lg-9">
+	                    	<input type="text" class="form-control" name="phone"/>
+	                    </div>
+                	</div>
+            		<div class="form-group">
+                		<div class="col-lg-12 col-lg-offset-3">
+                			<button type="submit" class="btn btn-primary" name="button">Check</button>
+                		</div>
+                	</div>
+                </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</body>
+</html>
