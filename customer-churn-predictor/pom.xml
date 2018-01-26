@@ -5,18 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.hazelcast.jet.demos</groupId>
-    <artifactId>demos</artifactId>
+    <artifactId>customer-churn-predictor</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>customer-churn-predictor</module>
-        <module>cryptocurrency-realtime-trend</module>
-        <module>flight-telemetry</module>
-        <module>image-recognition</module>
-        <module>jetleopard</module>
-        <module>markov-chain-generator</module>
-        <module>online-training-traffic-predictor</module>
+        <module>JetScoringEngine</module>
+        <module>TelecomDataLoader</module>
+        <module>ServerMember</module>
     </modules>
 
 
