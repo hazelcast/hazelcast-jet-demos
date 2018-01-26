@@ -27,4 +27,10 @@
   2. In form type phone no : 415  382-4657  Hit Enter to get the prediction result 
   3. Try Phone No : 415-329-6603
   
-  
+  ## Process Flow 
+  
+  ![Pic 1](https://github.com/mohari/jet-demos/blob/master/JetScoringEngine/PMML_Scorer_ProcessFlow.jpg)
+  
+  ## Demo Work Flow
+  
+  ![Pic 2](https://github.com/mohari/jet-demos/blob/master/JetScoringEngine/DEMO_Workflow.jpg)
