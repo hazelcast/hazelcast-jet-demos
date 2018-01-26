@@ -1,10 +1,10 @@
 ## Getting Started With Hazelcast Jet
 
 In this white paper we examine the new Hazelcast Jet technology.
-If you are not already familiar with Hazelcast IMDG, you should start by reading the white paper "An Architect's View of Hazelcast" (https://hazelcast.com/resources/architects-view-hazelcast/), as we assume a working knowledge of the main features of Hazelcast IMDG throughout.
+If you are not already familiar with Hazelcast IMDG, you should start by reading the white paper ["An Architect's View of Hazelcast"](https://hazelcast.com/resources/architects-view-hazelcast/), as we assume a working knowledge of the main features of Hazelcast IMDG throughout.
 
 We will also be looking at JetLeopard, a sample reference application built using Jet.
-This is a port to Jet of the BetLeopard application that was introduced in the white paper "Introduction to Hazelcast IMDG with Apache Spark" (https://hazelcast.com/resources/introduction-hazelcast-imdg-apache-spark/).
+This is a port to Jet of the BetLeopard application that was introduced in the white paper ["Introduction to Hazelcast IMDG with Apache Spark"](https://hazelcast.com/resources/introduction-hazelcast-imdg-apache-spark/).
 
 To get the most from this white paper it should be read after the previous one, as we assume a familiarity with BetLeopard and its domain model.
 
@@ -58,21 +58,26 @@ The end result is that Jet provides several different APIs to the programmer:
 * Distributed java.util.stream
 * DAG (and Processors)
 
-Of these, the Pipelines API is the easiest to program for the newcomer to distributed computing.
-The distributed Stream API has additional complexity that many programmers may find a hinderance at first.
-The DAG API has existed for longer, but is not necessary (and is too low-level) for many applications of Jet - but for the power user, it provides capabilities not easily accessible by the other APIs.
+Of the three APIs, the Pipelines API is the newest, and provides a broad feature set and a very easy on-ramp for developers who are new to distributed computing.
+
+The distributed Stream API has additional complexity, compared to running a local application that uses `java.util.stream`.
+The API is the same, but under the hood there will always be distributed, partitioned data.
+
+The DAG API has existed for longer, but is not necessary (and is too low-level) for many applications of Jet. For the power user, it provides capabilities not easily accessible by the other APIs and may be useful, e.g. for building DSLs.
+
+A comparison of the APIs can be found on the [Hazelcast website](http://docs.hazelcast.org/docs/jet/0.5.1/manual/Comparison_of_Jet_APIs.html).
 
 In the rest of this white paper, we use the Pipelines API exclusively.
 
 ### Introducing JetLeopard
 
-As noted earlier, JetLeopard (https://github.com/kittylyst/jetleopard) is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
+As noted earlier, [JetLeopard](https://github.com/kittylyst/jetleopard) is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
 
 The JetLeopard
 
 ![Jet Leopard](jetleopard-logo.png "JetLeopard")
 
-BetLeopard can be found at (https://github.com/hazelcast/betleopard) and models horse-racing.
+BetLeopard can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
 It was designed as an on-ramp for developers to see a non-trivial model to better illustrate the Hazelcast technologies.
 The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains details of the domain model and should be consulted before reading the rest of this white paper.
 
@@ -448,21 +453,19 @@ Teams should ensure that they properly understand their own requirements and the
 
 ### Links to additional Hazelcast Jet and IMDG resources
 
-* Learn about Hazelcast IMDG: "An Architect’s View of Hazelcast" white paper  https://hazelcast.com/resources/architects-view-hazelcast/
+* Learn about Hazelcast IMDG: ["An Architect’s View of Hazelcast" white paper](https://hazelcast.com/resources/architects-view-hazelcast/)
 
-* Download Hazelcast IMDG and participate in the community:
-http://www.hazelcast.org
+* Download Hazelcast IMDG and [participate in the community](http://www.hazelcast.org)
 
-* Contribute code or report a bug:
-Hazelcast IMDG GitHub: https://github.com/hazelcast/hazelcast
+* Contribute code or report a bug on [GitHub](https://github.com/hazelcast/hazelcast)
 
 * Join the discussion:
-  - Google Groups https://groups.google.com/forum/#!forum/hazelcast
-  - StackOverflow http://stackoverflow.com/questions/tagged/hazelcast
+  - [Google Groups](https://groups.google.com/forum/#!forum/hazelcast)
+  - [StackOverflow](http://stackoverflow.com/questions/tagged/hazelcast)
 
 * Follow us online:
-  - Twitter @Hazelcast https://twitter.com/hazelcast
-  - Facebook https://www.facebook.com/hazelcast/
-  - LinkedIn https://www.linkedin.com/company/hazelcast
+  - [Twitter @Hazelcast](https://twitter.com/hazelcast)
+  - [Facebook](https://www.facebook.com/hazelcast/)
+  - [LinkedIn](https://www.linkedin.com/company/hazelcast)
 
 
