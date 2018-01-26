@@ -75,7 +75,7 @@ As noted earlier, [JetLeopard](https://github.com/kittylyst/jetleopard) is a por
 
 The JetLeopard
 
-![Jet Leopard](jetleopard-logo.png "JetLeopard" | width=200)
+![Jet Leopard](jetleopard-logo.png "JetLeopard")
 
 BetLeopard can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
 It was designed as an on-ramp for developers to see a non-trivial model to better illustrate the Hazelcast technologies.
