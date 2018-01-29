@@ -1,6 +1,3 @@
-package com.hazelcast.jet.demo;
-
-
 import boofcv.abst.scene.ImageClassifier.Score;
 import boofcv.gui.ImageClassificationPanel;
 import boofcv.gui.image.ShowImages;

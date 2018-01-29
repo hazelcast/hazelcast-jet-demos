@@ -37,7 +37,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.hazelcast.jet.demo.RealtimeImageRecognition</mainClass>
+                                    <mainClass>RealtimeImageRecognition</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

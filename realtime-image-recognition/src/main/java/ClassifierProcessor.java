@@ -1,5 +1,3 @@
-package com.hazelcast.jet.demo;
-
 import boofcv.abst.scene.ImageClassifier;
 import boofcv.abst.scene.ImageClassifier.Score;
 import boofcv.deepboof.ImageClassifierVggCifar10;
@@ -35,16 +33,19 @@ import static com.hazelcast.jet.Util.entry;
  */
 public class ClassifierProcessor extends AbstractProcessor {
 
+
     private ImageClassifier<Planar<GrayF32>> classifier;
     private List<String> categories;
+    private String modelPath;
+
+    public ClassifierProcessor(String modelPath) {
+        this.modelPath = modelPath;
+    }
 
     @Override
     protected void init(Context context) throws Exception {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        String path = classLoader.getResource("likevgg_cifar10.zip").getPath();
-        unzip(path, "unzipped");
         classifier = new ImageClassifierVggCifar10();
-        classifier.loadModel(new File("unzipped/likevgg_cifar10"));
+        classifier.loadModel(new File(modelPath));
         categories = classifier.getCategories();
     }
 
@@ -107,7 +108,6 @@ public class ClassifierProcessor extends AbstractProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
 }

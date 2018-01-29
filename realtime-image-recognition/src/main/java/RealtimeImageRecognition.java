@@ -1,5 +1,4 @@
-package com.hazelcast.jet.demo;
-
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -10,8 +9,6 @@ import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.server.JetBootstrap;
-import java.net.URL;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
@@ -34,14 +31,16 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
  */
 public class RealtimeImageRecognition {
 
-    public static void main(String[] args) throws Exception {
-        JobConfig config = new JobConfig();
+    private static final String MODEL_PATH = RealtimeImageRecognition.class.getResource("likevgg_cifar10").getPath();
 
-        config.addResource(new URL("http://boofcv.org/notwiki/largefiles/likevgg_cifar10.zip"));
+    public static void main(String[] args) throws Exception {
+        System.setProperty("hazelcast.logging.type", "slf4j");
+
+        JobConfig config = new JobConfig();
 
         DAG dag = buildDAG();
 
-        JetInstance jet = JetBootstrap.getInstance();
+        JetInstance jet = Jet.newJetInstance();
         jet.newJob(dag, config).join();
     }
 
@@ -50,7 +49,7 @@ public class RealtimeImageRecognition {
         DAG dag = new DAG();
 
         Vertex webcamSource = dag.newVertex("webcam source", WebcamSource.webcam());
-        Vertex classifierVertex = dag.newVertex("classifier", of(ClassifierProcessor::new));
+        Vertex classifierVertex = dag.newVertex("classifier", of(() -> new ClassifierProcessor(MODEL_PATH)));
 
         WindowDefinition tumbling = WindowDefinition.tumblingWindowDef(1000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
@@ -71,13 +70,13 @@ public class RealtimeImageRecognition {
                             return maxScoredCategory.getValue();
                         })
                 ))).localParallelism(1);
-        Vertex globalMaxScore = dag.newVertex("globalMaxScore", peekInputP(combineToSlidingWindowP(
+        Vertex globalMaxScore = dag.newVertex("globalMaxScore", combineToSlidingWindowP(
                 tumbling,
-                maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input)-> {
+                maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input) -> {
                             Entry<String, Double> maxScoredCategory = input.getValue();
                             return maxScoredCategory.getValue();
                         })
-                )))).localParallelism(1);
+                ))).localParallelism(1);
 
         Vertex guiSink = dag.newVertex("gui", peekInputP(GUISink.sink()));
 

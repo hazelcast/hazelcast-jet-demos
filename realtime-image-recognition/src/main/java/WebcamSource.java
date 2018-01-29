@@ -1,5 +1,3 @@
-package com.hazelcast.jet.demo;
-
 import boofcv.gui.image.ImagePanel;
 import boofcv.gui.image.ShowImages;
 import boofcv.io.webcamcapture.UtilWebcamCapture;
