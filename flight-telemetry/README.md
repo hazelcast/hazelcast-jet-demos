@@ -16,10 +16,28 @@ The demo will calculate following metrics and publish them in Grafana
 
 This demo application will output it's results to a Graphite database for visualization with Grafana.
 
-You can easily start a Graphite and Grafana setup from the following repository.
+You can easily start a Graphite and Grafana setup with Docker with the provided `docker-compose.yml` and  `Makefile` script.
 
-**Please follow the instructions on the [Grafana and Graphite Docker Image](https://github.com/eminn/docker-grafana-graphite) 
-repository to run Grafana and Graphite then run this application.**
+You use following command to run the Graphite and Grafana Docker image:
+
+```bash
+$ make up
+```
+
+When you are done with the demo, to stop the container, run the following command:
+```bash
+$ make down
+```
+
+In case you need to log into running docker container shell, run the following command:
+```bash
+$ make shell
+```
+
+In case you need to view the container log , run the following command:
+```bash
+$ make tail
+```
 
 # Building the Application
 
@@ -40,4 +58,9 @@ Then run the application with :
 ```bash
 java -jar flight-telemetry-0.1-SNAPSHOT-jar-with-dependencies.jar
 ```
+
+Then navigate to with your browser `localhost` to open up the Grafana application.
+To log into Grafana use `admin/admin` username/password pair. 
+You need to select `Flight Telemetry` dashboard to see the metrics 
+that are emitted from the Flight Telemetry application.
 
