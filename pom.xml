@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>customer-churn-predictor</module>
+        <!--<module>customer-churn-predictor</module>-->
         <module>cryptocurrency-realtime-trend</module>
         <module>flight-telemetry</module>
         <module>realtime-image-recognition</module>
