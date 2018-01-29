@@ -1,8 +1,7 @@
 # Real-time Image Recognition
 This demonstration application uses the webcam video stream of the laptop computer as a source and recognizes 
 the images in each frame.
-The recognition done with a model pre-tranied with CIFAR-10 dataset. This model added as a resource to the Jet job,
-so it will be available to all Jet nodes in the cluster.
+The recognition done with a model pre-tranied with CIFAR-10 dataset. The model is read from the filesystem and loaded into the Jet processors which are making the recognition.
 The recognitions along with recognition scores are aggregated in 1 second windows and 
 frame with the maximum score will be shown in a GUI application.
 
