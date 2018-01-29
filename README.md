@@ -9,7 +9,7 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 * Neil - Market Data Distributor
 
-* Real-time Image Classifier
+* [Real-time Image Recognition](./realtime-image-recognition) - Recognizes images present in the webcam video input with a model trained with CIFAR-10 dataset.
 
 * [Bitcoin Sentiment Real-Time Analysis](./cryptocurrency-realtime-trend) - 
 
