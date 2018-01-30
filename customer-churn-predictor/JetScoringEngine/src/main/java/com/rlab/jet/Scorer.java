@@ -53,7 +53,8 @@ public class Scorer implements CommandLineRunner  {
 	private void initPMMLModel(){
 		PMML pmml;
 		try {
-			pmml = JPMMLUtils.loadModel("src\\main\\resources\\churnPmmlModel.pmml");
+			//pmml = JPMMLUtils.loadModel("src\\main\\resources\\churnPmmlModel.pmml");
+			pmml = JPMMLUtils.loadModel("./src/main/resources/churnPmmlModel.pmml");
 			modelEvaluator = JPMMLUtils.getVerifiedEvaluator(pmml);
 			Model model = modelEvaluator.getModel();
 		} catch (MLException | ReflectiveOperationException e) {
