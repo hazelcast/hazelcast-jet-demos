@@ -16,6 +16,8 @@ The demo will calculate following metrics and publish them in Grafana
 
 - Docker with Docker Compose : [Installation guide](https://docs.docker.com/install/)
 
+Docker must be running for this demo to work. 
+
 This demo application will output it's results to a Graphite database for visualization with Grafana.
 
 You can easily start a Graphite and Grafana setup with Docker with the provided `docker-compose.yml` and  `Makefile` script.
