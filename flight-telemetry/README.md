@@ -68,3 +68,5 @@ To log into Grafana use `admin/admin` username/password pair.
 You need to select `Flight Telemetry` dashboard to see the metrics 
 that are emitted from the Flight Telemetry application.
 
+Note: The ADB-S data stream publishes ~3 MB of data per update. We are polling it every 10 seconds by default, so you might need a decent internet connection for demo to work properly. Otherwise you might see some delay on the charts/output.
+
