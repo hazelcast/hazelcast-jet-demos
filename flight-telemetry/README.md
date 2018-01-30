@@ -15,7 +15,6 @@ The demo will calculate following metrics and publish them in Grafana
 # Prerequisites
 
 - Docker with Docker Compose : [Installation guide](https://docs.docker.com/install/)
-- JDK 8+ : [Installation guide](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 
 This demo application will output it's results to a Graphite database for visualization with Grafana.
 

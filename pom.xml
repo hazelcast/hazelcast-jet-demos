@@ -8,6 +8,7 @@
     <artifactId>demos</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <name>Hazelcast Jet Demo Applications</name>
 
     <modules>
         <!--<module>customer-churn-predictor</module>-->
