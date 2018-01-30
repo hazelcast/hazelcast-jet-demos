@@ -4,9 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.hazelcast.jet</groupId>
+    <parent>
+        <groupId>com.hazelcast.jet.demos</groupId>
+        <artifactId>demos</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
     <artifactId>markov-chain-generator</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
     <build>
         <plugins>
             <plugin>
@@ -20,24 +25,6 @@
         </plugins>
     </build>
     <repositories>
-        <repository>
-            <id>snapshot-repository</id>
-            <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>main-repo</id>
-            <url>http://repo1.maven.org/maven2/</url>
-        </repository>
-        <repository>
-            <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
-        </repository>
-        <repository>
-            <id>release-repository</id>
-            <name>release repository</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
-        </repository>
     </repositories>
     <dependencies>
         <dependency>
