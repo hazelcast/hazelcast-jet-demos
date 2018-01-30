@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.rlab</groupId>
-	<artifactId>tele_data_loader</artifactId>
+	<artifactId>TelecomDataLoader</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>TelecomDataLoader</name>
-	<description>Chaching Option for springBoot</description>
+	<description>Caching Option for springBoot</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
