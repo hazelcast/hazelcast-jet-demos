@@ -71,7 +71,9 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
 
     @Override
     public void close() throws IOException {
-        webcam.close();
+        if (webcam != null) {
+            webcam.close();
+        }
     }
 
 
