@@ -56,8 +56,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * The training data is obtained from:
  * https://catalog.data.gov/dataset/nys-thruway-origin-and-destination-points-for-all-vehicles-15-minute-intervals-2016-q1
  *
- * We've grouped the data by date and location and sorted
- *
+ * We've grouped the data by date and entry location and sorted them.
  */
 public class Main {
 
@@ -68,8 +67,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-
-        Path sourceFile = getSourcePath();
+        Path sourceFile = Paths.get(args[0]).toAbsolutePath();
         final String targetDirectory = "predictions";
 
         DAG dag = new DAG();
@@ -115,20 +113,9 @@ public class Main {
         JetInstance instance = Jet.newJetInstance();
         try {
             instance.newJob(dag).join();
-
-            // print the map
-            instance.getMap("trends").forEach((k, v) -> System.out.println(k + "=" + v));
         } finally {
             Jet.shutdownAll();
         }
-    }
-
-    private static Path getSourcePath() {
-        URL resource = Main.class.getClassLoader().getResource("15-minute-counts-sorted.csv");
-        if (resource == null) {
-            throw new IllegalArgumentException("No resource is found");
-        }
-        return Paths.get(resource.getFile());
     }
 
     private static class PredictionP extends AbstractProcessor {
