@@ -21,7 +21,6 @@ import com.hazelcast.jet.Pipeline;
 import com.hazelcast.jet.Sinks;
 import com.hazelcast.jet.Sources;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -104,26 +103,19 @@ public class MarkovChainGenerator {
     }
 
     private static AggregateOperation1<Tuple2<String, String>, ?, SortedMap<Double, String>> buildAggregateOp() {
-
-        AggregateOperation1<Tuple2<String, String>,
-                Tuple2<LongAccumulator, Map<String, LongAccumulator>>,
-                Tuple2<Long, Map<String, Long>>> aggrOp =
-                allOf(
-                        counting(),
-                        groupingBy(Tuple2::f1, counting())
-                );
-        return aggrOp.withFinishFn(aggrOp.finishFn().andThen(l -> {
-            long totals = l.f0();
-            Map<String, Long> counts = l.f1();
-            SortedMap<Double, String> probabilities = new TreeMap<>();
-
-            double cumulative = 0.0;
-            for (Entry<String, Long> e : counts.entrySet()) {
-                cumulative += e.getValue() / (double) totals;
-                probabilities.put(cumulative, e.getKey());
-            }
-            return probabilities;
-        }));
+        return allOf(
+                counting(),
+                groupingBy(Tuple2::f1, counting()),
+                (totals, counts) -> {
+                    SortedMap<Double, String> probabilities = new TreeMap<>();
+                    double cumulative = 0.0;
+                    for (Entry<String, Long> e : counts.entrySet()) {
+                        cumulative += e.getValue() / (double) totals;
+                        probabilities.put(cumulative, e.getKey());
+                    }
+                    return probabilities;
+                }
+        );
     }
 
     private static void printTransitions(Map<String, SortedMap<Double, String>> counts) {
