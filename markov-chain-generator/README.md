@@ -5,6 +5,8 @@ This application calculates word transition probabilities from the classical boo
 
 Then they are used to create sentences of specified length.
 
+To learn more about Markov Chains, see: [Wikipedia Article](https://en.wikipedia.org/wiki/Markov_chain)
+
 # Building the Application
 
 To build and package the application, run :
