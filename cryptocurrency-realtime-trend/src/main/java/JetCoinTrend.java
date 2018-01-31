@@ -20,12 +20,14 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WindowDefinition.*;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 
 public class JetCoinTrend {
     public static void main(String[] args) throws Exception {
-        System.out.println("NOT AN INVESTMENT SUGGESTION");
+        System.setProperty("hazelcast.logging.type","log4j");
+        System.out.println("DISCLAIMER: This is not an investment advice");
 
         DAG dag = new DAG();
         Vertex twitterSource = dag.newVertex("twitter", dontParallelize(of(TwitterSource::new)));
@@ -33,36 +35,49 @@ public class JetCoinTrend {
         Vertex relevance = dag.newVertex("relevance", of(RelevanceProcessor::new));
         Vertex sentiment = dag.newVertex("sentiment", of(SentimentProcessor::new));
 
-        WindowDefinition slidingWindowDef1Min = WindowDefinition.slidingWindowDef(10000, 5000);
-        WindowDefinition slidingWindowDef5Min = WindowDefinition.slidingWindowDef(300000, 60000);
-        WindowDefinition slidingWindowDef15Min = WindowDefinition.slidingWindowDef(900000, 300000);
+        WindowDefinition slidingWindowDef30Secs = slidingWindowDef(10_000, 5000);
+        WindowDefinition slidingWindowDef1Min = slidingWindowDef(60_000, 10_000);
+        WindowDefinition slidingWindowDef5Min = slidingWindowDef(300_000, 60_000);
 
         WatermarkGenerationParams<TimestampedEntry<String, Double>> params = WatermarkGenerationParams
-                .wmGenParams((DistributedToLongFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getTimestamp,
-                        withFixedLag(5000), emitByFrame(slidingWindowDef1Min), 60000);
+                .wmGenParams(
+                        (DistributedToLongFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getTimestamp,
+                        withFixedLag(5000),
+                        emitByFrame(slidingWindowDef30Secs), 60000
+                );
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(params);
 
         Vertex insertWm = dag.newVertex("insertWm", insertWMP).localParallelism(1);
 
-        Vertex aggregateTrend1Min = dag.newVertex("aggregateTrend1Min", aggregateToSlidingWindowP(TimestampedEntry::getKey,
+        Vertex aggregateTrend30Secs = dag.newVertex("aggregateTrend30Secs", aggregateToSlidingWindowP(
+                TimestampedEntry::getKey,
                 TimestampedEntry::getTimestamp,
                 TimestampKind.EVENT,
-                slidingWindowDef1Min, averagingDouble((DistributedToDoubleFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getValue)
-        ));
-
-        Vertex aggregateTrend5Min = dag.newVertex("aggregateTrend5Min", aggregateToSlidingWindowP(TimestampedEntry::getKey,
-                TimestampedEntry::getTimestamp,
-                TimestampKind.EVENT,
-                slidingWindowDef5Min, averagingDouble(
+                slidingWindowDef30Secs,
+                averagingDouble(
                         (DistributedToDoubleFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getValue)
-        ));
+                )
+        );
 
-        Vertex aggregateTrend15Min = dag.newVertex("aggregateTrend15Min", aggregateToSlidingWindowP(TimestampedEntry::getKey,
+        Vertex aggregateTrend1Min = dag.newVertex("aggregateTrend1Min", aggregateToSlidingWindowP(
+                TimestampedEntry::getKey,
                 TimestampedEntry::getTimestamp,
                 TimestampKind.EVENT,
-                slidingWindowDef15Min, averagingDouble(
+                slidingWindowDef1Min,
+                averagingDouble(
                         (DistributedToDoubleFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getValue)
-        ));
+                )
+        );
+
+        Vertex aggregateTrend5Min = dag.newVertex("aggregateTrend5Min", aggregateToSlidingWindowP(
+                TimestampedEntry::getKey,
+                TimestampedEntry::getTimestamp,
+                TimestampKind.EVENT,
+                slidingWindowDef5Min,
+                averagingDouble(
+                        (DistributedToDoubleFunction<TimestampedEntry<String, Double>>) TimestampedEntry::getValue)
+                )
+        );
 
 
         Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
@@ -71,22 +86,24 @@ public class JetCoinTrend {
 //        dag.edge(Edge.between(redditSource, insertWm));
         dag.edge(between(insertWm, relevance));
         dag.edge(between(relevance, sentiment));
-        dag.edge(from(sentiment).to(aggregateTrend1Min).
+        dag.edge(from(sentiment).to(aggregateTrend30Secs).
                 partitioned(
-                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey)
+                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey
+                ).distributed()
+        );
+        dag.edge(from(aggregateTrend30Secs).to(aggregateTrend1Min).
+                partitioned(
+                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey
+                ).distributed()
         );
         dag.edge(from(aggregateTrend1Min).to(aggregateTrend5Min).
                 partitioned(
-                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey)
+                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey
+                ).distributed()
         );
-        dag.edge(from(aggregateTrend5Min).to(aggregateTrend15Min).
-                partitioned(
-                        (DistributedFunction<TimestampedEntry<String, Double>, Object>) TimestampedEntry::getKey)
-        );
-        dag.edge(from(aggregateTrend1Min, 1).to(sink, 0));
-        dag.edge(from(aggregateTrend5Min, 1).to(sink, 1));
-        dag.edge(from(aggregateTrend15Min, 1).to(sink, 2));
-
+        dag.edge(from(aggregateTrend30Secs, 1).to(sink, 0));
+        dag.edge(from(aggregateTrend1Min, 1).to(sink, 1));
+        dag.edge(from(aggregateTrend5Min).to(sink, 2));
 
         // Start Jet, populate the input list
         JetInstance jet = Jet.newJetInstance();

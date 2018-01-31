@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -70,9 +71,12 @@ public class TwitterSource extends AbstractProcessor {
             queue.drainTo(messages);
             List<TimestampedEntry<String, String>> timestampedEntries = messages.stream().map(message -> {
                 JSONObject jsonObject = new JSONObject(message);
+                if (!jsonObject.has("text")) {
+                    return null;
+                }
                 String text = jsonObject.getString("text");
                 return new TimestampedEntry<>(System.currentTimeMillis(), text.toLowerCase(), "");
-            }).collect(Collectors.toList());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
             traverser = Traversers.traverseIterable(timestampedEntries);
         }
         if (emitFromTraverser(traverser)) {

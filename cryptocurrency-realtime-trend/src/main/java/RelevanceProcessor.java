@@ -19,7 +19,6 @@ public class RelevanceProcessor extends AbstractProcessor {
                 for (String keyword : CoinDefs.coinMap.get(cointype)) {
                     if (content.getKey().contains(keyword)) {
                         TimestampedEntry<String, String> entry = new TimestampedEntry<>(content.getTimestamp(), cointype, content.getKey());
-//                    System.out.println("content = " + content.getKey() + " " + cointype);
                         relevant.add(entry);
                     }
                 }
