@@ -14,7 +14,7 @@ The demo will calculate following metrics and publish them in Grafana
 
 # Prerequisites
 
-- Docker with Docker Compose : [Installation guide](https://docs.docker.com/install/)
+- Docker with Docker Compose: [Installation guide](https://docs.docker.com/install/)
 
 Docker must be running for this demo to work. 
 
@@ -45,7 +45,7 @@ $ make tail
 
 # Building the Application
 
-To build and package the application, run :
+To build and package the application, run:
 
 ```bash
 mvn clean package
@@ -53,12 +53,12 @@ mvn clean package
 
 # Running the Application
 
-After building the application, navigate to `target` folder by :
+After building the application, navigate to `target` folder by:
 ```bash
 cd target
 ```
 
-Then run the application with : 
+Then run the application with: 
 ```bash
 java -jar flight-telemetry-0.1-SNAPSHOT-jar-with-dependencies.jar
 ```

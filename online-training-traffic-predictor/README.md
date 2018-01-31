@@ -10,7 +10,7 @@ Sample data extracted from [here](https://catalog.data.gov/dataset/nys-thruway-o
 
 # Building the Application
 
-To build and package the application, run :
+To build and package the application, run:
 
 ```bash
 mvn clean package
@@ -18,7 +18,7 @@ mvn clean package
 
 # Running the Application
 
-Then run the application with : 
+Then run the application with: 
 ```bash
 mvn exec:java -Dexec.mainClass="Main"
 ```

@@ -27,8 +27,8 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 ## Prerequisites
 
-- Git Large File Storage : [Installation Guide](https://git-lfs.github.com/)
+- Git Large File Storage: [Installation Guide](https://git-lfs.github.com/)
   Some of the demo applications includes machine learning models in their use cases. Since some models' size exceeds 
   GitHub's 100MB file storage limit this repository uses Git LFS.
-- Java Development Kit 8+ : [Installation Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
-- Apache Maven : [Installation Guide](https://maven.apache.org/install.html)
+- Java Development Kit 8+: [Installation Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
+- Apache Maven: [Installation Guide](https://maven.apache.org/install.html)

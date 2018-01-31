@@ -10,7 +10,7 @@ This application shows how you can implement a custom streaming source and sink 
 
 # Building the Application
 
-To build and package the application, run :
+To build and package the application, run:
 
 ```bash
 mvn clean package
@@ -18,7 +18,7 @@ mvn clean package
 
 # Running the Application
 
-After building the application, run the application with : 
+After building the application, run the application with: 
 ```bash
 java -cp target/classes:target/realtime-image-recognition-1.0-SNAPSHOT-jar-with-dependencies.jar  RealtimeImageRecognition
 ```

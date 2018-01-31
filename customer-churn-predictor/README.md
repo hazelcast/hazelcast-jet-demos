@@ -2,9 +2,9 @@
 #  Customer Churn Predictor
 ### This sample has 3 projects 
 * **JetScoringEngine**: For scoring requests using already trained PMML Model and responding to appserver with results
-* **TelecomCustomerChurnPredictor** : The SpringbootWeb application which serves the UI to enter customer-Dhazelcast.diagnostics.enabled=true phone number to intiate churn prediction. It submits requests to ScoringEngine using Kafka. It loads contract and call details to hazelcast Cluster.
+* **TelecomCustomerChurnPredictor**: The SpringbootWeb application which serves the UI to enter customer-Dhazelcast.diagnostics.enabled=true phone number to intiate churn prediction. It submits requests to ScoringEngine using Kafka. It loads contract and call details to hazelcast Cluster.
 * **ServerMember**: Hazelcast cluster.
-*Management center : start MC to monitor cluster.
+*Management center: start MC to monitor cluster.
 
 ## Kafka Setup
   1. Install kafka_2.12-0.10.2.1
@@ -24,8 +24,8 @@
   
   ## Demo
   1. Go To http://localhost:8181/churnpredictorMain
-  2. In form type phone no : 415  382-4657  Hit Enter to get the prediction result 
-  3. Try Phone No : 415-329-6603
+  2. In form type phone no: 415  382-4657  Hit Enter to get the prediction result 
+  3. Try Phone No: 415-329-6603
   
   ## Process Flow 
   

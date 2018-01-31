@@ -9,7 +9,7 @@ To learn more about Markov Chains, see: [Wikipedia Article](https://en.wikipedia
 
 # Building the Application
 
-To build and package the application, run :
+To build and package the application, run:
 
 ```bash
 mvn clean package
@@ -17,7 +17,7 @@ mvn clean package
 
 # Running the Application
 
-After building the application, run it with : 
+After building the application, run it with: 
 
 ```bash
 mvn exec:java -Dexec.mainClass="MarkovChainGenerator" 
