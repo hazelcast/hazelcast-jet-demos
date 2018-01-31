@@ -15,7 +15,7 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 * [Flight Telemetry](./flight-telemetry) - Reads a stream of telemetry data from ADB-S on all commercial aircraft flying anywhere in the world. There is typically 5,000 - 6,000 aircraft at any point in time. This is then filtered, aggregated and certain features are enriched and displayed in Grafana.
 
-* [Markov Chain Generator](./markov-chain-generator)
+* [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
 
 * [Customer Churn Predictor](./customer-churn-predictor)
 
