@@ -33,6 +33,7 @@ public class JetCoinTrend {
     private static final String MAP_NAME_1_MINUTE = "map1Min";
     private static final String MAP_NAME_5_MINUTE = "map5Min";
     private static final int PRINT_INTERNAL_MILLIS = 30000;
+    private static volatile boolean running = true;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.logging.type", "log4j");
@@ -46,6 +47,7 @@ public class JetCoinTrend {
             // Perform the computation
             jet.newJob(dag).join();
         } finally {
+            running = false;
             Jet.shutdownAll();
         }
     }
@@ -53,7 +55,7 @@ public class JetCoinTrend {
     private static void startConsolePrinterThread(JetInstance jet) {
         new Thread(() -> {
             long lastPrint = 0;
-            while (true) {
+            while (running) {
                 long now = System.currentTimeMillis();
                 if (now > lastPrint + PRINT_INTERNAL_MILLIS) {
                     lastPrint = now;

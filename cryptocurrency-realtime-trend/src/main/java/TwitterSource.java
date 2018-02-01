@@ -52,6 +52,9 @@ public class TwitterSource extends AbstractProcessor {
         String consumerSecret = secret.getProperty("consumerSecret");
         String token = secret.getProperty("token");
         String tokenSecret = secret.getProperty("tokenSecret");
+        if (isMissing(consumerKey) || isMissing(consumerSecret) || isMissing(token) || isMissing(tokenSecret)) {
+            throw new IllegalArgumentException("Twitter credentials are missing!");
+        }
 
         Authentication auth = new OAuth1(consumerKey, consumerSecret, token, tokenSecret);
 
@@ -83,6 +86,10 @@ public class TwitterSource extends AbstractProcessor {
             traverser = null;
         }
         return false;
+    }
+
+    boolean isMissing(String test) {
+        return test.isEmpty() || "REPLACE_THIS".equals(test);
     }
 
 }
