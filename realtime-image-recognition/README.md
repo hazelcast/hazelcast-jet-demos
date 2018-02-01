@@ -20,7 +20,7 @@ mvn clean package
 
 After building the application, run the application with: 
 ```bash
-java -cp target/classes:target/realtime-image-recognition-1.0-SNAPSHOT-jar-with-dependencies.jar  RealtimeImageRecognition
+mvn exec:java
 ```
 
 You should be able to see that your webcam input is taken and, after a few seconds, outputted to the second GUI with the recognized tag.

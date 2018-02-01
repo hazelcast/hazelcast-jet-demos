@@ -9,6 +9,8 @@ import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
@@ -16,7 +18,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingTimestampAndWallClockLag;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
@@ -31,30 +33,31 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
  */
 public class RealtimeImageRecognition {
 
-    private static final String MODEL_PATH = RealtimeImageRecognition.class.getResource("likevgg_cifar10").getPath();
 
     public static void main(String[] args) throws Exception {
+        Path modelPath = Paths.get(args[0]).toAbsolutePath();
+
         System.setProperty("hazelcast.logging.type", "slf4j");
 
         JobConfig config = new JobConfig();
 
-        DAG dag = buildDAG();
+        DAG dag = buildDAG(modelPath.toString());
 
         JetInstance jet = Jet.newJetInstance();
         jet.newJob(dag, config).join();
     }
 
 
-    private static DAG buildDAG() {
+    private static DAG buildDAG(String modelPath) {
         DAG dag = new DAG();
 
         Vertex webcamSource = dag.newVertex("webcam source", WebcamSource.webcam());
-        Vertex classifierVertex = dag.newVertex("classifier", of(() -> new ClassifierProcessor(MODEL_PATH)));
+        Vertex classifierVertex = dag.newVertex("classifier", of(() -> new ClassifierProcessor(modelPath)));
 
         WindowDefinition tumbling = WindowDefinition.tumblingWindowDef(1000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
                 (DistributedToLongFunction<TimestampedEntry>) TimestampedEntry::getTimestamp,
-                withFixedLag(500),
+                limitingTimestampAndWallClockLag(500, 500),
                 emitByFrame(tumbling),
                 60000L
         ));
