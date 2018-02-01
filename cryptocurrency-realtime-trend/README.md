@@ -1,5 +1,5 @@
 # Cryptocurrency Realtime Trend
-Twitter and Reddit content are analyzed in real time to calculate cryptocurrency
+Twitter content are analyzed in real time to calculate cryptocurrency
 trend list with its popularity index.
 
 NLP sentimental analysis applied to tweets and posts to calculate the content scores.  
@@ -8,16 +8,12 @@ NLP sentimental analysis applied to tweets and posts to calculate the content sc
 
 ## Prerequisites
 
-You'll need to have API Credentials from Twitter and Reddit to make this demo work.
+You'll need to have API Credentials from Twitter to make this demo work.
 
-To obtain them, visit the following websites:
+To obtain them, visit the following website:
 - [Twitter Application Management](http://apps.twitter.com/)
-- [Reddit Application Preferences](https://www.reddit.com/prefs/apps)
 
-
-Please fill in the Twitter and Reddit credentials into these files below.
-
-`src/main/resources/reddit-security.properties`
+Please fill in the Twitter credentials into the file below.
 
 `src/main/resources/twitter-security.properties`
 
