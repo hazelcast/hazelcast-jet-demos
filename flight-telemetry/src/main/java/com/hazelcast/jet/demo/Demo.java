@@ -10,6 +10,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -281,12 +282,11 @@ public class Demo {
      * @param entry contains the altitude and results from the linear trend calculation.
      * @return an entry whose key is the altitude and value is the aircraft object which contains the vertical direction.
      */
-    private static Entry<Long, Aircraft> assignDirection(TimestampedEntry<Long, List<Object>> entry) {
+    private static Entry<Long, Aircraft> assignDirection(TimestampedEntry<Long, Tuple2<List<Aircraft>,Double>> entry) {
         // unpack the results
-        List<Object> results = entry.getValue();
-        List<Aircraft> aircraftList = (List<Aircraft>) results.get(0);
+        List<Aircraft> aircraftList = entry.getValue().f0();
         Aircraft aircraft = aircraftList.get(0);
-        double coefficient = (double) results.get(1);
+        double coefficient = entry.getValue().f1();
         aircraft.setVerticalDirection(getVerticalDirection(coefficient));
         return entry(entry.getKey(), aircraft);
     }
