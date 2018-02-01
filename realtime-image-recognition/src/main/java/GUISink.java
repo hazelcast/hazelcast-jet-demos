@@ -9,6 +9,7 @@ import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -35,7 +36,8 @@ public class GUISink extends AbstractProcessor {
         Entry<String, Double> category = imageEntry.getValue();
         Score score = new Score();
         score.set(category.getValue(), 0);
-        panel.addImage(image.getImage(), timestampedEntry.getKey() + timestampedEntry.getTimestamp(), singletonList(score), singletonList(category.getKey()));
+        String timestampString = new Timestamp(timestampedEntry.getTimestamp()).toString();
+        panel.addImage(image.getImage(), timestampString, singletonList(score), singletonList(category.getKey()));
         return true;
     }
 
