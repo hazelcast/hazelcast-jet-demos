@@ -20,7 +20,7 @@ mvn clean package
 After building the application, run it with: 
 
 ```bash
-mvn exec:java -Dexec.mainClass="MarkovChainGenerator" 
+mvn exec:java 
 ```
 
 
