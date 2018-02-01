@@ -1,8 +1,8 @@
 # Cryptocurrency Realtime Trend
-Twitter and Reddit content is analyzed in real time to calculate cryptocurrency
-trend list with popularity index.
+Twitter and Reddit content are analyzed in real time to calculate cryptocurrency
+trend list with its popularity index.
 
-Tweet and post contents are applied NLP sentimental analysis to find to content scores.  
+NLP sentimental analysis applied to tweets and posts to calculate the content scores.  
 
 ![](./diagram.png)
 
@@ -26,7 +26,7 @@ Please fill in the Twitter and Reddit credentials into these files below.
 
 To build and package the application, run:
 
->Please note that maven may take some time to download all dependency on the first run.
+>Please note that maven may take some time to download all dependencies on the first run since the NLP libraries are hefty in file size.
 
 ```bash
 mvn clean package
