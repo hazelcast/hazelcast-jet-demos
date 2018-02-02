@@ -53,14 +53,10 @@ mvn clean package
 
 # Running the Application
 
-After building the application, navigate to `target` folder by:
-```bash
-cd target
-```
+After building the application, run the application with:
 
-Then run the application with: 
 ```bash
-java -jar flight-telemetry-0.1-SNAPSHOT-jar-with-dependencies.jar
+mvn exec:java
 ```
 
 Then navigate to with your browser `localhost` to open up the Grafana application.
