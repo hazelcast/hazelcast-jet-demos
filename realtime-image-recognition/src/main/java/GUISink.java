@@ -9,9 +9,11 @@ import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import java.awt.*;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map.Entry;
+import javax.swing.*;
 
 import static java.util.Collections.singletonList;
 
@@ -38,7 +40,23 @@ public class GUISink extends AbstractProcessor {
         score.set(category.getValue(), 0);
         String timestampString = new Timestamp(timestampedEntry.getTimestamp()).toString();
         panel.addImage(image.getImage(), timestampString, singletonList(score), singletonList(category.getKey()));
+        scrollToBottomAndRepaint();
         return true;
+    }
+
+    private void scrollToBottomAndRepaint() {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JScrollPane) {
+                JScrollPane scrollPane = (JScrollPane) component;
+                JList list = (JList) scrollPane.getViewport().getView();
+                int size = list.getModel().getSize();
+                list.setSelectedIndex(Math.max(size - 2, list.getLastVisibleIndex()));
+                JScrollBar vertical = scrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
+                panel.repaint(scrollPane.getBounds());
+            }
+        }
     }
 
     @Override
