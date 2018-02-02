@@ -35,3 +35,7 @@ After building the application, run the application with:
 ```bash
 mvn exec:java
 ```
+
+You should see the coin trends in the output like below
+
+![](./output.png)
