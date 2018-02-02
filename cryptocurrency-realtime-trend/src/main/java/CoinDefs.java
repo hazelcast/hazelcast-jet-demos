@@ -5,21 +5,17 @@ import java.util.Map;
 
 public class CoinDefs {
 
-    static Map<String, List<String>> coinMap = new HashMap<>();
+    static Map<String, List<String>> COIN_MAP = new HashMap<>();
 
     static {
-        coinMap.put("BTC", Arrays.asList("bitcoin", "#btc", "#bitcoin"));
-        coinMap.put("ETH", Arrays.asList("ether", "ethereum", "#eth", "#ether", "#ethereum"));
-        coinMap.put("XRP", Arrays.asList("ripple", "#xrp", "#ripple"));
-        coinMap.put("BCH", Arrays.asList("bitcoin cash", "#bitcoincash", "#bch"));
-        coinMap.put("ADA", Arrays.asList("cardano", "#ada", "#cardano"));
-        coinMap.put("LTC", Arrays.asList("litecoin", "#ltc", "#litecoin"));
-        coinMap.put("XLM", Arrays.asList("stellar", "#xlm", "#steller"));
-        coinMap.put("XEM", Arrays.asList("NEM", "#xem", "#nem"));
-        coinMap.put("EOS", Arrays.asList("EOS", "#eos"));
+        COIN_MAP.put("BTC", Arrays.asList("bitcoin", "#btc", "#bitcoin"));
+        COIN_MAP.put("ETH", Arrays.asList("ether", "ethereum", "#eth", "#ether", "#ethereum"));
+        COIN_MAP.put("XRP", Arrays.asList("ripple", "#xrp", "#ripple"));
+        COIN_MAP.put("BCH", Arrays.asList("bitcoin cash", "#bitcoincash", "#bch"));
+        COIN_MAP.put("ADA", Arrays.asList("cardano", "#ada", "#cardano"));
+        COIN_MAP.put("LTC", Arrays.asList("litecoin", "#ltc", "#litecoin"));
+        COIN_MAP.put("XLM", Arrays.asList("stellar", "#xlm", "#steller"));
+        COIN_MAP.put("XEM", Arrays.asList("NEM", "#xem", "#nem"));
+        COIN_MAP.put("EOS", Arrays.asList("EOS", "#eos"));
     }
-
-    static List<String> redditNames = Arrays
-            .asList("Bitcoin", "Etherum", "Ripple", "Bitcoincash", "Cardano", "Litecoin", "Stellar", "nem", "eos");
-
 }

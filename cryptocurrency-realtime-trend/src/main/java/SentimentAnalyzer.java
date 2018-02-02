@@ -12,11 +12,10 @@ import java.util.Properties;
 
 public class SentimentAnalyzer {
 
-    private StanfordCoreNLP pipeline;
-    private Properties props;
+    private final StanfordCoreNLP pipeline;
 
     public SentimentAnalyzer() {
-        props = new Properties();
+        Properties props = new Properties();
         props.setProperty("annotators", "tokenize, ssplit, pos, parse, sentiment");
         pipeline = new StanfordCoreNLP(props);
     }
@@ -78,11 +77,8 @@ public class SentimentAnalyzer {
 
     public List<CoreMap> getAnnotations(String text) {
         Annotation annotation = new Annotation(text);
-
         pipeline.annotate(annotation);
-
-        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
-        return sentences;
+        return annotation.get(CoreAnnotations.SentencesAnnotation.class);
     }
 
 }
