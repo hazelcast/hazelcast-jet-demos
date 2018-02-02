@@ -1,10 +1,19 @@
 # Cryptocurrency Realtime Trend
-Twitter content are analyzed in real time to calculate cryptocurrency
-trend list with its popularity index.
 
-NLP sentimental analysis applied to tweets and posts to calculate the content scores.  
+Twitter content is analyzed in real time to calculate cryptocurrency trend list with its popularity index.
+
+This demo shows how to ingest a Tweet stream and how to use streaming operations in Jet (windowing, event-time processing, streaming aggregations). It also demonstrates integrating of 3rd party NLP library into the parallel data pipeline.      
+
+# Data Pipeline
 
 ![](./diagram.png)
+
+The tweets are read from Twitter and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP sentimental analysis is applied to each tweet to calculate the sentiment score of the respective tweet. This score says whether the Tweet has rather positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
+
+ For each cryptocurrency, Jet aggregates scores from last 30 seconds, last minute and last 5 minutes and prints the coin popularity table to the output like below: 
+ 
+![](./output.png)
+  
 
 ## Prerequisites
 
@@ -35,7 +44,3 @@ After building the application, run the application with:
 ```bash
 mvn exec:java
 ```
-
-You should see the coin trends in the output like below
-
-![](./output.png)
