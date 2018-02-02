@@ -23,8 +23,12 @@ After building the application, run the application with:
 mvn exec:java
 ```
 
-You should be able to see that your webcam input is taken and, after a few seconds, outputted to the second GUI with the recognized tag.
+You should be able to see that your webcam input is taken and after a few seconds, outputted to the second GUI with the recognized tag, like below.
+
+![](./output.png)
 
 Since this is a demonstration application the model is used here is a model pre-trained with [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html). 
 
 The size of the model is around 100MB and contains just 10 categories. 
+
+
