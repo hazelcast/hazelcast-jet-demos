@@ -71,7 +71,6 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.8.0</version>
             <classifier>models-english</classifier>
-
         </dependency>
         <dependency>
             <groupId>net.dean.jraw</groupId>
@@ -88,7 +87,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20171018</version>
+            <version>20180130</version>
         </dependency>
     </dependencies>
 
@@ -117,7 +116,4 @@
             <url>https://oss.sonatype.org/content/repositories/releases</url>
         </repository>
     </repositories>
-
-
-
 </project>
