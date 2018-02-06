@@ -3,6 +3,7 @@ package com.hazelcast.jet.demo;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
@@ -118,6 +119,7 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
  */
 public class FlightTelemetry {
 
+    public static final String JOB_NAME = "Flight Telemetry";
     private static final String SOURCE_URL = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json";
     private static final String TAKE_OFF_MAP = "takeOffMap";
     private static final String LANDING_MAP = "landingMap";
@@ -132,7 +134,9 @@ public class FlightTelemetry {
         addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
 
         try {
-            Job job = jet.newJob(dag);
+            JobConfig jobConfig = new JobConfig();
+            jobConfig.setName(JOB_NAME);
+            Job job = jet.newJob(dag, jobConfig);
             job.join();
         } finally {
             Jet.shutdownAll();

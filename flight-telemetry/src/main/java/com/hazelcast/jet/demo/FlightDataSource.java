@@ -9,6 +9,11 @@ import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,15 +26,15 @@ import javax.net.ssl.HttpsURLConnection;
 
 import static com.hazelcast.jet.Sources.fromProcessor;
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
  * Polls the <a href="https://www.adsbexchange.com">ADS-B Exchange</a> HTTP API
  * for flight data. The API will be polled every {@code pollIntervalMillis} milliseconds.
- *
+ * <p>
  * After a successful poll, this source filters out aircrafts which are missing registration number
  * and position timestamp. It will also records the latest position timestamp of the aircrafts so if
  * there are no update for an aircraft it will not be emitted from this source.
@@ -50,7 +55,7 @@ public class FlightDataSource extends AbstractProcessor {
             throw ExceptionUtil.rethrow(e);
         }
         this.intervalMillis = pollIntervalMillis;
-    }              
+    }
 
     @Override
     public boolean complete() {
@@ -122,11 +127,46 @@ public class FlightDataSource extends AbstractProcessor {
     }
 
     public static ProcessorMetaSupplier streamAircraftP(String url, long intervalMillis) {
-        return dontParallelize(() -> new FlightDataSource(url, intervalMillis));
+        return new MetaSupplier(url, intervalMillis);
     }
 
     public static Source<Aircraft> streamAircraft(String url, long intervalMillis) {
         return fromProcessor("streamAircraft", streamAircraftP(url, intervalMillis));
+    }
+
+    private static class MetaSupplier implements ProcessorMetaSupplier {
+
+        private final String url;
+        private final long intervalMillis;
+        private transient Address ownerAddress;
+
+        @Override
+        public int preferredLocalParallelism() {
+            return 1;
+        }
+
+        public MetaSupplier(String url, long intervalMillis) {
+            this.url = url;
+            this.intervalMillis = intervalMillis;
+        }
+
+        @Override
+        public void init(Context context) {
+            String partitionKey = StringPartitioningStrategy.getPartitionKey("flightDataSource");
+            ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                                  .getPartition(partitionKey).getOwner().getAddress();
+        }
+
+        @Override
+        public DistributedFunction<Address, ProcessorSupplier> get(List<Address> addresses) {
+            return address -> {
+                if (address.equals(ownerAddress)) {
+                    return ProcessorSupplier.of(() -> new FlightDataSource(url, intervalMillis));
+                }
+                // return empty producer on all other nodes
+                return c -> singletonList(Processors.noopP().get());
+            };
+        }
     }
 
 }
