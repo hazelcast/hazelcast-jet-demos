@@ -150,7 +150,7 @@ public class FlightTelemetry {
                 (Aircraft ac) -> !ac.isGnd() && ac.getAlt() > 0 && ac.getAlt() < 3000)
         ).localParallelism(1);
 
-        Vertex assignAirport = dag.newVertex("assignAirport", mapP(Demo::assignAirport)).localParallelism(1);
+        Vertex assignAirport = dag.newVertex("assignAirport", mapP(FlightTelemetry::assignAirport)).localParallelism(1);
 
         WindowDefinition wDefTrend = WindowDefinition.slidingWindowDef(60_000, 30_000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
@@ -173,7 +173,7 @@ public class FlightTelemetry {
                 allOf(toList(), linearTrend(Aircraft::getPosTime, Aircraft::getAlt))
         ));
 
-        Vertex addVerticalDirection = dag.newVertex("addVerticalDirection", mapP(Demo::assignDirection));
+        Vertex addVerticalDirection = dag.newVertex("addVerticalDirection", mapP(FlightTelemetry::assignDirection));
 
         Vertex filterAscending = dag.newVertex("filterAscending", filterP(
                 (Entry<Long, Aircraft> e) -> e.getValue().verticalDirection == ASCENDING));
