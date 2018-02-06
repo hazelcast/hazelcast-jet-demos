@@ -70,61 +70,33 @@ In the rest of this white paper, we use the Pipeline API exclusively.
 
 ### Introducing JetLeopard
 
-As noted earlier, [JetLeopard](https://github.com/kittylyst/jetleopard) is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
-
-The JetLeopard
+As noted earlier, JetLeopard is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
 
 ![Jet Leopard](jetleopard-logo.png "JetLeopard")
 
-BetLeopard can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
+The original BetLeopard example can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
 It was designed as an on-ramp for developers to see a non-trivial model to better illustrate the Hazelcast technologies.
-The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains details of the domain model and should be consulted before reading the rest of this white paper.
+The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains details of the domain model and could be consulted before reading the rest of this white paper.
 
 JetLeopard uses the same domain model as BetLeopard in terms of races, horses, bets and users.
 
 ![Simple view of BetLeopard's model of events and races](betleopard-model.png "JetLeopard")
 
-As JetLeopard depends on BetLeopard, we need to arrange the Maven dependency stanzas somewhat carefully, like this:
+The application can be obtained as a part of the Hazelcast open-source Jet demos [available from Github](https://github.com/hazelcast/hazelcast-jet-demos). To simplify the Maven build for JetLeopard, it includes the classes needed from BetLeopard.
+This means that JetLeopard can run standalone without needing a BetLeopard jar.
 
-----
-    <properties>
-    
-        <!-- ... -->
-        <!-- Library versions -->
+To run the project, clone or download it from Github, and change into the jetleopard directory, then run the following commands:
 
-        <!-- ... -->
-        <betleopard.version>1.1.0</betleopard.version>
-        <hazelcast-jet.version>0.5</hazelcast-jet.version>
-    </properties>
-    
-    <dependencies>
-    
-        <!-- ... -->
-        <dependency>
-            <groupId>com</groupId>
-            <artifactId>betleopard</artifactId>
-            <version>${betleopard.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>${hazelcast-jet.version}</version>
-        </dependency>
-----
+```
+mvn clean package
+mvn exec:java
+```
 
-This is because BetLeopard also depends on Hazelcast IMDG and there is a real risk of clashing dependencies.
-We want JetLeopard to use Jet's version of Hazelcast IMDG and so we explicitly exclude the dependency from transitively being included from BetLeopard.
 
 With the project set up we can now replicate the historical analysis application from BetLeopard very simply.
 JetLeopard is based on the Pipeline API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
 
-----
+```
     public void setup() {
         jet = Jet.newJetInstance();
 
@@ -137,7 +109,7 @@ JetLeopard is based on the Pipeline API and the warm up calculation is contained
             iox.printStackTrace();
         }
     }
-----
+```
 
 With the data loaded into IMDG we can now construct a description of the analysis task.
 Unlike the Java 8 APIs, in Jet we construct a single object (a Pipeline) that represents the entire data operation.
