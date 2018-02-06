@@ -76,7 +76,7 @@ As noted earlier, JetLeopard is a port of the BetLeopard open-source betting eng
 
 The original BetLeopard example can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
 It was designed as an on-ramp for developers to see a non-trivial model to better illustrate the Hazelcast technologies.
-The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains details of the domain model and could be consulted before reading the rest of this white paper.
+The white paper ["Introduction to Hazelcast IMDG with Apache Spark"](https://hazelcast.com/resources/introduction-hazelcast-imdg-apache-spark/) contains details of the domain model and could be consulted before reading the rest of this white paper.
 
 JetLeopard uses the same domain model as BetLeopard in terms of races, horses, bets and users.
 
