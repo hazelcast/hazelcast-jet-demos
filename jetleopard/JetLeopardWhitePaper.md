@@ -30,8 +30,7 @@ It has full integration with Hazelcast IMDG, and also supports the following lis
 
 This list is expected to grow significantly as the technology matures. 
 
-Release 0.5 brings major enhancements to Jet - the documentation is much more complete, the API has been nicely rounded out with several "missing" methods and classes provided.
-In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
+Release 0.5 is a major milestone for Jet, and the first production ready release. In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
 
 As Jet is intended to be used as a distributed, streaming processing engine, it has all of the core features that are typical for such systems, such as snapshots and fault-tolerance within the processing grid, and windowing of data streams.
 This white paper focuses on the core technology and a developer-friendly introduction, and further material should be consulted on the detail of the operation of a production Jet grid.
@@ -54,11 +53,11 @@ The queues are not the standard java.util.concurrent queues and instead use wait
 
 The end result is that Jet provides several different APIs to the programmer:
 
-* Pipelines
+* Pipeline
 * Distributed java.util.stream
-* DAG (and Processors)
+* Core (DAG)
 
-Of the three APIs, the Pipelines API is the newest, and provides a broad feature set and a very easy on-ramp for developers who are new to distributed computing.
+Of the three APIs, the Pipeline API is the newest, and provides a broad feature set and a very easy on-ramp for developers who are new to distributed computing.
 
 The distributed Stream API has additional complexity, compared to running a local application that uses `java.util.stream`.
 The API is the same, but under the hood there will always be distributed, partitioned data.
@@ -67,7 +66,7 @@ The DAG API has existed for longer, but is not necessary (and is too low-level) 
 
 A comparison of the APIs can be found on the [Hazelcast website](http://docs.hazelcast.org/docs/jet/0.5.1/manual/Comparison_of_Jet_APIs.html).
 
-In the rest of this white paper, we use the Pipelines API exclusively.
+In the rest of this white paper, we use the Pipeline API exclusively.
 
 ### Introducing JetLeopard
 
@@ -123,7 +122,7 @@ This is because BetLeopard also depends on Hazelcast IMDG and there is a real ri
 We want JetLeopard to use Jet's version of Hazelcast IMDG and so we explicitly exclude the dependency from transitively being included from BetLeopard.
 
 With the project set up we can now replicate the historical analysis application from BetLeopard very simply.
-JetLeopard is based on the Pipelines API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
+JetLeopard is based on the Pipeline API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
 
 ----
     public void setup() {
@@ -200,7 +199,7 @@ This function takes in an `Entry<String, Event>` and returns a `Horse`, the winn
 
 This completes the view of how we have constructed the computation graph (DAG) as a pipeline.
 
-Overall, the Pipelines API is the highest-level API that Jet provides, and this means that when we want to run the job corresponding to the pipeline, it is as simple as a couple of lines of code:
+Overall, the Pipeline API is the highest-level API that Jet provides, and this means that when we want to run the job corresponding to the pipeline, it is as simple as a couple of lines of code:
 
 ----
     Pipeline p = buildPipeline();
@@ -416,8 +415,6 @@ ____
 Spark, on the other hand, prefers to confront the developer with the fact that they are working with a new abstraction that doesn't fit the Java Collections model.
 ____
 
-This gives Spark seamless access to the naturally functional aspects of Scala's collections, but at the expense of making Spark less of a natural fit for Java programmers, and introducing  additional complexity overhead and learning curve when Java developers first begin to work with Spark.
-
 One side-effect of Spark's Scala-first approach is that Java programmers are faced with the necessity of including the Scala runtime and dependencies into their Java projects.
 The Scala world does not place the same emphasis on strict binary compatibility that many Java programmers take for granted.
 This means that Java-based Spark applications may exhibit occasional stability problems (especially when upgrading or adding to the Scala libraries present in the project dependency graph).
@@ -436,7 +433,7 @@ This is positive news for developers, as it improves the available open-source t
 
 The tools are now there, but developers must properly analyse their domain and requirements.
 When considering these two technologies for a software project, a lot will depend upon the details of the system under consideration.
-Questions such as:
+The careful architect should ask questions such as:
 
 * How real-time is the real-time computing need?
 
@@ -448,7 +445,7 @@ Questions such as:
 
 * What is the cost of rewriting code to fit to new APIs?
 
-are essential to understanding the factors that should drive the choice of a streaming technology.
+These considerations are essential to understanding the factors that should drive the choice of a streaming technology.
 Teams should ensure that they properly understand their own requirements and the trade-offs present with each technology before making their architectural choice.
 
 ### Links to additional Hazelcast Jet and IMDG resources
