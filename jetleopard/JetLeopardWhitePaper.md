@@ -83,7 +83,7 @@ JetLeopard uses the same domain model as BetLeopard in terms of races, horses, b
 ![Simple view of BetLeopard's model of events and races](betleopard-model.png "JetLeopard")
 
 The application can be obtained as a part of the Hazelcast open-source Jet demos [available from Github](https://github.com/hazelcast/hazelcast-jet-demos). To simplify the Maven build for JetLeopard, it includes the classes needed from BetLeopard.
-This means that JetLeopard can run standalone without needing a BetLeopard jar.
+This means that JetLeopard can run standalone without needing a BetLeopard jar or needlessly complicating the build.
 
 To run the project, clone or download it from Github, and change into the jetleopard directory, then run the following commands:
 
@@ -92,8 +92,8 @@ mvn clean package
 mvn exec:java
 ```
 
+The second command will run the default operation for the project - it runs a replica of the historical analysis application from BetLeopard, intended as a warmup exercise for introducing the Jet API.
 
-With the project set up we can now replicate the historical analysis application from BetLeopard very simply.
 JetLeopard is based on the Pipeline API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
 
 ```
@@ -126,7 +126,7 @@ As a result, it is considered best practice to use a factory method for the Pipe
 
 Let's take a look at a simple pipeline for use in the AnalysisJet example:
 
-----
+```Java
     public static Pipeline buildPipeline() {
         final Pipeline p = Pipeline.create();
 
@@ -140,7 +140,7 @@ Let's take a look at a simple pipeline for use in the AnalysisJet example:
         
         return p;
     }
-----
+```
 
 This pipeline features a source, a sink and one intermediate grouping stage.
 
@@ -163,20 +163,20 @@ In this case, we are drawing from the EVENTS_BY_NAME and taking everything (usin
 
 This function takes in an `Entry<String, Event>` and returns a `Horse`, the winner of the first race of the day, and is defined by a couple of simple static helpers:
 
-----
+```
     public final static Function<Event, Horse> FIRST_PAST_THE_POST = e -> e.getRaces().get(0).getWinner().orElse(Horse.PALE);
 
     public final static DistributedFunction<Entry<String, Event>, Horse> HORSE_FROM_EVENT = e -> FIRST_PAST_THE_POST.apply(e.getValue());
-----
+```
 
 This completes the view of how we have constructed the computation graph (DAG) as a pipeline.
 
 Overall, the Pipeline API is the highest-level API that Jet provides, and this means that when we want to run the job corresponding to the pipeline, it is as simple as a couple of lines of code:
 
-----
+```
     Pipeline p = buildPipeline();
     jet.newJob(p).join();
-----
+```
 
 The call to `newJob()` begins executing immediately in an asynchronous manner, and returns a Job object.
 This construct holds a simple status and a CompletableFuture on the actual computation - so the job's progress can be queried or cancelled after some time period.
@@ -184,13 +184,13 @@ This construct holds a simple status and a CompletableFuture on the actual compu
 In this simple example, we don't want to do anything asynchronous with the computation and so we call `join()` on the job immediately, and just block for completion.
 With this done, Jet has produced the filtered data set for the result, put it into the results IMap and this can then be output in a simple loop like this:
 
-----
+```
     final Map<Horse, Long> multiple = main.jet.getMap(MULTIPLE);
     System.out.println("Result set size: " + multiple.size());
     for (Horse h : multiple.keySet()) {
         System.out.println(h + " : " + multiple.get(h));
     }
-----
+```
 
 Given the actual size of the data set under consideration in this example, there is of course no need to involve a distributed framework such as Jet.
 However, the clean nature of the Jet API means that the clear construction of the code can be made out regardless of the actual size of the data being processed.
@@ -203,7 +203,7 @@ In the JetLeopard case, Spark and its dependencies (including the entire Scala r
 We can also reuse a lot of the boilerplate "random generation" methods that were used in BetLeopard.
 As a result, the main loop for JetLeopard is very similar to the BetLeopard case:
 
-----
+```
     public void run() {
         while (!shutdown) {
             addSomeSimulatedBets();
@@ -219,37 +219,37 @@ As a result, the main loop for JetLeopard is very similar to the BetLeopard case
         }
         jet.shutdown();
     }
-----
+```
 
 In terms of execution then, as before, we use `join()` to force synchronous execution of the Jet job.
 
 The real difference hides in the `pipeline` field on the main application object.
 This is, unsurprisingly, set up in a method called `buildPipeline()`, which is slightly more complex than the previous example:
 
-----
+```
     public static Pipeline buildPipeline() {
         final Pipeline pipeline = Pipeline.create();
 
         // Draw users from the Hazelcast IMDG source
         ComputeStage<User> users = pipeline.drawFrom(Sources.<Long, User, User>map(USER_ID, e -> true, Entry::getValue));
-----
+```
 
 Once again, we see the creation of a Pipeline object, which draws data from a Hazelcast IMDG IMap.
 The `USER_ID` IMap maps userids to users, and so in this case the projection function needs to simply take the value of each `Entry<Long, User>` object it's handed.
 Note that we must provide explicit values for the type parameters on `map()`.
 Alternatively, this could also be written:
 
-----
+```
         ComputeStage<User> users =
         	pipeline.drawFrom(
         		Sources.map(USER_ID, e -> true, 
         			Entry<Long, User>::getValue));
-----
+```
 
 Now we have a compute stage for all the users, let's use that to build a view of the bets backing each horse, in each race. 
 To keep it simple, we'll only consider single bets:
 
-----
+```
         // All bet legs which are single
         ComputeStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
                 user.getKnownBets().stream()
@@ -258,7 +258,7 @@ To keep it simple, we'll only consider single bets:
                     .map(leg -> tuple3(leg.getRace(), leg.getBacking(), bet)))
             )
         );
-----        
+```        
 
 There are two aspects of the above code that make it differ slightly from regular Java 8 streams code.
 The first is the call to `traverseStream()` - a minor bit of boilerplate to fit stream code into Jet.
@@ -270,7 +270,7 @@ To complete the picture, we need to take the compute stage and perform an aggreg
 We achieve this by using a `groupBy()` to produce a compute stage of entry objects.
 The key of the entries is the race, and the value is an aggregated map of the possible payouts that would be necessary if each horse was to win:
 
-----
+```
         // Find for each race the projected loss if each horse was to win
         ComputeStage<Entry<Race, Map<Horse, Double>>> betsByRace = bets.groupBy(
                 Tuple3::f0, AggregateOperations.toMap(
@@ -286,7 +286,7 @@ The key of the entries is the race, and the value is an aggregated map of the po
 
         return pipeline;
     }
-----
+```
 
 The key to this is the `AggregateOperations.toMap()` call, which requires three operations to be passed to it:
 
@@ -304,7 +304,7 @@ As before, we return the DAG we've built for use at a later time - no actual com
 
 Returning to the `run()` method, we can see that after a synchronous execution of the job, the code calls a helper method that calculates largest possible loss and the results that caused that outcome:
 
-----
+```
     public void outputPossibleLosses() {
         final IMap<Race, Map<Horse, Double>> risks = jet.getHazelcastInstance().getMap(WORST_ID);
 
@@ -323,19 +323,19 @@ Returning to the `run()` method, we can see that after a synchronous execution o
 
         System.out.println("Worst case total losses: " + apocalypse);
     }
-----
+```
 
 This relies upon a simple static helper that finds the largest exposure that occurs in a map of exposures (e.g. from a single race) and returns a tuple of that horse and the exposed amount.
 That is, it represents a "worst case" result for the race (from the point of view of the betting site):
 
-----
+```
     public static final Tuple2<Horse, Double> getMaxExposureAsTuple(Map<Horse, Double> exposures) {
         return exposures.entrySet().stream()
                 .max(Entry.comparingByValue())
                 .map(e -> tuple2(e.getKey(), e.getValue()))
                 .get();
     }
-----
+```
 
 This calculation is not especially difficult, but it represents the type of calculations that might be expected to form part of a typical Jet application.
 
