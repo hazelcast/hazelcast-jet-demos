@@ -58,7 +58,65 @@ import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
 import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
 
-public class Demo {
+/**
+ *
+ * The DAG used to model Flight Telemetry calculations can be seen below :
+ *
+ *                                                  ┌──────────────────┐
+ *                                                  │Flight Data Source│
+ *                                                  └─────────┬────────┘
+ *                                                            │
+ *                                                            v
+ *                                           ┌─────────────────────────────────┐
+ *                                           │Filter Aircrafts in Low Altitudes│
+ *                                           └────────────────┬────────────────┘
+ *                                                            │
+ *                                                            v
+ *                                                  ┌───────────────────┐
+ *                                                  │Assign Airport Info│
+ *                                                  └─────────┬─────────┘
+ *                                                            │
+ *                                                            v
+ *                                                   ┌─────────────────┐
+ *                                                   │Insert Watermarks│
+ *                                                   └────────┬────────┘
+ *                                                            │
+ *                                                            v
+ *                                          ┌───────────────────────────────────┐
+ *                                          │Calculate Linear Trend of Altitudes│
+ *                                          └─────────────────┬─────────────────┘
+ *                                                            │
+ *                                                            v
+ *                                               ┌─────────────────────────┐
+ *                                               │Assign Vertical Direction│
+ *                                               └────┬────┬──┬───┬───┬────┘
+ *                                                    │    │  │   │   │
+ *                        ┌───────────────────────────┘    │  │   │   └──────────────────────────┐
+ *                        │                                │  │   └─────────┐                    │
+ *                        │                                │  └─────────┐   │                    │
+ *                        v                                v            │   │                    │
+ *             ┌────────────────────┐          ┌──────────────────────┐ │   │                    │
+ *             │Enrich with C02 Info│          │Enrich with Noise Info│ │   │                    │
+ *             └──┬─────────────────┘          └───────────┬──────────┘ │   │                    │
+ *                │                                        │            │   │                    │
+ *                │                          ┌─────────────┘            │   │                    │
+ *                │                          │          ┌───────────────┘   │                    │
+ *                v                          v          │                   v                    v
+ *┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
+ *│Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircrafts│ │Filter Ascending Aircrafts│
+ *└──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
+ *               │                       │              │               │                         │
+ *               │  ┌────────────────────┘              │               │                         │
+ *               │  │  ┌────────────────────────────────┘               │                         │
+ *               │  │  │                                                │                         │
+ *               │  │  │                                                │                         │
+ *               v  v  v                                                v                         v
+ *           ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
+ *           │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
+ *           └─────────────┘                               └──────────────────────┘     └────────────────────────┘
+ *
+ */
+public class FlightTelemetry {
 
     private static final String SOURCE_URL = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json";
     private static final String TAKE_OFF_MAP = "takeOffMap";
