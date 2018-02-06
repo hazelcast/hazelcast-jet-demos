@@ -23,8 +23,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 
-
-
 /**
  * Simple example for getting started - uses Jet adapted from Java 8 
  * collections
