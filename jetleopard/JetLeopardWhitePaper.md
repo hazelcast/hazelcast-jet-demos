@@ -30,8 +30,7 @@ It has full integration with Hazelcast IMDG, and also supports the following lis
 
 This list is expected to grow significantly as the technology matures. 
 
-Release 0.5 brings major enhancements to Jet - the documentation is much more complete, the API has been nicely rounded out with several "missing" methods and classes provided.
-In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
+Release 0.5 is a major milestone for Jet, and the first production ready release. In tests, the underlying engine exhibited no instability and was easy to work with - including being able to write reliable unit tests in single-node operation.
 
 As Jet is intended to be used as a distributed, streaming processing engine, it has all of the core features that are typical for such systems, such as snapshots and fault-tolerance within the processing grid, and windowing of data streams.
 This white paper focuses on the core technology and a developer-friendly introduction, and further material should be consulted on the detail of the operation of a production Jet grid.
@@ -54,11 +53,11 @@ The queues are not the standard java.util.concurrent queues and instead use wait
 
 The end result is that Jet provides several different APIs to the programmer:
 
-* Pipelines
+* Pipeline
 * Distributed java.util.stream
-* DAG (and Processors)
+* Core (DAG)
 
-Of the three APIs, the Pipelines API is the newest, and provides a broad feature set and a very easy on-ramp for developers who are new to distributed computing.
+Of the three APIs, the Pipeline API is the newest, and provides a broad feature set and a very easy on-ramp for developers who are new to distributed computing.
 
 The distributed Stream API has additional complexity, compared to running a local application that uses `java.util.stream`.
 The API is the same, but under the hood there will always be distributed, partitioned data.
@@ -67,65 +66,37 @@ The DAG API has existed for longer, but is not necessary (and is too low-level) 
 
 A comparison of the APIs can be found on the [Hazelcast website](http://docs.hazelcast.org/docs/jet/0.5.1/manual/Comparison_of_Jet_APIs.html).
 
-In the rest of this white paper, we use the Pipelines API exclusively.
+In the rest of this white paper, we use the Pipeline API exclusively.
 
 ### Introducing JetLeopard
 
-As noted earlier, [JetLeopard](https://github.com/kittylyst/jetleopard) is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
-
-The JetLeopard
+As noted earlier, JetLeopard is a port of the BetLeopard open-source betting engine to use Hazelcast Jet.
 
 ![Jet Leopard](jetleopard-logo.png "JetLeopard")
 
-BetLeopard can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
+The original BetLeopard example can be [found on Github](https://github.com/hazelcast/betleopard) and models horse-racing.
 It was designed as an on-ramp for developers to see a non-trivial model to better illustrate the Hazelcast technologies.
-The white paper "Introduction to Hazelcast IMDG with Apache Spark" contains details of the domain model and should be consulted before reading the rest of this white paper.
+The white paper ["Introduction to Hazelcast IMDG with Apache Spark"](https://hazelcast.com/resources/introduction-hazelcast-imdg-apache-spark/) contains details of the domain model and could be consulted before reading the rest of this white paper.
 
 JetLeopard uses the same domain model as BetLeopard in terms of races, horses, bets and users.
 
 ![Simple view of BetLeopard's model of events and races](betleopard-model.png "JetLeopard")
 
-As JetLeopard depends on BetLeopard, we need to arrange the Maven dependency stanzas somewhat carefully, like this:
+The application can be obtained as a part of the Hazelcast open-source Jet demos [available from Github](https://github.com/hazelcast/hazelcast-jet-demos). To simplify the Maven build for JetLeopard, it includes the classes needed from BetLeopard.
+This means that JetLeopard can run standalone without needing a BetLeopard jar or needlessly complicating the build.
 
-----
-    <properties>
-    
-        <!-- ... -->
-        <!-- Library versions -->
+To run the project, clone or download it from Github, and change into the jetleopard directory, then run the following commands:
 
-        <!-- ... -->
-        <betleopard.version>1.1.0</betleopard.version>
-        <hazelcast-jet.version>0.5</hazelcast-jet.version>
-    </properties>
-    
-    <dependencies>
-    
-        <!-- ... -->
-        <dependency>
-            <groupId>com</groupId>
-            <artifactId>betleopard</artifactId>
-            <version>${betleopard.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>${hazelcast-jet.version}</version>
-        </dependency>
-----
+```
+mvn clean package
+mvn exec:java
+```
 
-This is because BetLeopard also depends on Hazelcast IMDG and there is a real risk of clashing dependencies.
-We want JetLeopard to use Jet's version of Hazelcast IMDG and so we explicitly exclude the dependency from transitively being included from BetLeopard.
+The second command will run the default operation for the project - it runs a replica of the historical analysis application from BetLeopard, intended as a warmup exercise for introducing the Jet API.
 
-With the project set up we can now replicate the historical analysis application from BetLeopard very simply.
-JetLeopard is based on the Pipelines API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
+JetLeopard is based on the Pipeline API and the warm up calculation is contained in the class AnalysisJet and starts with a very straightforward load of the data into a Hazelcast IMap:
 
-----
+```
     public void setup() {
         jet = Jet.newJetInstance();
 
@@ -138,7 +109,7 @@ JetLeopard is based on the Pipelines API and the warm up calculation is containe
             iox.printStackTrace();
         }
     }
-----
+```
 
 With the data loaded into IMDG we can now construct a description of the analysis task.
 Unlike the Java 8 APIs, in Jet we construct a single object (a Pipeline) that represents the entire data operation.
@@ -155,7 +126,7 @@ As a result, it is considered best practice to use a factory method for the Pipe
 
 Let's take a look at a simple pipeline for use in the AnalysisJet example:
 
-----
+```Java
     public static Pipeline buildPipeline() {
         final Pipeline p = Pipeline.create();
 
@@ -169,7 +140,7 @@ Let's take a look at a simple pipeline for use in the AnalysisJet example:
         
         return p;
     }
-----
+```
 
 This pipeline features a source, a sink and one intermediate grouping stage.
 
@@ -192,20 +163,20 @@ In this case, we are drawing from the EVENTS_BY_NAME and taking everything (usin
 
 This function takes in an `Entry<String, Event>` and returns a `Horse`, the winner of the first race of the day, and is defined by a couple of simple static helpers:
 
-----
+```
     public final static Function<Event, Horse> FIRST_PAST_THE_POST = e -> e.getRaces().get(0).getWinner().orElse(Horse.PALE);
 
     public final static DistributedFunction<Entry<String, Event>, Horse> HORSE_FROM_EVENT = e -> FIRST_PAST_THE_POST.apply(e.getValue());
-----
+```
 
 This completes the view of how we have constructed the computation graph (DAG) as a pipeline.
 
-Overall, the Pipelines API is the highest-level API that Jet provides, and this means that when we want to run the job corresponding to the pipeline, it is as simple as a couple of lines of code:
+Overall, the Pipeline API is the highest-level API that Jet provides, and this means that when we want to run the job corresponding to the pipeline, it is as simple as a couple of lines of code:
 
-----
+```
     Pipeline p = buildPipeline();
     jet.newJob(p).join();
-----
+```
 
 The call to `newJob()` begins executing immediately in an asynchronous manner, and returns a Job object.
 This construct holds a simple status and a CompletableFuture on the actual computation - so the job's progress can be queried or cancelled after some time period.
@@ -213,13 +184,13 @@ This construct holds a simple status and a CompletableFuture on the actual compu
 In this simple example, we don't want to do anything asynchronous with the computation and so we call `join()` on the job immediately, and just block for completion.
 With this done, Jet has produced the filtered data set for the result, put it into the results IMap and this can then be output in a simple loop like this:
 
-----
+```
     final Map<Horse, Long> multiple = main.jet.getMap(MULTIPLE);
     System.out.println("Result set size: " + multiple.size());
     for (Horse h : multiple.keySet()) {
         System.out.println(h + " : " + multiple.get(h));
     }
-----
+```
 
 Given the actual size of the data set under consideration in this example, there is of course no need to involve a distributed framework such as Jet.
 However, the clean nature of the Jet API means that the clear construction of the code can be made out regardless of the actual size of the data being processed.
@@ -232,7 +203,7 @@ In the JetLeopard case, Spark and its dependencies (including the entire Scala r
 We can also reuse a lot of the boilerplate "random generation" methods that were used in BetLeopard.
 As a result, the main loop for JetLeopard is very similar to the BetLeopard case:
 
-----
+```
     public void run() {
         while (!shutdown) {
             addSomeSimulatedBets();
@@ -248,37 +219,37 @@ As a result, the main loop for JetLeopard is very similar to the BetLeopard case
         }
         jet.shutdown();
     }
-----
+```
 
 In terms of execution then, as before, we use `join()` to force synchronous execution of the Jet job.
 
 The real difference hides in the `pipeline` field on the main application object.
 This is, unsurprisingly, set up in a method called `buildPipeline()`, which is slightly more complex than the previous example:
 
-----
+```
     public static Pipeline buildPipeline() {
         final Pipeline pipeline = Pipeline.create();
 
         // Draw users from the Hazelcast IMDG source
         ComputeStage<User> users = pipeline.drawFrom(Sources.<Long, User, User>map(USER_ID, e -> true, Entry::getValue));
-----
+```
 
 Once again, we see the creation of a Pipeline object, which draws data from a Hazelcast IMDG IMap.
 The `USER_ID` IMap maps userids to users, and so in this case the projection function needs to simply take the value of each `Entry<Long, User>` object it's handed.
 Note that we must provide explicit values for the type parameters on `map()`.
 Alternatively, this could also be written:
 
-----
+```
         ComputeStage<User> users =
         	pipeline.drawFrom(
         		Sources.map(USER_ID, e -> true, 
         			Entry<Long, User>::getValue));
-----
+```
 
 Now we have a compute stage for all the users, let's use that to build a view of the bets backing each horse, in each race. 
 To keep it simple, we'll only consider single bets:
 
-----
+```
         // All bet legs which are single
         ComputeStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
                 user.getKnownBets().stream()
@@ -287,7 +258,7 @@ To keep it simple, we'll only consider single bets:
                     .map(leg -> tuple3(leg.getRace(), leg.getBacking(), bet)))
             )
         );
-----        
+```        
 
 There are two aspects of the above code that make it differ slightly from regular Java 8 streams code.
 The first is the call to `traverseStream()` - a minor bit of boilerplate to fit stream code into Jet.
@@ -299,7 +270,7 @@ To complete the picture, we need to take the compute stage and perform an aggreg
 We achieve this by using a `groupBy()` to produce a compute stage of entry objects.
 The key of the entries is the race, and the value is an aggregated map of the possible payouts that would be necessary if each horse was to win:
 
-----
+```
         // Find for each race the projected loss if each horse was to win
         ComputeStage<Entry<Race, Map<Horse, Double>>> betsByRace = bets.groupBy(
                 Tuple3::f0, AggregateOperations.toMap(
@@ -315,7 +286,7 @@ The key of the entries is the race, and the value is an aggregated map of the po
 
         return pipeline;
     }
-----
+```
 
 The key to this is the `AggregateOperations.toMap()` call, which requires three operations to be passed to it:
 
@@ -333,7 +304,7 @@ As before, we return the DAG we've built for use at a later time - no actual com
 
 Returning to the `run()` method, we can see that after a synchronous execution of the job, the code calls a helper method that calculates largest possible loss and the results that caused that outcome:
 
-----
+```
     public void outputPossibleLosses() {
         final IMap<Race, Map<Horse, Double>> risks = jet.getHazelcastInstance().getMap(WORST_ID);
 
@@ -352,19 +323,19 @@ Returning to the `run()` method, we can see that after a synchronous execution o
 
         System.out.println("Worst case total losses: " + apocalypse);
     }
-----
+```
 
 This relies upon a simple static helper that finds the largest exposure that occurs in a map of exposures (e.g. from a single race) and returns a tuple of that horse and the exposed amount.
 That is, it represents a "worst case" result for the race (from the point of view of the betting site):
 
-----
+```
     public static final Tuple2<Horse, Double> getMaxExposureAsTuple(Map<Horse, Double> exposures) {
         return exposures.entrySet().stream()
                 .max(Entry.comparingByValue())
                 .map(e -> tuple2(e.getKey(), e.getValue()))
                 .get();
     }
-----
+```
 
 This calculation is not especially difficult, but it represents the type of calculations that might be expected to form part of a typical Jet application.
 
@@ -416,8 +387,6 @@ ____
 Spark, on the other hand, prefers to confront the developer with the fact that they are working with a new abstraction that doesn't fit the Java Collections model.
 ____
 
-This gives Spark seamless access to the naturally functional aspects of Scala's collections, but at the expense of making Spark less of a natural fit for Java programmers, and introducing  additional complexity overhead and learning curve when Java developers first begin to work with Spark.
-
 One side-effect of Spark's Scala-first approach is that Java programmers are faced with the necessity of including the Scala runtime and dependencies into their Java projects.
 The Scala world does not place the same emphasis on strict binary compatibility that many Java programmers take for granted.
 This means that Java-based Spark applications may exhibit occasional stability problems (especially when upgrading or adding to the Scala libraries present in the project dependency graph).
@@ -436,7 +405,7 @@ This is positive news for developers, as it improves the available open-source t
 
 The tools are now there, but developers must properly analyse their domain and requirements.
 When considering these two technologies for a software project, a lot will depend upon the details of the system under consideration.
-Questions such as:
+The careful architect should ask questions such as:
 
 * How real-time is the real-time computing need?
 
@@ -448,7 +417,7 @@ Questions such as:
 
 * What is the cost of rewriting code to fit to new APIs?
 
-are essential to understanding the factors that should drive the choice of a streaming technology.
+These considerations are essential to understanding the factors that should drive the choice of a streaming technology.
 Teams should ensure that they properly understand their own requirements and the trade-offs present with each technology before making their architectural choice.
 
 ### Links to additional Hazelcast Jet and IMDG resources
