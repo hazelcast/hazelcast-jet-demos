@@ -379,7 +379,100 @@ There are two Jet jobs in this example.
 
 ### `ReadKafkaIntoHazelcast.java`
 
+The code for this is mostly this:
+
+```
+        Pipeline pipeline = Pipeline.create();
+        
+        pipeline
+        .drawFrom(KafkaSources.kafka(properties, noWatermarks(), Constants.TOPIC_NAME_PRECIOUS))
+        .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
+        ;
+        
+        return pipeline;
+```
+
+That's it. Two lines do the work, a data source and a data sink.
+
+The `drawFrom` line tells Jet that the source is Kafka. We pass it properties to connect to Kafka,
+that we don't want watermarks (timestamps) interspersed automatically by Jet, and the name of
+the topic we wish to read.
+
+The `drainTo` line tells Jet that the output goes to a Hazelcast map called "_precious_".
+
+This is very easy but also very powerful.
+
+The above defines a processing pipeline that runs in parallel across the Hazelcast grid.
+
+Five Hazelcast instances can use a Jet job to ingest data at a very great speed. If
+higher speeds are needed, just increase the cluster size to ten and the ingest rate
+doubles. It's that simple.
+
+#### Properties
+
+The properties in the above are standard `java.util.Properties` for Kafka connection:
+
+```
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getCanonicalName());
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+```
+
+The main parts being the list of Kafka brokers (`bootstrapServers`) and that the key and value read from Kafka
+are Strings.
+
+Although the price should be a number, it is easier here to pass it as a string so we don't have to handle
+parsing. This would not be difficult to add.
+
 ### `PreciousHistory.java`
+
+The code for this is mostly this:
+
+```
+        Pipeline pipeline = Pipeline.create();
+        
+        pipeline
+        .drawFrom(Sources.<String, Object>mapJournal(Constants.IMAP_NAME_PRECIOUS, JournalInitialPosition.START_FROM_OLDEST, noWatermarks()))
+        .map(entry
+        		-> 
+        		new String(entry.getKey() + "==" + entry.getValue())
+        	)
+        .filter(str -> str.toLowerCase().startsWith("p"))
+        .drainTo(Sinks.logger())
+        ;
+        
+        return pipeline;
+```
+
+This is a fractionally more complicated data processing pipeline than the previous one, it has four steps.
+
+The `drawfrom` step takes the Hazelcast IMDG map journal as input. This data structure is partitioned
+across the Hazelcast processes. This step has the option to start from current point in time, but
+instead is coded to go back into history as far as is recorded. So we can analyse events that have
+already occurred.
+
+The `map` stage takes the entry event from the change history, and reformats the key and value
+into a single String.
+
+The `filter` stage only allows strings beginning with "_p_" to pass. Hence Gold and Silver are
+excluded, Platinum and Palladium pass through.
+
+Finally, the 'drainTo` stage completes the pipeline by sending the derived data somewhere.
+In this case, the somewhere is a logging routine. Each Hazelcast process logs the data is
+alone has processed, logging is parallelised. For real usage, storage somewhere is probably
+going to be more relevant.
+
+Again, the power here is both in the simplicity and the parallelisation. The coding is easy, but
+scaling of Hazelcast makes it run efficiently.
+
+#### Did you spot the mistake ?
+
+Well, it's not really a big mistake, but step 3 is a filter and step 2 is formatting. It would be more
+efficient to filter before re-formatting. As it stands currently, we are re-formatting data which
+we might then discard.
 
 ## Summary
 
