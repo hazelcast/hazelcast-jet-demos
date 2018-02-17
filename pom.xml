@@ -16,10 +16,10 @@
         <module>flight-telemetry</module>
         <module>realtime-image-recognition</module>
         <module>jetleopard</module>
+        <module>market-data-analyzer</module>
         <module>markov-chain-generator</module>
         <module>online-training-traffic-predictor</module>
     </modules>
-
 
     <repositories>
         <repository>

@@ -14,9 +14,9 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 * [Flight Telemetry](./flight-telemetry) - Reads a stream of telemetry data from ADB-S on all commercial aircraft flying anywhere in the world. There is typically 5,000 - 6,000 aircraft at any point in time. This is then filtered, aggregated and certain features are enriched and displayed in Grafana.
 
-* [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
+* [Market Data Distributor](./market-data-analyzer) - Uploads a stream of stock market data (prices) from a Kafka topic into an IMDG map. Data is analysed as part of the upload process, calculating the moving averages to detect buy/sell indicators. Input data here is manufactured to ensure such indicators exist, but this is easy to reconnect to real input.
 
-* [Market Data Distributor](#)
+* [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
 
 ## External Demos
 
