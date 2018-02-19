@@ -14,7 +14,6 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<hazelcast.version>3.9.3</hazelcast.version>
 		<hazelcast-jet.version>0.6-SNAPSHOT</hazelcast-jet.version>
 		<java.version>1.8</java.version>
 		<kafka_2.11.version>1.0.0</kafka_2.11.version>
@@ -30,11 +29,6 @@
 	</modules>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.hazelcast</groupId>
-			<artifactId>hazelcast</artifactId>
-			<version>${hazelcast.version}</version><!--$NO-MVN-MAN-VER$-->
-		</dependency>
 		<dependency>
 			<groupId>com.hazelcast.jet</groupId>
 			<artifactId>hazelcast-jet-kafka</artifactId>
@@ -81,18 +75,6 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>com.hazelcast</groupId>
-				<artifactId>hazelcast-client</artifactId>
-				<version>${hazelcast.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>com.hazelcast</groupId>
-						<artifactId>hazelcast</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-
 			<dependency>
 				<groupId>org.springframework.shell</groupId>
 				<artifactId>spring-shell</artifactId>
