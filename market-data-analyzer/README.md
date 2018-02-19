@@ -62,8 +62,9 @@ Kafka 1.0.0, released 1st November 2017, is the current stable version at the ti
 and can be obtained from [here](https://kafka.apache.org/downloads). The version used is
 for Scala 2.11 not 2.12, as the former is more widespread.
 
-Assuming Kafka has been installed in `/Applications/kafka_2.11-1.0.0`, there are five
-command scripts in `src/main/scripts` to run in this sequence.
+`KAFKA_HOME` environment variable should be set to where Kafka is installed. 
+You can use the command  `export KAFKA_HOME=<install dir>` to set the variable. 
+There are five command scripts in `src/main/scripts` to run in this sequence.
 
 1. `start-zookeeper.sh` 
 This script will start a single Zookeeper configuration server, running on port 2181 on the current machine.

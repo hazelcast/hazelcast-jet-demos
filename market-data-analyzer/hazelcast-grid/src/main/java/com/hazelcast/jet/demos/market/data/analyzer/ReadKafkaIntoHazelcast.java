@@ -1,20 +1,19 @@
 package com.hazelcast.jet.demos.market.data.analyzer;
 
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
-import java.util.Properties;
-import java.util.UUID;
-
 import com.hazelcast.jet.KafkaSources;
 import com.hazelcast.jet.Pipeline;
 import com.hazelcast.jet.Sinks;
-
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import java.util.Properties;
+import java.util.UUID;
+
+import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
+
 public class ReadKafkaIntoHazelcast {
 
-	public static Pipeline build(String bootstrapServers) {
-
+    public static Pipeline build(String bootstrapServers) {
         Properties properties = new Properties();
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -23,13 +22,12 @@ public class ReadKafkaIntoHazelcast {
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         Pipeline pipeline = Pipeline.create();
-        
+
         pipeline
-        .drawFrom(KafkaSources.kafka(properties, noWatermarks(), Constants.TOPIC_NAME_PRECIOUS))
-        .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
-        ;
-        
+                .drawFrom(KafkaSources.kafka(properties, noWatermarks(), Constants.TOPIC_NAME_PRECIOUS))
+                .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
+
         return pipeline;
     }
-	
+
 }

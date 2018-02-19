@@ -10,5 +10,4 @@ public class Application {
         System.setProperty("hazelcast.logging.type", "slf4j");
         Bootstrap.main(args);
     }
-
 }

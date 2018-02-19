@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component;
 @Order(Integer.MIN_VALUE)
 public class MyPrompt extends DefaultPromptProvider {
 
-	@Value("${my.prompt}")
-	private String prompt;
-	
+    @Value("${my.prompt}")
+    private String prompt;
+
     @Override
     public final String getPrompt() {
-    		return this.prompt + " cluster $ ";
+        return this.prompt + " cluster $ ";
     }
-	
+
 }
