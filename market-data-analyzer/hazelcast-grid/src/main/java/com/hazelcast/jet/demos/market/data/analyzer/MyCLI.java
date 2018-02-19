@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliCommand;
@@ -25,26 +26,26 @@ public class MyCLI implements CommandMarker {
     private HazelcastInstance hazelcastInstance;
     private String bootstrapServers;
 
-    public MyCLI(HazelcastInstance hazelcastInstance, 
-    				@Value("${bootstrap-servers}") String bootstrapServers,
-    				@Value("${my.prompt}") String myPrompt) {
+    public MyCLI(HazelcastInstance hazelcastInstance,
+                 @Value("${bootstrap-servers}") String bootstrapServers,
+                 @Value("${my.prompt}") String myPrompt) {
         this.hazelcastInstance = hazelcastInstance;
         this.bootstrapServers = bootstrapServers;
 
         // Initialise all maps
         for (String iMapName : Constants.IMAP_NAMES) {
-        		log.info("Initialize IMap '{}'", iMapName);
+            log.info("Initialize IMap '{}'", iMapName);
             this.hazelcastInstance.getMap(iMapName);
         }
     }
-        
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @CliCommand(value = "LIST", help = "List map keys")
     public void listIMaps() {
         Set<String> iMapNames = this.hazelcastInstance.getDistributedObjects().stream()
-                .filter(distributedObject -> distributedObject instanceof IMap)
-                .filter(distributedObject -> !distributedObject.getName().startsWith(Jet.INTERNAL_JET_OBJECTS_PREFIX))
-                .map(distributedObject -> distributedObject.getName()).collect(Collectors.toCollection(TreeSet::new));
+                                                      .filter(distributedObject -> distributedObject instanceof IMap)
+                                                      .filter(distributedObject -> !distributedObject.getName().startsWith(Jet.INTERNAL_JET_OBJECTS_PREFIX))
+                                                      .map(distributedObject -> distributedObject.getName()).collect(Collectors.toCollection(TreeSet::new));
 
         iMapNames.stream().forEach(name -> {
             IMap<?, ?> iMap = this.hazelcastInstance.getMap(name);
@@ -75,10 +76,10 @@ public class MyCLI implements CommandMarker {
         List<String> params = new ArrayList<>();
         params.add(Constants.COMMAND_VERB_START);
         params.add(this.bootstrapServers);
-        
+
         commandMap.put(Constants.COMMAND_NOUN_KAFKA, params);
-        
-        return String.format("Requested %s job '%s' with %s", Constants.COMMAND_VERB_START, Constants.COMMAND_NOUN_KAFKA, params.get(1));    
+
+        return String.format("Requested %s job '%s' with %s", Constants.COMMAND_VERB_START, Constants.COMMAND_NOUN_KAFKA, params.get(1));
     }
 
     @CliCommand(value = "HISTORY", help = "Recent history of changes to the 'precious' IMap")
@@ -87,10 +88,10 @@ public class MyCLI implements CommandMarker {
 
         List<String> params = new ArrayList<>();
         params.add(Constants.COMMAND_VERB_START);
-        
+
         commandMap.put(Constants.COMMAND_NOUN_HISTORY, params);
-        
-        return String.format("Requested %s job '%s'", Constants.COMMAND_VERB_START, Constants.COMMAND_NOUN_HISTORY);    
+
+        return String.format("Requested %s job '%s'", Constants.COMMAND_VERB_START, Constants.COMMAND_NOUN_HISTORY);
     }
 
 }

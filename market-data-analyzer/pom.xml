@@ -10,7 +10,7 @@
 
 	<name>Market Data Analyzer</name>
 	<groupId>com.hazelcast.jet.demos.market-data-analyzer</groupId>
-	<artifactId>pom</artifactId>
+	<artifactId>market-data-analyzer</artifactId>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -34,7 +34,6 @@
 			<artifactId>hazelcast-jet-kafka</artifactId>
 			<version>${hazelcast-jet.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka_2.11</artifactId>

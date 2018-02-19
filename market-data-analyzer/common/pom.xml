@@ -4,7 +4,7 @@
 	
 	<parent>
 		<groupId>com.hazelcast.jet.demos.market-data-analyzer</groupId>
-		<artifactId>pom</artifactId>
+		<artifactId>market-data-analyzer</artifactId>
 		<version>0.1-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>

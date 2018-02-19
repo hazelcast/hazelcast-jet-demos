@@ -14,19 +14,19 @@ public class LoggingListener implements EntryAddedListener, EntryUpdatedListener
 	
 	@Override
 	public void entryUpdated(EntryEvent arg0) {
-		this.log(arg0);
+	    this.log(arg0);
 	}
 	@Override
 	public void entryAdded(EntryEvent arg0) {
-		this.log(arg0);
+      this.log(arg0);
 	}
 
-	private void log(EntryEvent entryEvent) {
-		log.info("{} event, map '{}', key '{}', new value '{}'",
-				entryEvent.getEventType(),
-				entryEvent.getName(),
-				entryEvent.getKey(),
-				entryEvent.getValue());
-	}
+  private void log(EntryEvent entryEvent) {
+        log.info("{} event, map '{}', key '{}', new value '{}'",
+        entryEvent.getEventType(),
+        entryEvent.getName(),
+        entryEvent.getKey(),
+        entryEvent.getValue());
+    }
 
 }
