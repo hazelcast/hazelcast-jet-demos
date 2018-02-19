@@ -2,6 +2,8 @@ package com.hazelcast.jet.demos.market.data.analyzer;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,12 +14,11 @@ import com.hazelcast.jet.Pipeline;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Component
 public class CommandListener implements EntryAddedListener<String, List<String>>, EntryUpdatedListener<String, List<String>> {
 
+	private static Logger log = LoggerFactory.getLogger(CommandListener.class);
+			
 	@Autowired
 	private JetInstance jetInstance;
 

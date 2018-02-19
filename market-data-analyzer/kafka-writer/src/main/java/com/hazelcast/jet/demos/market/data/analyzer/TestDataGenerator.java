@@ -2,10 +2,10 @@ package com.hazelcast.jet.demos.market.data.analyzer;
 
 import java.util.Random;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,9 +15,9 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
 @Component
-@Slf4j
 public class TestDataGenerator implements CommandLineRunner {
 
+	private static Logger log = LoggerFactory.getLogger(TestDataGenerator.class);
 	private static Random random = new Random();
 
 	@Autowired

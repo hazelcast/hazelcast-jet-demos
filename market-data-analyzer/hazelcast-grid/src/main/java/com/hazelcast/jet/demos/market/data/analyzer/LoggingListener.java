@@ -1,15 +1,17 @@
 package com.hazelcast.jet.demos.market.data.analyzer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 
-import lombok.extern.slf4j.Slf4j;
-
 @SuppressWarnings("rawtypes")
-@Slf4j
 public class LoggingListener implements EntryAddedListener, EntryUpdatedListener {
 
+	private static Logger log = LoggerFactory.getLogger(LoggingListener.class);
+	
 	@Override
 	public void entryUpdated(EntryEvent arg0) {
 		this.log(arg0);
