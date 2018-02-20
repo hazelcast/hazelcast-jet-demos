@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PMML version="4.2" xmlns="http://www.dmg.org/PMML-4_2">
+  <Header copyright="RIMO">
+    <Application name="KNIME" version="3.2.1"/>
+  </Header>
+  <DataDictionary numberOfFields="21">
+    <DataField name="VMail Message" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="51.0"/>
+    </DataField>
+    <DataField name="Day Mins" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="350.8"/>
+    </DataField>
+    <DataField name="Eve Mins" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="363.7"/>
+    </DataField>
+    <DataField name="Night Mins" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="23.2" rightMargin="395.0"/>
+    </DataField>
+    <DataField name="Intl Mins" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="20.0"/>
+    </DataField>
+    <DataField name="CustServ Calls" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="9.0"/>
+    </DataField>
+    <DataField name="Day Calls" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="165.0"/>
+    </DataField>
+    <DataField name="Day Charge" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="59.64"/>
+    </DataField>
+    <DataField name="Eve Calls" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="170.0"/>
+    </DataField>
+    <DataField name="Eve Charge" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="30.91"/>
+    </DataField>
+    <DataField name="Night Calls" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="33.0" rightMargin="175.0"/>
+    </DataField>
+    <DataField name="Night Charge" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="1.04" rightMargin="17.77"/>
+    </DataField>
+    <DataField name="Intl Calls" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="20.0"/>
+    </DataField>
+    <DataField name="Intl Charge" optype="continuous" dataType="double">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="5.4"/>
+    </DataField>
+    <DataField name="Area Code" optype="categorical" dataType="string">
+      <Value value="415"/>
+      <Value value="408"/>
+      <Value value="510"/>
+    </DataField>
+    <DataField name="Phone" optype="categorical" dataType="string"/>
+    <DataField name="Account Length" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="1.0" rightMargin="243.0"/>
+    </DataField>
+    <DataField name="Churn" optype="categorical" dataType="string">
+      <Value value="0"/>
+      <Value value="1"/>
+    </DataField>
+    <DataField name="Int'l Plan" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="1.0"/>
+    </DataField>
+    <DataField name="VMail Plan" optype="continuous" dataType="integer">
+      <Interval closure="closedClosed" leftMargin="0.0" rightMargin="1.0"/>
+    </DataField>
+    <DataField name="State" optype="categorical" dataType="string">
+      <Value value="KS"/>
+      <Value value="OH"/>
+      <Value value="NJ"/>
+      <Value value="OK"/>
+      <Value value="AL"/>
+      <Value value="MA"/>
+      <Value value="MO"/>
+      <Value value="LA"/>
+      <Value value="WV"/>
+      <Value value="IN"/>
+      <Value value="RI"/>
+      <Value value="IA"/>
+      <Value value="MT"/>
+      <Value value="NY"/>
+      <Value value="ID"/>
+      <Value value="VT"/>
+      <Value value="VA"/>
+      <Value value="TX"/>
+      <Value value="FL"/>
+      <Value value="CO"/>
+      <Value value="AZ"/>
+      <Value value="SC"/>
+      <Value value="NE"/>
+      <Value value="WY"/>
+      <Value value="HI"/>
+      <Value value="IL"/>
+      <Value value="NH"/>
+      <Value value="GA"/>
+      <Value value="AK"/>
+      <Value value="MD"/>
+      <Value value="AR"/>
+      <Value value="WI"/>
+      <Value value="OR"/>
+      <Value value="MI"/>
+      <Value value="DE"/>
+      <Value value="UT"/>
+      <Value value="CA"/>
+      <Value value="MN"/>
+      <Value value="SD"/>
+      <Value value="NC"/>
+      <Value value="WA"/>
+      <Value value="NM"/>
+      <Value value="NV"/>
+      <Value value="DC"/>
+      <Value value="KY"/>
+      <Value value="ME"/>
+      <Value value="MS"/>
+      <Value value="TN"/>
+      <Value value="PA"/>
+      <Value value="CT"/>
+      <Value value="ND"/>
+    </DataField>
+  </DataDictionary>
+  <TreeModel modelName="DecisionTree" functionName="classification" splitCharacteristic="binarySplit" missingValueStrategy="lastPrediction" noTrueChildStrategy="returnNullPrediction">
+    <MiningSchema>
+      <MiningField name="VMail Message" invalidValueTreatment="asIs"/>
+      <MiningField name="Day Mins" invalidValueTreatment="asIs"/>
+      <MiningField name="Eve Mins" invalidValueTreatment="asIs"/>
+      <MiningField name="Night Mins" invalidValueTreatment="asIs"/>
+      <MiningField name="Intl Mins" invalidValueTreatment="asIs"/>
+      <MiningField name="CustServ Calls" invalidValueTreatment="asIs"/>
+      <MiningField name="Day Calls" invalidValueTreatment="asIs"/>
+      <MiningField name="Day Charge" invalidValueTreatment="asIs"/>
+      <MiningField name="Eve Calls" invalidValueTreatment="asIs"/>
+      <MiningField name="Eve Charge" invalidValueTreatment="asIs"/>
+      <MiningField name="Night Calls" invalidValueTreatment="asIs"/>
+      <MiningField name="Night Charge" invalidValueTreatment="asIs"/>
+      <MiningField name="Intl Calls" invalidValueTreatment="asIs"/>
+      <MiningField name="Intl Charge" invalidValueTreatment="asIs"/>
+      <MiningField name="Area Code" invalidValueTreatment="asIs"/>
+      <MiningField name="Account Length" invalidValueTreatment="asIs"/>
+      <MiningField name="Int'l Plan" invalidValueTreatment="asIs"/>
+      <MiningField name="VMail Plan" invalidValueTreatment="asIs"/>
+      <MiningField name="State" invalidValueTreatment="asIs"/>
+      <MiningField name="Churn" invalidValueTreatment="asIs" usageType="target"/>
+    </MiningSchema>
+    <Node id="0" score="0" recordCount="2666.0">
+      <True/>
+      <ScoreDistribution value="0" recordCount="2280.0"/>
+      <ScoreDistribution value="1" recordCount="386.0"/>
+      <Node id="20" score="0" recordCount="2502.0">
+        <SimplePredicate field="Day Charge" operator="lessOrEqual" value="44.96"/>
+        <ScoreDistribution value="0" recordCount="2216.0"/>
+        <ScoreDistribution value="1" recordCount="286.0"/>
+        <Node id="22" score="0" recordCount="2308.0">
+          <SimplePredicate field="CustServ Calls" operator="lessOrEqual" value="3.5"/>
+          <ScoreDistribution value="0" recordCount="2124.0"/>
+          <ScoreDistribution value="1" recordCount="184.0"/>
+          <Node id="50" score="0" recordCount="2093.0">
+            <SimplePredicate field="Int'l Plan" operator="lessOrEqual" value="0.5"/>
+            <ScoreDistribution value="0" recordCount="1989.0"/>
+            <ScoreDistribution value="1" recordCount="104.0"/>
+            <Node id="62" score="0" recordCount="1788.0">
+              <SimplePredicate field="Day Charge" operator="lessOrEqual" value="38.185"/>
+              <ScoreDistribution value="0" recordCount="1738.0"/>
+              <ScoreDistribution value="1" recordCount="50.0"/>
+              <Node id="97" score="0" recordCount="845.0">
+                <SimpleSetPredicate field="State" booleanOperator="isIn">
+                  <Array n="13" type="string">"KS" "OH" "NJ" "AL" "LA" "MT" "VT" "VA" "CO" "WY" "ID" "CA" "SD"</Array>
+                </SimpleSetPredicate>
+                <ScoreDistribution value="0" recordCount="807.0"/>
+                <ScoreDistribution value="1" recordCount="38.0"/>
+                <Node id="102" score="0" recordCount="601.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="8" type="string">"KS" "NJ" "AL" "LA" "VT" "VA" "CO" "WY"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="579.0"/>
+                  <ScoreDistribution value="1" recordCount="22.0"/>
+                </Node>
+                <Node id="101" score="0" recordCount="244.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="43" type="string">"OH" "OK" "MA" "IN" "IA" "MT" "FL" "AZ" "NE" "MO" "HI" "NH" "AK" "MD" "AR" "ID" "WI" "OR" "MI" "DE" "CA" "MN" "SD" "WA" "UT" "TX" "NM" "NV" "DC" "NY" "WV" "GA" "KY" "ME" "MS" "RI" "SC" "TN" "PA" "IL" "NC" "CT" "ND"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="228.0"/>
+                  <ScoreDistribution value="1" recordCount="16.0"/>
+                  <Node id="105" score="0" recordCount="238.0">
+                    <SimplePredicate field="Day Charge" operator="lessOrEqual" value="37.655"/>
+                    <ScoreDistribution value="0" recordCount="224.0"/>
+                    <ScoreDistribution value="1" recordCount="14.0"/>
+                    <Node id="108" score="0" recordCount="186.0">
+                      <SimplePredicate field="Intl Charge" operator="lessOrEqual" value="3.3899999999999997"/>
+                      <ScoreDistribution value="0" recordCount="172.0"/>
+                      <ScoreDistribution value="1" recordCount="14.0"/>
+                      <Node id="113" score="0" recordCount="179.0">
+                        <SimplePredicate field="Intl Charge" operator="lessOrEqual" value="3.335"/>
+                        <ScoreDistribution value="0" recordCount="169.0"/>
+                        <ScoreDistribution value="1" recordCount="10.0"/>
+                        <Node id="114" score="0" recordCount="90.0">
+                          <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="17.314999999999998"/>
+                          <ScoreDistribution value="0" recordCount="81.0"/>
+                          <ScoreDistribution value="1" recordCount="9.0"/>
+                          <Node id="115" score="0" recordCount="72.0">
+                            <SimplePredicate field="Account Length" operator="lessOrEqual" value="132.0"/>
+                            <ScoreDistribution value="0" recordCount="67.0"/>
+                            <ScoreDistribution value="1" recordCount="5.0"/>
+                          </Node>
+                          <Node id="124" score="0" recordCount="18.0">
+                            <SimplePredicate field="Account Length" operator="greaterThan" value="132.0"/>
+                            <ScoreDistribution value="0" recordCount="14.0"/>
+                            <ScoreDistribution value="1" recordCount="4.0"/>
+                            <Node id="125" score="0" recordCount="12.0">
+                              <SimplePredicate field="Night Charge" operator="lessOrEqual" value="9.415"/>
+                              <ScoreDistribution value="0" recordCount="12.0"/>
+                              <ScoreDistribution value="1" recordCount="0.0"/>
+                            </Node>
+                            <Node id="126" score="1" recordCount="6.0">
+                              <SimplePredicate field="Night Charge" operator="greaterThan" value="9.415"/>
+                              <ScoreDistribution value="0" recordCount="2.0"/>
+                              <ScoreDistribution value="1" recordCount="4.0"/>
+                            </Node>
+                          </Node>
+                        </Node>
+                        <Node id="127" score="0" recordCount="89.0">
+                          <SimplePredicate field="Eve Charge" operator="greaterThan" value="17.314999999999998"/>
+                          <ScoreDistribution value="0" recordCount="88.0"/>
+                          <ScoreDistribution value="1" recordCount="1.0"/>
+                        </Node>
+                      </Node>
+                      <Node id="130" score="1" recordCount="7.0">
+                        <SimplePredicate field="Intl Charge" operator="greaterThan" value="3.335"/>
+                        <ScoreDistribution value="0" recordCount="3.0"/>
+                        <ScoreDistribution value="1" recordCount="4.0"/>
+                      </Node>
+                    </Node>
+                    <Node id="131" score="0" recordCount="52.0">
+                      <SimplePredicate field="Intl Charge" operator="greaterThan" value="3.3899999999999997"/>
+                      <ScoreDistribution value="0" recordCount="52.0"/>
+                      <ScoreDistribution value="1" recordCount="0.0"/>
+                    </Node>
+                  </Node>
+                  <Node id="132" score="0" recordCount="6.0">
+                    <SimplePredicate field="Day Charge" operator="greaterThan" value="37.655"/>
+                    <ScoreDistribution value="0" recordCount="4.0"/>
+                    <ScoreDistribution value="1" recordCount="2.0"/>
+                  </Node>
+                </Node>
+              </Node>
+              <Node id="98" score="0" recordCount="943.0">
+                <SimpleSetPredicate field="State" booleanOperator="isIn">
+                  <Array n="38" type="string">"OK" "MA" "IN" "IA" "FL" "AZ" "NE" "MO" "HI" "NH" "AK" "MD" "AR" "WI" "OR" "MI" "DE" "MN" "WA" "UT" "TX" "NM" "NV" "DC" "NY" "WV" "GA" "KY" "ME" "MS" "RI" "SC" "TN" "PA" "IL" "NC" "CT" "ND"</Array>
+                </SimpleSetPredicate>
+                <ScoreDistribution value="0" recordCount="931.0"/>
+                <ScoreDistribution value="1" recordCount="12.0"/>
+              </Node>
+            </Node>
+            <Node id="61" score="0" recordCount="305.0">
+              <SimplePredicate field="Day Charge" operator="greaterThan" value="38.185"/>
+              <ScoreDistribution value="0" recordCount="251.0"/>
+              <ScoreDistribution value="1" recordCount="54.0"/>
+              <Node id="63" score="0" recordCount="270.0">
+                <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="22.67"/>
+                <ScoreDistribution value="0" recordCount="242.0"/>
+                <ScoreDistribution value="1" recordCount="28.0"/>
+                <Node id="64" score="0" recordCount="79.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="10" type="string">"NJ" "MA" "FL" "AZ" "MO" "MD" "AR" "ID" "OR" "CA"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="57.0"/>
+                  <ScoreDistribution value="1" recordCount="22.0"/>
+                  <Node id="65" score="0" recordCount="69.0">
+                    <SimplePredicate field="Day Charge" operator="lessOrEqual" value="43.235"/>
+                    <ScoreDistribution value="0" recordCount="55.0"/>
+                    <ScoreDistribution value="1" recordCount="14.0"/>
+                    <Node id="66" score="0" recordCount="26.0">
+                      <SimplePredicate field="Night Charge" operator="lessOrEqual" value="8.365"/>
+                      <ScoreDistribution value="0" recordCount="25.0"/>
+                      <ScoreDistribution value="1" recordCount="1.0"/>
+                    </Node>
+                    <Node id="69" score="0" recordCount="43.0">
+                      <SimplePredicate field="Night Charge" operator="greaterThan" value="8.365"/>
+                      <ScoreDistribution value="0" recordCount="30.0"/>
+                      <ScoreDistribution value="1" recordCount="13.0"/>
+                      <Node id="70" score="0" recordCount="29.0">
+                        <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="19.145"/>
+                        <ScoreDistribution value="0" recordCount="24.0"/>
+                        <ScoreDistribution value="1" recordCount="5.0"/>
+                      </Node>
+                      <Node id="77" score="1" recordCount="14.0">
+                        <SimplePredicate field="Eve Charge" operator="greaterThan" value="19.145"/>
+                        <ScoreDistribution value="0" recordCount="6.0"/>
+                        <ScoreDistribution value="1" recordCount="8.0"/>
+                        <Node id="78" score="0" recordCount="6.0">
+                          <SimplePredicate field="Day Charge" operator="lessOrEqual" value="40.715"/>
+                          <ScoreDistribution value="0" recordCount="5.0"/>
+                          <ScoreDistribution value="1" recordCount="1.0"/>
+                        </Node>
+                        <Node id="79" score="1" recordCount="8.0">
+                          <SimplePredicate field="Day Charge" operator="greaterThan" value="40.715"/>
+                          <ScoreDistribution value="0" recordCount="1.0"/>
+                          <ScoreDistribution value="1" recordCount="7.0"/>
+                        </Node>
+                      </Node>
+                    </Node>                  </Node>
+                  <Node id="80" score="1" recordCount="10.0">
+                    <SimplePredicate field="Day Charge" operator="greaterThan" value="43.235"/>
+                    <ScoreDistribution value="0" recordCount="2.0"/>
+                    <ScoreDistribution value="1" recordCount="8.0"/>
+                  </Node>
+                </Node>
+                <Node id="81" score="0" recordCount="191.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="41" type="string">"KS" "OH" "OK" "AL" "LA" "IN" "IA" "MT" "VT" "VA" "CO" "NE" "WY" "HI" "NH" "AK" "WI" "MI" "DE" "MN" "SD" "WA" "UT" "TX" "NM" "NV" "DC" "NY" "WV" "GA" "KY" "ME" "MS" "RI" "SC" "TN" "PA" "IL" "NC" "CT" "ND"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="185.0"/>
+                  <ScoreDistribution value="1" recordCount="6.0"/>
+                </Node>
+              </Node>
+              <Node id="90" score="1" recordCount="35.0">
+                <SimplePredicate field="Eve Charge" operator="greaterThan" value="22.67"/>
+                <ScoreDistribution value="0" recordCount="9.0"/>
+                <ScoreDistribution value="1" recordCount="26.0"/>
+                <Node id="91" score="1" recordCount="29.0">
+                  <SimplePredicate field="VMail Plan" operator="lessOrEqual" value="0.5"/>
+                  <ScoreDistribution value="0" recordCount="3.0"/>
+                  <ScoreDistribution value="1" recordCount="26.0"/>
+                </Node>
+                <Node id="96" score="0" recordCount="6.0">
+                  <SimplePredicate field="VMail Plan" operator="greaterThan" value="0.5"/>
+                  <ScoreDistribution value="0" recordCount="6.0"/>
+                  <ScoreDistribution value="1" recordCount="0.0"/>
+                </Node>
+              </Node>
+            </Node>
+          </Node>
+          <Node id="49" score="0" recordCount="215.0">
+            <SimplePredicate field="Int'l Plan" operator="greaterThan" value="0.5"/>
+            <ScoreDistribution value="0" recordCount="135.0"/>
+            <ScoreDistribution value="1" recordCount="80.0"/>
+            <Node id="51" score="0" recordCount="175.0">
+              <SimplePredicate field="Intl Charge" operator="lessOrEqual" value="3.535"/>
+              <ScoreDistribution value="0" recordCount="135.0"/>
+              <ScoreDistribution value="1" recordCount="40.0"/>
+              <Node id="52" score="1" recordCount="34.0">
+                <SimplePredicate field="Intl Calls" operator="lessOrEqual" value="2.5"/>
+                <ScoreDistribution value="0" recordCount="0.0"/>
+                <ScoreDistribution value="1" recordCount="34.0"/>
+              </Node>
+              <Node id="53" score="0" recordCount="141.0">
+                <SimplePredicate field="Intl Calls" operator="greaterThan" value="2.5"/>
+                <ScoreDistribution value="0" recordCount="135.0"/>
+                <ScoreDistribution value="1" recordCount="6.0"/>
+                <Node id="54" score="0" recordCount="31.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="5" type="string">"OH" "MT" "VA" "CO" "AR"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="25.0"/>
+                  <ScoreDistribution value="1" recordCount="6.0"/>
+                  <Node id="55" score="0" recordCount="25.0">
+                    <SimplePredicate field="Day Charge" operator="lessOrEqual" value="40.62"/>
+                    <ScoreDistribution value="0" recordCount="24.0"/>
+                    <ScoreDistribution value="1" recordCount="1.0"/>
+                  </Node>
+                  <Node id="58" score="1" recordCount="6.0">
+                    <SimplePredicate field="Day Charge" operator="greaterThan" value="40.62"/>
+                    <ScoreDistribution value="0" recordCount="1.0"/>
+                    <ScoreDistribution value="1" recordCount="5.0"/>
+                  </Node>
+                </Node>
+                <Node id="59" score="0" recordCount="110.0">
+                  <SimpleSetPredicate field="State" booleanOperator="isIn">
+                    <Array n="46" type="string">"KS" "NJ" "OK" "AL" "MA" "LA" "IN" "IA" "VT" "FL" "AZ" "NE" "WY" "MO" "HI" "NH" "AK" "MD" "ID" "WI" "OR" "MI" "DE" "CA" "MN" "SD" "WA" "UT" "TX" "NM" "NV" "DC" "NY" "WV" "GA" "KY" "ME" "MS" "RI" "SC" "TN" "PA" "IL" "NC" "CT" "ND"</Array>
+                  </SimpleSetPredicate>
+                  <ScoreDistribution value="0" recordCount="110.0"/>
+                  <ScoreDistribution value="1" recordCount="0.0"/>
+                </Node>
+              </Node>
+            </Node>
+            <Node id="60" score="1" recordCount="40.0">
+              <SimplePredicate field="Intl Charge" operator="greaterThan" value="3.535"/>
+              <ScoreDistribution value="0" recordCount="0.0"/>
+              <ScoreDistribution value="1" recordCount="40.0"/>
+            </Node>
+          </Node>
+        </Node>
+        <Node id="21" score="1" recordCount="194.0">
+          <SimplePredicate field="CustServ Calls" operator="greaterThan" value="3.5"/>
+          <ScoreDistribution value="0" recordCount="92.0"/>
+          <ScoreDistribution value="1" recordCount="102.0"/>
+          <Node id="23" score="1" recordCount="81.0">
+            <SimplePredicate field="Day Charge" operator="lessOrEqual" value="27.185000000000002"/>
+            <ScoreDistribution value="0" recordCount="9.0"/>
+            <ScoreDistribution value="1" recordCount="72.0"/>
+            <Node id="24" score="1" recordCount="74.0">
+              <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="22.424999999999997"/>
+              <ScoreDistribution value="0" recordCount="4.0"/>
+              <ScoreDistribution value="1" recordCount="70.0"/>
+            </Node>
+            <Node id="31" score="0" recordCount="7.0">
+              <SimplePredicate field="Eve Charge" operator="greaterThan" value="22.424999999999997"/>
+              <ScoreDistribution value="0" recordCount="5.0"/>
+              <ScoreDistribution value="1" recordCount="2.0"/>
+            </Node>
+          </Node>
+          <Node id="32" score="0" recordCount="113.0">
+            <SimplePredicate field="Day Charge" operator="greaterThan" value="27.185000000000002"/>
+            <ScoreDistribution value="0" recordCount="83.0"/>
+            <ScoreDistribution value="1" recordCount="30.0"/>
+            <Node id="33" score="1" recordCount="13.0">
+              <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="12.05"/>
+              <ScoreDistribution value="0" recordCount="2.0"/>
+              <ScoreDistribution value="1" recordCount="11.0"/>
+            </Node>
+            <Node id="36" score="0" recordCount="100.0">
+              <SimplePredicate field="Eve Charge" operator="greaterThan" value="12.05"/>
+              <ScoreDistribution value="0" recordCount="81.0"/>
+              <ScoreDistribution value="1" recordCount="19.0"/>
+              <Node id="37" score="0" recordCount="25.0">
+                <SimplePredicate field="Day Charge" operator="lessOrEqual" value="29.880000000000003"/>
+                <ScoreDistribution value="0" recordCount="14.0"/>
+                <ScoreDistribution value="1" recordCount="11.0"/>
+                <Node id="38" score="1" recordCount="13.0">
+                  <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="18.08"/>
+                  <ScoreDistribution value="0" recordCount="2.0"/>
+                  <ScoreDistribution value="1" recordCount="11.0"/>
+                </Node>
+                <Node id="41" score="0" recordCount="12.0">
+                  <SimplePredicate field="Eve Charge" operator="greaterThan" value="18.08"/>
+                  <ScoreDistribution value="0" recordCount="12.0"/>
+                  <ScoreDistribution value="1" recordCount="0.0"/>
+                </Node>
+              </Node>
+              <Node id="42" score="0" recordCount="75.0">
+                <SimplePredicate field="Day Charge" operator="greaterThan" value="29.880000000000003"/>
+                <ScoreDistribution value="0" recordCount="67.0"/>
+                <ScoreDistribution value="1" recordCount="8.0"/>
+                <Node id="43" score="0" recordCount="58.0">
+                  <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="20.555"/>
+                  <ScoreDistribution value="0" recordCount="56.0"/>
+                  <ScoreDistribution value="1" recordCount="2.0"/>
+                </Node>
+                <Node id="46" score="0" recordCount="17.0">
+                  <SimplePredicate field="Eve Charge" operator="greaterThan" value="20.555"/>
+                  <ScoreDistribution value="0" recordCount="11.0"/>
+                  <ScoreDistribution value="1" recordCount="6.0"/>
+                  <Node id="47" score="1" recordCount="6.0">
+                    <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="21.78"/>
+                    <ScoreDistribution value="0" recordCount="1.0"/>
+                    <ScoreDistribution value="1" recordCount="5.0"/>
+                  </Node>
+                  <Node id="48" score="0" recordCount="11.0">
+                    <SimplePredicate field="Eve Charge" operator="greaterThan" value="21.78"/>
+                    <ScoreDistribution value="0" recordCount="10.0"/>
+                    <ScoreDistribution value="1" recordCount="1.0"/>
+                  </Node>
+                </Node>
+              </Node>
+            </Node>
+          </Node>
+        </Node>
+      </Node>
+      <Node id="1" score="1" recordCount="164.0">
+        <SimplePredicate field="Day Charge" operator="greaterThan" value="44.96"/>
+        <ScoreDistribution value="0" recordCount="64.0"/>
+        <ScoreDistribution value="1" recordCount="100.0"/>
+        <Node id="2" score="1" recordCount="123.0">
+          <SimplePredicate field="VMail Plan" operator="lessOrEqual" value="0.5"/>
+          <ScoreDistribution value="0" recordCount="29.0"/>
+          <ScoreDistribution value="1" recordCount="94.0"/>
+          <Node id="3" score="0" recordCount="46.0">
+            <SimplePredicate field="Eve Charge" operator="lessOrEqual" value="15.96"/>
+            <ScoreDistribution value="0" recordCount="25.0"/>
+            <ScoreDistribution value="1" recordCount="21.0"/>
+            <Node id="4" score="0" recordCount="27.0">
+              <SimplePredicate field="Night Charge" operator="lessOrEqual" value="9.594999999999999"/>
+              <ScoreDistribution value="0" recordCount="21.0"/>
+              <ScoreDistribution value="1" recordCount="6.0"/>
+              <Node id="5" score="0" recordCount="21.0">
+                <SimplePredicate field="Day Charge" operator="lessOrEqual" value="51.095"/>
+                <ScoreDistribution value="0" recordCount="20.0"/>
+                <ScoreDistribution value="1" recordCount="1.0"/>
+              </Node>
+              <Node id="8" score="1" recordCount="6.0">
+                <SimplePredicate field="Day Charge" operator="greaterThan" value="51.095"/>
+                <ScoreDistribution value="0" recordCount="1.0"/>
+                <ScoreDistribution value="1" recordCount="5.0"/>
+              </Node>
+            </Node>
+            <Node id="9" score="1" recordCount="19.0">
+              <SimplePredicate field="Night Charge" operator="greaterThan" value="9.594999999999999"/>
+              <ScoreDistribution value="0" recordCount="4.0"/>
+              <ScoreDistribution value="1" recordCount="15.0"/>
+            </Node>
+          </Node>
+          <Node id="12" score="1" recordCount="77.0">
+            <SimplePredicate field="Eve Charge" operator="greaterThan" value="15.96"/>
+            <ScoreDistribution value="0" recordCount="4.0"/>
+            <ScoreDistribution value="1" recordCount="73.0"/>
+            <Node id="13" score="0" recordCount="6.0">
+              <SimplePredicate field="Night Charge" operator="lessOrEqual" value="5.715"/>
+              <ScoreDistribution value="0" recordCount="4.0"/>
+              <ScoreDistribution value="1" recordCount="2.0"/>
+            </Node>
+            <Node id="14" score="1" recordCount="71.0">
+              <SimplePredicate field="Night Charge" operator="greaterThan" value="5.715"/>
+              <ScoreDistribution value="0" recordCount="0.0"/>
+              <ScoreDistribution value="1" recordCount="71.0"/>
+            </Node>
+          </Node>
+        </Node>
+        <Node id="15" score="0" recordCount="41.0">
+          <SimplePredicate field="VMail Plan" operator="greaterThan" value="0.5"/>
+          <ScoreDistribution value="0" recordCount="35.0"/>
+          <ScoreDistribution value="1" recordCount="6.0"/>
+          <Node id="16" score="0" recordCount="35.0">
+            <SimplePredicate field="Int'l Plan" operator="lessOrEqual" value="0.5"/>
+            <ScoreDistribution value="0" recordCount="34.0"/>
+            <ScoreDistribution value="1" recordCount="1.0"/>
+          </Node>
+          <Node id="19" score="1" recordCount="6.0">
+            <SimplePredicate field="Int'l Plan" operator="greaterThan" value="0.5"/>
+            <ScoreDistribution value="0" recordCount="1.0"/>
+            <ScoreDistribution value="1" recordCount="5.0"/>
+          </Node>
+        </Node>
+      </Node>
+    </Node>
+  </TreeModel>
+</PMML>
