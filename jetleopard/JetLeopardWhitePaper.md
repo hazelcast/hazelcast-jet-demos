@@ -1,6 +1,7 @@
 ## Getting Started With Hazelcast Jet
 
 In this white paper we examine the new Hazelcast Jet technology.
+
 If you are not already familiar with Hazelcast IMDG, you should start by reading the white paper ["An Architect's View of Hazelcast"](https://hazelcast.com/resources/architects-view-hazelcast/), as we assume a working knowledge of the main features of Hazelcast IMDG throughout.
 
 We will also be looking at JetLeopard, a sample reference application built using Jet.
@@ -11,7 +12,6 @@ To get the most from this white paper it should be read after the previous one, 
 ### Executive Summary of Hazelcast Jet
 
 Hazelcast Jet is a general purpose distributed streaming data processing engine built on Hazelcast IMDG and based on directed acyclic graphs (DAGs) as a model for data flow.
-
 The project started in 2015 and had its first release in Feb 2017.
 It is based on JVM technology, runs on Java 8 and later and is a Java-first technology.
 
