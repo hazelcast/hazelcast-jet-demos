@@ -68,7 +68,7 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
  *                                                            │
  *                                                            v
  *                                           ┌─────────────────────────────────┐
- *                                           │Filter Aircrafts in Low Altitudes│
+ *                                           │Filter Aircraft  in Low Altitudes│
  *                                           └────────────────┬────────────────┘
  *                                                            │
  *                                                            v
@@ -103,7 +103,7 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
  *                │                          │          ┌───────────────┘   │                    │
  *                v                          v          │                   v                    v
  *┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
- *│Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircrafts│ │Filter Ascending Aircrafts│
+ *│Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircraft │ │Filter Ascending Aircraft │
  *└──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
  *               │                       │              │               │                         │
  *               │  ┌────────────────────┘              │               │                         │
