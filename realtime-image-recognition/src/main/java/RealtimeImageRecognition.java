@@ -1,6 +1,5 @@
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
@@ -33,18 +32,21 @@ import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
  */
 public class RealtimeImageRecognition {
 
+    static {
+        System.setProperty("hazelcast.logging.type", "slf4j");
+    }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Path modelPath = Paths.get(args[0]).toAbsolutePath();
 
-        System.setProperty("hazelcast.logging.type", "slf4j");
-
-        JobConfig config = new JobConfig();
+        JetInstance jet = Jet.newJetInstance();
 
         DAG dag = buildDAG(modelPath.toString());
-
-        JetInstance jet = Jet.newJetInstance();
-        jet.newJob(dag, config).join();
+        try {
+            jet.newJob(dag).join();
+        } finally {
+            Jet.shutdownAll();
+        }
     }
 
 
