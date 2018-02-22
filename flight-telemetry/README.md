@@ -66,3 +66,48 @@ that are emitted from the Flight Telemetry application.
 
 Note: The ADB-S data stream publishes ~3 MB of data per update. We are polling it every 10 seconds by default, so you might need a decent internet connection for demo to work properly. Otherwise you might see some delay on the charts/output.
 
+# Scaling the Application
+If you'd like to scale up the application, you can add a new node to the cluster and restart the application. To achieve
+that we've included the `AdditionalMember` class implements the scenario.
+
+You can see the implementation of the `AdditionalMember` class below.
+
+```java
+/**
+ * It starts a new Jet instance and restart the currently running job to scale it to run on all members
+ * including the new launched one.
+ */
+public class AdditionalMember {
+    public static void main(String[] args) {
+        System.setProperty("hazelcast.logging.type", "log4j");
+        JetInstance jet = Jet.newJetInstance();
+        Job job = jet.getJob(FlightTelemetry.JOB_NAME);
+
+        makeSureThatJobExists(job);
+        makeSureThatJobIsRunning(job);
+
+        job.restart();
+        job.join();
+    }
+
+    private static void makeSureThatJobExists(Job job) {
+        if (job == null) {
+            throw new IllegalStateException("Job(" + FlightTelemetry.JOB_NAME + ") cannot be found. Are you sure that you\'ve started the FlightTelemetry ?");
+        }
+    }
+
+    private static void makeSureThatJobIsRunning(Job job) {
+        while (!JobStatus.RUNNING.equals(job.getStatus())) {
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+            System.out.println("Waiting for Job(" + FlightTelemetry.JOB_NAME + ")  to be started.");
+        }
+    }
+}
+
+```
+
+You can run the following to scale up the application while `Flight Telemetry` demo is running.
+
+```bash
+mvn exec:java -Dexec.mainClass="AdditionalMember"
+```
