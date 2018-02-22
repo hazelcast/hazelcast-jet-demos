@@ -52,8 +52,11 @@ public class JetCoinTrend {
     private static final String ANSI_GREEN = "\u001B[32m";
     private static final String ANSI_YELLOW = "\u001B[33m";
 
-    public static void main(String[] args) throws Exception {
+    static {
         System.setProperty("hazelcast.logging.type", "log4j");
+    }
+
+    public static void main(String[] args) throws Exception {
         System.out.println("DISCLAIMER: This is not an investment advice");
 
         DAG dag = buildDag();
