@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -24,7 +25,7 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.stream.IStreamMap;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -62,7 +63,7 @@ public class MarkovChainGenerator {
     }
 
     private static void printTransitionsAndMarkovChain(JetInstance jet) {
-        IStreamMap<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
+        IMapJet<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
         printTransitions(transitions);
         String chain = generateMarkovChain(1000, transitions);
         System.out.println(chain);

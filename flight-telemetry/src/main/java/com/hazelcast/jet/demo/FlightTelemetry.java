@@ -1,5 +1,6 @@
 package com.hazelcast.jet.demo;
 
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -18,7 +19,6 @@ import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToIntFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
-import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import java.util.List;
 import java.util.Map.Entry;
@@ -382,8 +382,9 @@ public class FlightTelemetry {
         }
     }
 
-    private static void addListener(IStreamMap<Long, Aircraft> map, Consumer<Aircraft> consumer) {
-        map.addEntryListener((EntryAddedListener<Long, Aircraft>) event -> consumer.accept(event.getValue()), true);
+    private static void addListener(IMapJet<Long, Aircraft> map, Consumer<Aircraft> consumer) {
+        map.addEntryListener((EntryAddedListener<Long, Aircraft>) event ->
+                consumer.accept(event.getValue()), true);
     }
 
 }
