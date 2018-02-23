@@ -18,38 +18,27 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.pipeline.SlidingWindowDef;
-import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.StreamStage;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
-import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
-import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
+import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
-import static java.util.Collections.singletonList;
+import static com.hazelcast.jet.pipeline.Sources.files;
+import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static java.lang.Integer.parseInt;
+import static java.time.ZoneId.systemDefault;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -59,7 +48,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * <p>
  * We've grouped the data by date and entry location and sorted them.
  */
-public class Main {
+public class TrafficPredictor {
 
     private static final long GRANULARITY_STEP_MS = MINUTES.toMillis(15);
 
@@ -72,59 +61,42 @@ public class Main {
         final String targetDirectory = "predictions";
 
         JetInstance instance = Jet.newJetInstance();
-        DAG dag = buildDAG(sourceFile, targetDirectory);
+        Pipeline pipeline = buildPipeline(sourceFile, targetDirectory);
         try {
-            instance.newJob(dag).join();
+            instance.newJob(pipeline).join();
         } finally {
             Jet.shutdownAll();
         }
     }
 
-    private static DAG buildDAG(Path sourceFile, String targetDirectory) {
-        DAG dag = new DAG();
-        SlidingWindowDef windowDef = WindowDefinition.sliding(MINUTES.toMillis(120), MINUTES.toMillis(15));
-
-        Vertex source = dag.newVertex("source",
-                readFilesP(
+    private static Pipeline buildPipeline(Path sourceFile, String targetDirectory) {
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<CarCount> carCounts = pipeline.drawFrom(
+                files(
                         sourceFile.getParent().toString(),
                         StandardCharsets.UTF_8,
-                        sourceFile.getFileName().toString(),
-                        (filename, line) -> {
+                        sourceFile.getFileName().toString(), (filename, line) -> {
                             String[] split = line.split(",");
-                            long time = LocalDateTime.parse(split[0]).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                            return new CarCount(split[1], time, Integer.parseInt(split[2]));
+                            long time = LocalDateTime.parse(split[0])
+                                                     .atZone(systemDefault())
+                                                     .toInstant()
+                                                     .toEpochMilli();
+                            return new CarCount(split[1], time, parseInt(split[2]));
+                        }
+                )
+        ).addTimestamps(CarCount::getTime, MINUTES.toMillis(300));
 
-                        })).localParallelism(1);
-        Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(wmGenParams(
-                CarCount::getTime, limitingLag(MINUTES.toMillis(300)), emitByFrame(windowDef.toSlidingWindowPolicy()), -1
-        ))).localParallelism(1);
-        DistributedFunction<CarCount, String> keyFn = CarCount::getLocation;
-        DistributedToLongFunction<CarCount> timestampFn = CarCount::getTime;
-        Vertex calcTrend = dag.newVertex("calcTrend", aggregateToSlidingWindowP(
-                singletonList(keyFn),
-                singletonList(timestampFn), TimestampKind.EVENT,
-                windowDef.toSlidingWindowPolicy(),
-                linearTrend(CarCount::getTime, CarCount::getCount),
-                TimestampedEntry::new
-        ));
-        Vertex mapTrend = dag.newVertex("mapTrend", mapP((TimestampedEntry<String, Double> en) ->
-                entry(new TrendKey(en.getKey(), en.getTimestamp()), en.getValue())));
-        Vertex storeTrend = dag.newVertex("storeTrend", writeMapP("trends"));
+        carCounts
+                .groupingKey(CarCount::getLocation)
+                .window(sliding(MINUTES.toMillis(120), MINUTES.toMillis(15)))
+                .aggregate(linearTrend(CarCount::getTime, CarCount::getCount))
+                .map((TimestampedEntry<String, Double> e) ->
+                        entry(new TrendKey(e.getKey(), e.getTimestamp()), e.getValue()))
+                .drainTo(Sinks.map("trends"));
 
-        // 2nd path: use the trends
-        Vertex useTrend = dag.newVertex("useTrend", PredictionP::new);
-        Vertex storePredictions = dag.newVertex("storePredictions", writeFileP(targetDirectory))
-                                     .localParallelism(1);
-
-        dag.edge(between(source, insertWm))
-           .edge(between(insertWm, calcTrend)
-                   .partitioned(CarCount::getLocation))
-           .edge(between(calcTrend, mapTrend))
-           .edge(between(mapTrend, storeTrend))
-           // 2nd path
-           .edge(from(source, 1).to(useTrend))
-           .edge(between(useTrend, storePredictions));
-        return dag;
+        carCounts.customTransform("useTrend", PredictionP::new)
+                 .drainTo(Sinks.files(targetDirectory));
+        return pipeline;
     }
 
     private static class PredictionP extends AbstractProcessor {
@@ -139,7 +111,8 @@ public class Main {
 
         @Override
         protected boolean tryProcess(int ordinal, Object item) {
-            CarCount cc = (CarCount) item;
+            JetEvent<CarCount> event = ((JetEvent<CarCount>) item);
+            CarCount cc = event.payload();
             int[] counts = new int[NUM_PREDICTIONS];
             double trend = 0.0;
             for (int i = 0; i < NUM_PREDICTIONS; i++) {
@@ -151,7 +124,7 @@ public class Main {
                 counts[i] = (int) Math.round(prediction);
             }
             Prediction prediction = new Prediction(cc.location, cc.time + GRANULARITY_STEP_MS, counts);
-            return tryEmit(prediction);
+            return tryEmit(jetEvent(prediction, event.timestamp()));
         }
     }
 

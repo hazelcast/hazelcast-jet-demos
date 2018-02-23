@@ -126,7 +126,7 @@ public class FlightDataSource extends AbstractProcessor {
     }
 
     public static StreamSource<Aircraft> streamAircraft(String url, long intervalMillis) {
-        return  streamFromProcessor("streamAircraft", streamAircraftP(url, intervalMillis));
+        return streamFromProcessor("streamAircraft", streamAircraftP(url, intervalMillis));
     }
 
 }

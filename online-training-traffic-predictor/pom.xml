@@ -26,7 +26,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>Main</mainClass>
+                    <mainClass>TrafficPredictor</mainClass>
                     <arguments>
                         <argument>15-minute-counts-sorted.csv</argument>
                     </arguments>

@@ -4,26 +4,18 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToDoubleFunction;
-import com.hazelcast.jet.function.DistributedToIntFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.map.listener.EntryAddedListener;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Util.entry;
@@ -32,23 +24,16 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.core.ProcessorSupplier.of;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLagAndDelay;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
-import static com.hazelcast.jet.core.processor.Processors.filterP;
-import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
-import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.demo.Aircraft.VerticalDirection.ASCENDING;
 import static com.hazelcast.jet.demo.Aircraft.VerticalDirection.CRUISE;
 import static com.hazelcast.jet.demo.Aircraft.VerticalDirection.DESCENDING;
 import static com.hazelcast.jet.demo.Aircraft.VerticalDirection.UNKNOWN;
+import static com.hazelcast.jet.demo.Constants.heavyWTCClimbingAltitudeToNoiseDb;
+import static com.hazelcast.jet.demo.Constants.heavyWTCDescendAltitudeToNoiseDb;
+import static com.hazelcast.jet.demo.Constants.mediumWTCClimbingAltitudeToNoiseDb;
+import static com.hazelcast.jet.demo.Constants.mediumWTCDescendAltitudeToNoiseDb;
+import static com.hazelcast.jet.demo.Constants.typeToLTOCycyleC02Emission;
+import static com.hazelcast.jet.demo.FlightDataSource.streamAircraft;
 import static com.hazelcast.jet.demo.types.WakeTurbulanceCategory.HEAVY;
 import static com.hazelcast.jet.demo.util.Util.inAtlanta;
 import static com.hazelcast.jet.demo.util.Util.inFrankfurt;
@@ -58,9 +43,8 @@ import static com.hazelcast.jet.demo.util.Util.inNYC;
 import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
 import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
-import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.util.Collections.emptySortedMap;
-import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The DAG used to model Flight Telemetry calculations can be seen below :
@@ -132,158 +116,88 @@ public class FlightTelemetry {
     public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
 
-        DAG dag = buildDAG();
-
+        Pipeline pipeline = buildPipeline();
         addListener(jet.getMap(TAKE_OFF_MAP), a -> System.out.println("New aircraft taking off: " + a));
         addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
 
         try {
-            Job job = jet.newJob(dag);
+            Job job = jet.newJob(pipeline);
             job.join();
         } finally {
             Jet.shutdownAll();
         }
     }
 
-    private static DAG buildDAG() {
-        DAG dag = new DAG();
+    private static Pipeline buildPipeline() {
+        Pipeline p = Pipeline.create();
 
-        // initialize the source vertex which polls the API for every 10s
-        Vertex source = dag.newVertex("flightDataSource", FlightDataSource.streamAircraftP(SOURCE_URL, 10000));
+        Sink<Object> graphiteSink = GraphiteSink.sink("127.0.0.1", 2004);
 
-        // we are interested only in planes above the ground and altitude less than 3000
-        Vertex filterLowAltitude = dag.newVertex("filterLowAltitude", filterP(
-                (Aircraft ac) -> !ac.isGnd() && ac.getAlt() > 0 && ac.getAlt() < 3000)
-        ).localParallelism(1);
+        SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
+        StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
+                .drawFrom(streamAircraft(SOURCE_URL, 10000))
+                .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
+                .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000)
+                .map(FlightTelemetry::assignAirport)
+                .window(slidingWindow)
+                .groupingKey(Aircraft::getId)
+                .aggregate(
+                        allOf(toList(), linearTrend(Aircraft::getPosTime, Aircraft::getAlt),
+                                (events, coefficient) -> {
+                                    Aircraft aircraft = events.get(events.size() - 1);
+                                    aircraft.setVerticalDirection(getVerticalDirection(coefficient));
+                                    return aircraft;
+                                })
+                ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
-        Vertex assignAirport = dag.newVertex("assignAirport", mapP(FlightTelemetry::assignAirport)).localParallelism(1);
+        StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
+                .filter(e -> e.getValue().verticalDirection == ASCENDING);
 
-        SlidingWindowDef wDefTrend = sliding(60_000, 30_000);
-        DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
-                Aircraft::getPosTime,
-                limitingLagAndDelay(TimeUnit.MINUTES.toMillis(15), 10_000),
-                emitByFrame(wDefTrend.toSlidingWindowPolicy()),
-                60000L
-        ));
-        Vertex insertWm = dag.newVertex("insertWm", peekOutputP(
-                Object::toString,
-                o -> o instanceof Watermark,
-                insertWMP)).localParallelism(1);
+        takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
+        takingOffFlights.drainTo(graphiteSink); // (aircraft_id, aircraft)
 
-        // aggregation: calculate altitude trend
-        DistributedFunction<Aircraft, Long> getKeyFn = Aircraft::getId;
-        DistributedToLongFunction<Aircraft> getTimestampFn = Aircraft::getPosTime;
-        Vertex aggregateTrend = dag.newVertex("aggregateTrend", aggregateToSlidingWindowP(
-                singletonList(getKeyFn),
-                singletonList(getTimestampFn),
-                TimestampKind.EVENT,
-                wDefTrend.toSlidingWindowPolicy(),
-                allOf(toList(), linearTrend(Aircraft::getPosTime, Aircraft::getAlt)),
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
-        ));
+        StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
+                .filter(e -> e.getValue().verticalDirection == DESCENDING);
 
-        Vertex addVerticalDirection = dag.newVertex("addVerticalDirection", mapP(FlightTelemetry::assignDirection));
+        landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
+        landingFlights.drainTo(graphiteSink); // (aircraft_id, aircraft)
 
-        Vertex filterAscending = dag.newVertex("filterAscending", filterP(
-                (Entry<Long, Aircraft> e) -> e.getValue().verticalDirection == ASCENDING));
+        flights
+                .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
+                .window(slidingWindow)
+                .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
+                .aggregate(maxBy(comparingInt(Entry::getValue)))
+                .drainTo(graphiteSink); // (airport, max_noise)
 
-        Vertex filterDescending = dag.newVertex("filterDescending", filterP(
-                (Entry<Long, Aircraft> e) -> e.getValue().verticalDirection == DESCENDING));
+        flights
+                .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
+                .window(slidingWindow)
+                .groupingKey(entry -> entry.getKey().getAirport() + "_C02_EMISSION")
+                .aggregate(summingDouble(Entry::getValue))
+                .drainTo(graphiteSink); // (airport, total_co2)
 
-        Vertex enrichWithNoiseInfo = dag.newVertex("enrich with noise info", mapP(
-                (Entry<Long, Aircraft> entry) -> {
-                    Aircraft aircraft = entry.getValue();
-                    Long altitude = aircraft.getAlt();
-                    SortedMap<Integer, Integer> lookupTable = getPhaseNoiseLookupTable(aircraft);
-                    if (lookupTable.isEmpty()) {
-                        return null;
-                    }
-                    Integer currentDb = lookupTable.tailMap(altitude.intValue()).values().iterator().next();
-                    return entry(aircraft, currentDb);
-                })
-        );
-
-        DistributedFunction<Entry<Aircraft, Integer>, String> getKeyFnMaxNoise = (Entry<Aircraft, Integer> entry) -> entry.getKey().getAirport() + "_AVG_NOISE";
-        DistributedToLongFunction<Entry<Aircraft, Integer>> getTimestampFnMaxNoise = (Entry<Aircraft, Integer> entry) -> entry.getKey().getPosTime();
-        Vertex maxNoiseLevel = dag.newVertex("max noise level", aggregateToSlidingWindowP(
-                singletonList(getKeyFnMaxNoise),
-                singletonList(getTimestampFnMaxNoise),
-                TimestampKind.EVENT,
-                wDefTrend.toSlidingWindowPolicy(),
-                maxBy(comparingInt((DistributedToIntFunction<Entry<Aircraft, Integer>>) Entry::getValue)),
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
-        ));
-
-        Vertex enrichWithC02Emission = dag.newVertex("enrich with C02 emission info", mapP(
-                (Entry<Long, Aircraft> entry) -> {
-                    Aircraft aircraft = entry.getValue();
-                    Double ltoC02EmissionInKg = Constants.typeToLTOCycyleC02Emission.getOrDefault(aircraft.getType(), 0d);
-                    return entry(aircraft, ltoC02EmissionInKg);
-                }
-        ));
-
-        DistributedFunction<Entry<Aircraft, Double>, String> getKeyFnC02Emission = (Entry<Aircraft, Double> entry) -> entry.getKey().getAirport() + "_C02_EMISSION";
-        DistributedToLongFunction<Entry<Aircraft, Double>> getTimestampC02Emission = (Entry<Aircraft, Double> entry) -> entry.getKey().getPosTime();
-        Vertex averagePollution = dag.newVertex("pollution", peekInputP(aggregateToSlidingWindowP(
-                singletonList(getKeyFnC02Emission),
-                singletonList(getTimestampC02Emission),
-                TimestampKind.EVENT,
-                wDefTrend.toSlidingWindowPolicy(),
-                summingDouble(
-                        (DistributedToDoubleFunction<Entry<Aircraft, Double>>) Entry::getValue
-                ),
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
-        )));
-
-        Vertex takeOffMapSink = dag.newVertex("takeOffMapSink", writeMapP(TAKE_OFF_MAP));
-        Vertex landingMapSink = dag.newVertex("landingMapSink", writeMapP(LANDING_MAP));
-
-        Vertex graphiteSink = dag.newVertex("graphite sink",
-                of(() -> new GraphiteSink("127.0.0.1", 2004))
-        );
-
-        dag.edge(between(source, filterLowAltitude));
-
-        // flights over interested cities and less then altitude 3000ft.
-        dag.edge(between(filterLowAltitude, assignAirport));
-
-        // identify flight phase (LANDING/TAKE-OFF)
-        dag
-                .edge(between(assignAirport, insertWm))
-                .edge(between(insertWm, aggregateTrend)
-                        .distributed()
-                        .partitioned(Aircraft::getId))
-                .edge(between(aggregateTrend, addVerticalDirection));
-
-        // max noise path
-        dag
-                .edge(from(addVerticalDirection, 0).to(enrichWithNoiseInfo))
-                .edge(between(enrichWithNoiseInfo, maxNoiseLevel)
-                        .distributed()
-                        .partitioned((Entry<Aircraft, Integer> entry) -> entry.getKey().getAirport()))
-                .edge(between(maxNoiseLevel, graphiteSink));
-
-
-        // C02 emission calculation path
-        dag
-                .edge(from(addVerticalDirection, 1).to(enrichWithC02Emission))
-                .edge(between(enrichWithC02Emission, averagePollution)
-                        .distributed()
-                        .allToOne())
-                .edge(from(averagePollution).to(graphiteSink, 1));
-
-        // taking off planes to IMap
-        dag.edge(from(addVerticalDirection, 2).to(filterAscending))
-           .edge(from(filterAscending).to(takeOffMapSink));
-
-        // landing planes to IMap
-        dag.edge(from(addVerticalDirection, 3).to(filterDescending))
-           .edge(from(filterDescending).to(landingMapSink));
-
-        dag.edge(from(addVerticalDirection, 4).to(graphiteSink, 2));
-
-        return dag;
+        return p;
     }
+
+    /**
+     * Returns the average C02 emission on landing/take-offfor the aircraft
+     *
+     * @param aircraft
+     * @return avg C02 for the aircraft
+     */
+    private static Double getCO2Emission(Aircraft aircraft) {
+        return typeToLTOCycyleC02Emission.getOrDefault(aircraft.getType(), 0d);
+    }
+
+    private static Integer getNoise(Aircraft aircraft) {
+        Long altitude = aircraft.getAlt();
+        SortedMap<Integer, Integer> lookupTable = getPhaseNoiseLookupTable(aircraft);
+        if (lookupTable.isEmpty()) {
+            return 0;
+        }
+        return lookupTable.tailMap(altitude.intValue()).values().iterator().next();
+    }
+
 
     private static Aircraft assignAirport(Aircraft ac) {
         if (ac.getAlt() > 0 && !ac.isGnd()) {
@@ -334,33 +248,18 @@ public class FlightTelemetry {
         WakeTurbulanceCategory wtc = aircraft.getWtc();
         if (ASCENDING.equals(verticalDirection)) {
             if (HEAVY.equals(wtc)) {
-                return Constants.heavyWTCClimbingAltitudeToNoiseDb;
+                return heavyWTCClimbingAltitudeToNoiseDb;
             } else {
-                return Constants.mediumWTCClimbingAltitudeToNoiseDb;
+                return mediumWTCClimbingAltitudeToNoiseDb;
             }
         } else if (DESCENDING.equals(verticalDirection)) {
             if (HEAVY.equals(wtc)) {
-                return Constants.heavyWTCDescendAltitudeToNoiseDb;
+                return heavyWTCDescendAltitudeToNoiseDb;
             } else {
-                return Constants.mediumWTCDescendAltitudeToNoiseDb;
+                return mediumWTCDescendAltitudeToNoiseDb;
             }
         }
         return emptySortedMap();
-    }
-
-    /**
-     * Assigns the vertical direction based on the linear trend coefficient of the altitude of the aircraft.
-     *
-     * @param entry contains the altitude and results from the linear trend calculation.
-     * @return an entry whose key is the altitude and value is the aircraft object which contains the vertical direction.
-     */
-    private static Entry<Long, Aircraft> assignDirection(TimestampedEntry<Long, Tuple2<List<Aircraft>, Double>> entry) {
-        // unpack the results
-        List<Aircraft> aircraftList = entry.getValue().f0();
-        Aircraft aircraft = aircraftList.get(0);
-        double coefficient = entry.getValue().f1();
-        aircraft.setVerticalDirection(getVerticalDirection(coefficient));
-        return entry(entry.getKey(), aircraft);
     }
 
     /**

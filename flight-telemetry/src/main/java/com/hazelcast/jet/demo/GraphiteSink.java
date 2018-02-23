@@ -2,6 +2,8 @@ package com.hazelcast.jet.demo;
 
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Sinks;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -13,6 +15,8 @@ import org.python.core.PyList;
 import org.python.core.PyString;
 import org.python.core.PyTuple;
 import org.python.modules.cPickle;
+
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
 
 /**
  * Sink implementation which forwards the items it receives to the Graphite.
@@ -42,20 +46,22 @@ public class GraphiteSink extends AbstractProcessor {
         PyInteger timestamp;
         PyFloat metricValue;
         if (item instanceof TimestampedEntry) {
-            TimestampedEntry<String, Object> timestampedEntry = (TimestampedEntry) item;
-            metricName = new PyString(timestampedEntry.getKey().replace(" ", "_"));
-            timestamp = new PyInteger((int) Instant.ofEpochMilli(timestampedEntry.getTimestamp()).getEpochSecond());
-            Object value = timestampedEntry.getValue();
-            if (value instanceof Double) {
-                metricValue = new PyFloat((Double) value);
+            TimestampedEntry timestampedEntry = (TimestampedEntry) item;
+            if (timestampedEntry.getKey() instanceof Long) {
+                Entry<Long, Aircraft> aircraftEntry = (Entry<Long, Aircraft>) item;
+                metricName = new PyString(aircraftEntry.getValue().getAirport().replace(" ", "_") + "." + aircraftEntry.getValue().verticalDirection.toString());
+                timestamp = new PyInteger((int) Instant.ofEpochMilli(aircraftEntry.getValue().getPosTime()).getEpochSecond());
+                metricValue = new PyFloat(1);
             } else {
-                metricValue = new PyFloat(((Entry<Aircraft, Integer>) value).getValue());
+                metricName = new PyString(((String) timestampedEntry.getKey()).replace(" ", "_"));
+                timestamp = new PyInteger((int) Instant.ofEpochMilli(timestampedEntry.getTimestamp()).getEpochSecond());
+                Object value = timestampedEntry.getValue();
+                if (value instanceof Double) {
+                    metricValue = new PyFloat((Double) value);
+                } else {
+                    metricValue = new PyFloat(((Entry<Aircraft, Integer>) value).getValue());
+                }
             }
-        } else if (item instanceof Entry) {
-            Entry<Long, Aircraft> aircraftEntry = (Entry<Long, Aircraft>) item;
-            metricName = new PyString(aircraftEntry.getValue().getAirport().replace(" ", "_") + "." + aircraftEntry.getValue().verticalDirection.toString());
-            timestamp = new PyInteger((int) Instant.ofEpochMilli(aircraftEntry.getValue().getPosTime()).getEpochSecond());
-            metricValue = new PyFloat(1);
         } else {
             return true;
         }
@@ -74,5 +80,9 @@ public class GraphiteSink extends AbstractProcessor {
     @Override
     public boolean complete() {
         return false;
+    }
+
+    public static Sink sink(String host, int port) {
+        return Sinks.fromProcessor("graphiteSink", of(() -> new GraphiteSink(host, port)));
     }
 }
