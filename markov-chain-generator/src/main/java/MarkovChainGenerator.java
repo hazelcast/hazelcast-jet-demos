@@ -44,23 +44,28 @@ public class MarkovChainGenerator {
     private static final String INPUT_FILE = MarkovChainGenerator.class.getResource("books").getPath();
     private static final Random RANDOM = new Random();
 
-    public static void main(String[] args) {
+    static {
         System.setProperty("hazelcast.logging.type", "log4j");
+    }
 
+    public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
         Pipeline p = createPipeline();
 
         System.out.println("Generating model...");
         try {
             jet.newJob(p).join();
-
-            IStreamMap<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
-            printTransitions(transitions);
-            String chain = generateMarkovChain(1000, transitions);
-            System.out.println(chain);
+            printTransitionsAndMarkovChain(jet);
         } finally {
             Jet.shutdownAll();
         }
+    }
+
+    private static void printTransitionsAndMarkovChain(JetInstance jet) {
+        IStreamMap<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
+        printTransitions(transitions);
+        String chain = generateMarkovChain(1000, transitions);
+        System.out.println(chain);
     }
 
     private static String generateMarkovChain(int length, Map<String, SortedMap<Double, String>> transitions) {

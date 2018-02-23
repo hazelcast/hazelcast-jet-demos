@@ -24,9 +24,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-
 import java.io.Serializable;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +53,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 /**
  * The training data is obtained from:
  * https://catalog.data.gov/dataset/nys-thruway-origin-and-destination-points-for-all-vehicles-15-minute-intervals-2016-q1
- *
+ * <p>
  * We've grouped the data by date and entry location and sorted them.
  */
 public class Main {
@@ -70,17 +68,30 @@ public class Main {
         Path sourceFile = Paths.get(args[0]).toAbsolutePath();
         final String targetDirectory = "predictions";
 
+        JetInstance instance = Jet.newJetInstance();
+        DAG dag = buildDAG(sourceFile, targetDirectory);
+        try {
+            instance.newJob(dag).join();
+        } finally {
+            Jet.shutdownAll();
+        }
+    }
+
+    private static DAG buildDAG(Path sourceFile, String targetDirectory) {
         DAG dag = new DAG();
         WindowDefinition windowDef = slidingWindowDef(MINUTES.toMillis(120), MINUTES.toMillis(15));
 
         Vertex source = dag.newVertex("source",
-                readFilesP(sourceFile.getParent().toString(), StandardCharsets.UTF_8, sourceFile.getFileName().toString()))
-                           .localParallelism(1);
-        Vertex map = dag.newVertex("map", mapP(item -> {
-            String[] line = ((String) item).split(",");
-            long time = LocalDateTime.parse(line[0]).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-            return new CarCount(line[1], time, Integer.parseInt(line[2]));
-        })).localParallelism(1);
+                readFilesP(
+                        sourceFile.getParent().toString(),
+                        StandardCharsets.UTF_8,
+                        sourceFile.getFileName().toString(),
+                        (filename, line) -> {
+                            String[] split = line.split(",");
+                            long time = LocalDateTime.parse(split[0]).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                            return new CarCount(split[1], time, Integer.parseInt(split[2]));
+
+                        })).localParallelism(1);
         Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(wmGenParams(
                 CarCount::getTime, withFixedLag(MINUTES.toMillis(300)), emitByFrame(windowDef), -1
         ))).localParallelism(1);
@@ -100,22 +111,15 @@ public class Main {
         Vertex storePredictions = dag.newVertex("storePredictions", writeFileP(targetDirectory))
                                      .localParallelism(1);
 
-        dag.edge(between(source, map))
-           .edge(between(map, insertWm))
+        dag.edge(between(source, insertWm))
            .edge(between(insertWm, calcTrend)
                    .partitioned(CarCount::getLocation))
            .edge(between(calcTrend, mapTrend))
            .edge(between(mapTrend, storeTrend))
            // 2nd path
-           .edge(from(map, 1).to(useTrend))
+           .edge(from(source, 1).to(useTrend))
            .edge(between(useTrend, storePredictions));
-
-        JetInstance instance = Jet.newJetInstance();
-        try {
-            instance.newJob(dag).join();
-        } finally {
-            Jet.shutdownAll();
-        }
+        return dag;
     }
 
     private static class PredictionP extends AbstractProcessor {

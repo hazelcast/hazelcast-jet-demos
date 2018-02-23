@@ -122,8 +122,11 @@ public class FlightTelemetry {
     private static final String TAKE_OFF_MAP = "takeOffMap";
     private static final String LANDING_MAP = "landingMap";
 
-    public static void main(String[] args) {
+    static {
         System.setProperty("hazelcast.logging.type", "log4j");
+    }
+
+    public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
 
         DAG dag = buildDAG();
