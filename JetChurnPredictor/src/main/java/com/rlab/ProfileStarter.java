@@ -29,11 +29,14 @@ public class ProfileStarter {
 	}
 	
 	public void start(){
-		ContractInfoLoader cil = new ContractInfoLoader("src\\main\\resources\\ContractData.csv");
+		//ContractInfoLoader cil = new ContractInfoLoader("src\\main\\resources\\ContractData.csv");
+		ContractInfoLoader cil = new ContractInfoLoader("ContractData.csv");
 		cil.setRepository(cir);
 		cil.startLoading();
 		
-		CustomerUsageLoader cul = new CustomerUsageLoader("src\\main\\resources\\CallsData.csv");
+		//CustomerUsageLoader cul = new CustomerUsageLoader("src\\main\\resources\\CallsData.csv");
+		CustomerUsageLoader cul = new CustomerUsageLoader("CallsData.csv");
+		cul.setRepository(cur);
 		cul.setRepository(cur);
 		cul.startLoading();
 	}

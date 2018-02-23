@@ -21,10 +21,16 @@ public class ServerMember {
 	   Config config;
 		try {
 			if(hz ==null){
-			config = new FileSystemXmlConfig("src/main/resources/hazelcast.xml");
+				
+		//	ClassLoader classLoader = ServerMember.class.getClassLoader();
+		  // File file = new File(classLoader.getResource("hazelcast.xml").getFile());
+				
+			//	config = new FileSystemXmlConfig(file);
+			 config = new FileSystemXmlConfig("src/main/resources/hazelcast.xml");
 			 hz = Hazelcast.newHazelcastInstance(config);
+			
 			}
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return hz;

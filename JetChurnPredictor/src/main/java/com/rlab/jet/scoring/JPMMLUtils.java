@@ -28,6 +28,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.google.common.collect.RangeSet;
+import com.rlab.imdg.member.ServerMember;
 import com.rlab.kafka.message.KMessage;
 
 import javax.xml.bind.JAXBException;
@@ -60,11 +61,13 @@ public final class JPMMLUtils {
 	 * @return
 	 * @throws MLException
 	 */
-	public static final PMML loadModel(final String file) throws MLException {
+	public static final PMML loadModel(final String filename) throws MLException {
 		PMML pmml = null;
-
-		File inputFilePath = new File( file ) ;
-
+         
+		//ClassLoader classLoader = JPMMLUtils.class.getClassLoader();
+		//File inputFilePath = new File(classLoader.getResource(filename).getFile());
+		
+		File inputFilePath = new File( filename);
 		try{
 			pmml=readPMML(inputFilePath);
 		} catch(   Exception  e) {

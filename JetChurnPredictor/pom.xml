@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.rlab.jet</groupId>
-	<artifactId>JetScoringEngine</artifactId>
+	<artifactId>JetChurnPredictor</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>JetScoringEngine</name>
+	<name>JetChurnPredictor</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -25,11 +25,11 @@
 	</properties>
 
 	<dependencies>
-	<dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-	  <dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
@@ -57,7 +57,7 @@
 			<artifactId>spring-kafka</artifactId>
 			<version>1.1.6.RELEASE</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>com.hazelcast.jet</groupId>
 			<artifactId>hazelcast-jet</artifactId>
@@ -74,26 +74,26 @@
 			<artifactId>kafka-clients</artifactId>
 			<version>0.10.1.1</version>
 		</dependency>
-		
-		 <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>2.7.4</version>
-    </dependency>
 
-    <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.7.4</version>
-    </dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.7.4</version>
+		</dependency>
 
-    <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.7.4</version>
-    </dependency>
-	
-	<dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.7.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.7.4</version>
+		</dependency>
+
+		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
@@ -107,15 +107,16 @@
 			<groupId>org.jpmml</groupId>
 			<artifactId>pmml-evaluator</artifactId>
 			<version>1.3.10</version>
-		</dependency>	
+		</dependency>
 	</dependencies>
 
 	<build>
-	<resources>
-                    <resource>
-                          <directory>src/main/resources</directory>
-                    </resource>
-                  </resources>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

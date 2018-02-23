@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import com.rlab.jet.scoring.JPMMLUtils;
+
 public abstract class CSVFileReader {
 	
 	private String filename;
@@ -19,17 +21,21 @@ public abstract class CSVFileReader {
 	}
 	
 	public void startLoading(){
-		loadFile(filename);
+		loadFile();
 	}
 	
-	private void loadFile(String fileName){
+	private void loadFile(){
 		String line = "";
         String cvsSplitBy = ",";
         
         File f = new File(".");
         System.out.println(f.getAbsolutePath());
         
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+        ClassLoader classLoader = CSVFileReader.class.getClassLoader();
+		File file = new File(classLoader.getResource(filename).getFile());
+		
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             //skip header 
         	br.readLine();
         	

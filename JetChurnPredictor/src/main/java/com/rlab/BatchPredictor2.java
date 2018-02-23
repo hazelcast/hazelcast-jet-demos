@@ -82,8 +82,7 @@ public class BatchPredictor2 implements CommandLineRunner  {
 	private IList<String> phoneNoslist = ServerMember.hazelcastInstance().getList("PhoneNos");
 	
 	ObjectMapper jom = new ObjectMapper();
-	ModelEvaluator<?> modelEvaluator;
-
+	
 	@Autowired
 	private Sender sender;
 
@@ -92,18 +91,6 @@ public class BatchPredictor2 implements CommandLineRunner  {
 		new BatchPredictor2().run();
 	}
 
-
-	private void initPMMLModel(){
-		PMML pmml;
-		try {
-			pmml = JPMMLUtils.loadModel("src\\main\\resources\\churnPmmlModel.pmml");
-			modelEvaluator = JPMMLUtils.getVerifiedEvaluator(pmml);
-			Model model = modelEvaluator.getModel();
-		} catch (MLException | ReflectiveOperationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	private  Pipeline buildPipeline() {
 
@@ -159,7 +146,6 @@ public class BatchPredictor2 implements CommandLineRunner  {
 				Math.max(1, getRuntime().availableProcessors() / 2)));
 
 		try {
-			initPMMLModel();
 			JetInstance instance = Jet.newJetInstance(cfg);
 			inputList = instance.getList(INPUT_LIST);
 			
@@ -184,7 +170,7 @@ public class BatchPredictor2 implements CommandLineRunner  {
         
 			long endTime = System.currentTimeMillis();
 			IList<KMessage> outputList = instance.getList(RESULT_LIST);
-			System.out.println("Result list items: " + new ArrayList<>(outputList));
+			//System.out.println("Result list items: " + new ArrayList<>(outputList));
 		
 			ArrayList<KMessage>  slist= new ArrayList<KMessage> (outputList);
 			slist.stream()
