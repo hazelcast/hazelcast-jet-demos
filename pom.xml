@@ -12,6 +12,7 @@
 
     <modules>
         <!--<module>customer-churn-predictor</module>-->
+        <module>JetChurnPredictor</module>     
         <module>cryptocurrency-realtime-trend</module>
         <module>flight-telemetry</module>
         <module>realtime-image-recognition</module>
