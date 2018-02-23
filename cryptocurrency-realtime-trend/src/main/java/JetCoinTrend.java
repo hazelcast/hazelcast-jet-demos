@@ -8,12 +8,13 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
-import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.Tuple2;
-
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,13 +31,14 @@ import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class JetCoinTrend {
@@ -82,14 +84,14 @@ public class JetCoinTrend {
                 TimestampedEntry<String, String>>flatMapP(JetCoinTrend::flatMapToRelevant));
         Vertex sentiment = dag.newVertex("sentiment", of(SentimentProcessor::new));
 
-        WindowDefinition slidingWindowOf30Sec = slidingWindowDef(30_000, 10_000);
-        WindowDefinition slidingWindowOf1Min = slidingWindowDef(60_000, 10_000);
-        WindowDefinition slidingWindowOf5Min = slidingWindowDef(300_000, 10_000);
+        SlidingWindowDef slidingWindowOf30Sec = sliding(30_000, 10_000);
+        SlidingWindowDef slidingWindowOf1Min = sliding(60_000, 10_000);
+        SlidingWindowDef slidingWindowOf5Min = sliding(300_000, 10_000);
 
         WatermarkGenerationParams<TimestampedEntry<String, Double>> params = wmGenParams(
                 TimestampedEntry::getTimestamp,
-                withFixedLag(5000),
-                emitByFrame(slidingWindowOf30Sec), 60000
+                limitingLag(5000),
+                emitByFrame(slidingWindowOf30Sec.toSlidingWindowPolicy()), 60000
         );
         Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(params)).localParallelism(1);
 
@@ -97,28 +99,33 @@ public class JetCoinTrend {
                 AggregateOperations.allOf(averagingDouble(TimestampedEntry::getValue), counting());
 
 
+        DistributedFunction<TimestampedEntry, Object> getKeyFn = TimestampedEntry::getKey;
+        DistributedToLongFunction<TimestampedEntry> getTimeStampFn = TimestampedEntry::getTimestamp;
         Vertex slidingWin30sec = dag.newVertex("slidingWin30Sec", aggregateToSlidingWindowP(
-                TimestampedEntry::getKey,
-                TimestampedEntry::getTimestamp,
+                singletonList(getKeyFn),
+                singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf30Sec,
-                aggrOp
+                slidingWindowOf30Sec.toSlidingWindowPolicy(),
+                aggrOp,
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
         ));
 
         Vertex slidingWin1min = dag.newVertex("slidingWin1Min", aggregateToSlidingWindowP(
-                TimestampedEntry::getKey,
-                TimestampedEntry::getTimestamp,
+                singletonList(getKeyFn),
+                singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf1Min,
-                aggrOp
+                slidingWindowOf1Min.toSlidingWindowPolicy(),
+                aggrOp,
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
         ));
 
         Vertex slidingWin5min = dag.newVertex("slidingWin5Min", aggregateToSlidingWindowP(
-                TimestampedEntry::getKey,
-                TimestampedEntry::getTimestamp,
+                singletonList(getKeyFn),
+                singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf5Min,
-                aggrOp
+                slidingWindowOf5Min.toSlidingWindowPolicy(),
+                aggrOp,
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
         ));
 
         Vertex map30Seconds = dag.newVertex(MAP_NAME_30_SECONDS, writeMapP(MAP_NAME_30_SECONDS));

@@ -1,11 +1,9 @@
 package com.hazelcast.jet.demos.market.data.analyzer;
 
 import com.hazelcast.jet.JournalInitialPosition;
-import com.hazelcast.jet.Pipeline;
-import com.hazelcast.jet.Sinks;
-import com.hazelcast.jet.Sources;
-
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 
 public class PreciousHistory {
 
@@ -15,7 +13,7 @@ public class PreciousHistory {
 
         // Palladium and Platinum only
         pipeline
-                .drawFrom(Sources.<String, Object>mapJournal(Constants.IMAP_NAME_PRECIOUS, JournalInitialPosition.START_FROM_OLDEST, noWatermarks()))
+                .drawFrom(Sources.<String, Object>mapJournal(Constants.IMAP_NAME_PRECIOUS, JournalInitialPosition.START_FROM_OLDEST))
                 .map(entry
                         ->
                         new String(entry.getKey() + "==" + entry.getValue())

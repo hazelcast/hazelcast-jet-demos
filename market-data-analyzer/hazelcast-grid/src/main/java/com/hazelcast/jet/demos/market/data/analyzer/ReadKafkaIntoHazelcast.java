@@ -1,15 +1,12 @@
 package com.hazelcast.jet.demos.market.data.analyzer;
 
 import com.hazelcast.jet.KafkaSources;
-import com.hazelcast.jet.Pipeline;
-import com.hazelcast.jet.Sinks;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import java.util.Properties;
 import java.util.UUID;
-
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
 public class ReadKafkaIntoHazelcast {
 
@@ -24,7 +21,7 @@ public class ReadKafkaIntoHazelcast {
         Pipeline pipeline = Pipeline.create();
 
         pipeline
-                .drawFrom(KafkaSources.kafka(properties, noWatermarks(), Constants.TOPIC_NAME_PRECIOUS))
+                .drawFrom(KafkaSources.kafka(properties, Constants.TOPIC_NAME_PRECIOUS))
                 .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
 
         return pipeline;

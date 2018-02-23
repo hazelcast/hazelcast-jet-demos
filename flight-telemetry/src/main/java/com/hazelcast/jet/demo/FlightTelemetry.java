@@ -8,17 +8,18 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToIntFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.map.listener.EntryAddedListener;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -57,9 +58,11 @@ import static com.hazelcast.jet.demo.util.Util.inNYC;
 import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
 import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
+import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static java.util.Collections.emptySortedMap;
+import static java.util.Collections.singletonList;
 
 /**
- *
  * The DAG used to model Flight Telemetry calculations can be seen below :
  *
  *                                                  ┌──────────────────┐
@@ -155,11 +158,11 @@ public class FlightTelemetry {
 
         Vertex assignAirport = dag.newVertex("assignAirport", mapP(FlightTelemetry::assignAirport)).localParallelism(1);
 
-        WindowDefinition wDefTrend = WindowDefinition.slidingWindowDef(60_000, 30_000);
+        SlidingWindowDef wDefTrend = sliding(60_000, 30_000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
                 Aircraft::getPosTime,
                 limitingLagAndDelay(TimeUnit.MINUTES.toMillis(15), 10_000),
-                emitByFrame(wDefTrend),
+                emitByFrame(wDefTrend.toSlidingWindowPolicy()),
                 60000L
         ));
         Vertex insertWm = dag.newVertex("insertWm", peekOutputP(
@@ -168,12 +171,15 @@ public class FlightTelemetry {
                 insertWMP)).localParallelism(1);
 
         // aggregation: calculate altitude trend
+        DistributedFunction<Aircraft, Long> getKeyFn = Aircraft::getId;
+        DistributedToLongFunction<Aircraft> getTimestampFn = Aircraft::getPosTime;
         Vertex aggregateTrend = dag.newVertex("aggregateTrend", aggregateToSlidingWindowP(
-                Aircraft::getId,
-                Aircraft::getPosTime,
+                singletonList(getKeyFn),
+                singletonList(getTimestampFn),
                 TimestampKind.EVENT,
-                wDefTrend,
-                allOf(toList(), linearTrend(Aircraft::getPosTime, Aircraft::getAlt))
+                wDefTrend.toSlidingWindowPolicy(),
+                allOf(toList(), linearTrend(Aircraft::getPosTime, Aircraft::getAlt)),
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
         ));
 
         Vertex addVerticalDirection = dag.newVertex("addVerticalDirection", mapP(FlightTelemetry::assignDirection));
@@ -197,14 +203,16 @@ public class FlightTelemetry {
                 })
         );
 
+        DistributedFunction<Entry<Aircraft, Integer>, String> getKeyFnMaxNoise = (Entry<Aircraft, Integer> entry) -> entry.getKey().getAirport() + "_AVG_NOISE";
+        DistributedToLongFunction<Entry<Aircraft, Integer>> getTimestampFnMaxNoise = (Entry<Aircraft, Integer> entry) -> entry.getKey().getPosTime();
         Vertex maxNoiseLevel = dag.newVertex("max noise level", aggregateToSlidingWindowP(
-                (Entry<Aircraft, Integer> entry) -> entry.getKey().getAirport() + "_AVG_NOISE",
-                (Entry<Aircraft, Integer> entry) -> entry.getKey().getPosTime(),
+                singletonList(getKeyFnMaxNoise),
+                singletonList(getTimestampFnMaxNoise),
                 TimestampKind.EVENT,
-                wDefTrend,
-                maxBy(comparingInt((DistributedToIntFunction<Entry<Aircraft, Integer>>) Entry::getValue))
-                )
-        );
+                wDefTrend.toSlidingWindowPolicy(),
+                maxBy(comparingInt((DistributedToIntFunction<Entry<Aircraft, Integer>>) Entry::getValue)),
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+        ));
 
         Vertex enrichWithC02Emission = dag.newVertex("enrich with C02 emission info", mapP(
                 (Entry<Long, Aircraft> entry) -> {
@@ -214,14 +222,17 @@ public class FlightTelemetry {
                 }
         ));
 
+        DistributedFunction<Entry<Aircraft, Double>, String> getKeyFnC02Emission = (Entry<Aircraft, Double> entry) -> entry.getKey().getAirport() + "_C02_EMISSION";
+        DistributedToLongFunction<Entry<Aircraft, Double>> getTimestampC02Emission = (Entry<Aircraft, Double> entry) -> entry.getKey().getPosTime();
         Vertex averagePollution = dag.newVertex("pollution", peekInputP(aggregateToSlidingWindowP(
-                (Entry<Aircraft, Double> entry) -> entry.getKey().getAirport() + "_C02_EMISSION",
-                (Entry<Aircraft, Double> entry) -> entry.getKey().getPosTime(),
+                singletonList(getKeyFnC02Emission),
+                singletonList(getTimestampC02Emission),
                 TimestampKind.EVENT,
-                wDefTrend,
+                wDefTrend.toSlidingWindowPolicy(),
                 summingDouble(
                         (DistributedToDoubleFunction<Entry<Aircraft, Double>>) Entry::getValue
-                )
+                ),
+                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
         )));
 
         Vertex takeOffMapSink = dag.newVertex("takeOffMapSink", writeMapP(TAKE_OFF_MAP));
@@ -334,7 +345,7 @@ public class FlightTelemetry {
                 return Constants.mediumWTCDescendAltitudeToNoiseDb;
             }
         }
-        return Collections.emptySortedMap();
+        return emptySortedMap();
     }
 
     /**
@@ -343,7 +354,7 @@ public class FlightTelemetry {
      * @param entry contains the altitude and results from the linear trend calculation.
      * @return an entry whose key is the altitude and value is the aircraft object which contains the vertical direction.
      */
-    private static Entry<Long, Aircraft> assignDirection(TimestampedEntry<Long, Tuple2<List<Aircraft>,Double>> entry) {
+    private static Entry<Long, Aircraft> assignDirection(TimestampedEntry<Long, Tuple2<List<Aircraft>, Double>> entry) {
         // unpack the results
         List<Aircraft> aircraftList = entry.getValue().f0();
         Aircraft aircraft = aircraftList.get(0);

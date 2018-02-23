@@ -3,21 +3,20 @@ package com.hazelcast.jet.demos.market.data.analyzer;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.Pipeline;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 
 @Component
 public class CommandListener implements EntryAddedListener<String, List<String>>, EntryUpdatedListener<String, List<String>> {
 
-	private static Logger log = LoggerFactory.getLogger(CommandListener.class);
+    private static Logger log = LoggerFactory.getLogger(CommandListener.class);
 
     @Autowired
     private JetInstance jetInstance;
