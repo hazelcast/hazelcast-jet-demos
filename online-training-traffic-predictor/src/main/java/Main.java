@@ -17,13 +17,15 @@
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -34,12 +36,12 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
@@ -47,6 +49,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -79,7 +82,7 @@ public class Main {
 
     private static DAG buildDAG(Path sourceFile, String targetDirectory) {
         DAG dag = new DAG();
-        WindowDefinition windowDef = slidingWindowDef(MINUTES.toMillis(120), MINUTES.toMillis(15));
+        SlidingWindowDef windowDef = WindowDefinition.sliding(MINUTES.toMillis(120), MINUTES.toMillis(15));
 
         Vertex source = dag.newVertex("source",
                 readFilesP(
@@ -93,14 +96,16 @@ public class Main {
 
                         })).localParallelism(1);
         Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(wmGenParams(
-                CarCount::getTime, withFixedLag(MINUTES.toMillis(300)), emitByFrame(windowDef), -1
+                CarCount::getTime, limitingLag(MINUTES.toMillis(300)), emitByFrame(windowDef.toSlidingWindowPolicy()), -1
         ))).localParallelism(1);
+        DistributedFunction<CarCount, String> keyFn = CarCount::getLocation;
+        DistributedToLongFunction<CarCount> timestampFn = CarCount::getTime;
         Vertex calcTrend = dag.newVertex("calcTrend", aggregateToSlidingWindowP(
-                CarCount::getLocation,
-                CarCount::getTime,
-                TimestampKind.EVENT,
-                windowDef,
-                AggregateOperations.linearTrend(CarCount::getTime, CarCount::getCount)
+                singletonList(keyFn),
+                singletonList(timestampFn), TimestampKind.EVENT,
+                windowDef.toSlidingWindowPolicy(),
+                linearTrend(CarCount::getTime, CarCount::getCount),
+                TimestampedEntry::new
         ));
         Vertex mapTrend = dag.newVertex("mapTrend", mapP((TimestampedEntry<String, Double> en) ->
                 entry(new TrendKey(en.getKey(), en.getTimestamp()), en.getValue())));

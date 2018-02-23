@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import com.hazelcast.jet.ComputeStage;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Pipeline;
-import com.hazelcast.jet.Sinks;
-import com.hazelcast.jet.Sources;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.IStreamMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -99,10 +99,11 @@ public class MarkovChainGenerator {
 
     private static Pipeline createPipeline() {
         Pipeline p = Pipeline.create();
-        ComputeStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
+        BatchStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
         Pattern twoWords = Pattern.compile("(\\.|\\w+)\\s(\\.|\\w+)");
         lines.flatMap(e -> traverseMatcher(twoWords.matcher(e.toLowerCase()), m -> tuple2(m.group(1), m.group(2))))
-             .groupBy(Tuple2::f0, buildAggregateOp())
+             .groupingKey(Tuple2::f0)
+             .aggregate(buildAggregateOp())
              .drainTo(Sinks.map("stateTransitions"));
         return p;
     }

@@ -5,10 +5,10 @@ import com.hazelcast.com.eclipsesource.json.Json;
 import com.hazelcast.com.eclipsesource.json.JsonArray;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.com.eclipsesource.json.JsonValue;
-import com.hazelcast.jet.Source;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.util.ExceptionUtil;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -19,17 +19,17 @@ import java.util.List;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 
-import static com.hazelcast.jet.Sources.fromProcessor;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.pipeline.Sources.streamFromProcessor;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.util.stream.Collectors.toList;
 
 /**
  * Polls the <a href="https://www.adsbexchange.com">ADS-B Exchange</a> HTTP API
  * for flight data. The API will be polled every {@code pollIntervalMillis} milliseconds.
- *
+ * <p>
  * After a successful poll, this source filters out aircrafts which are missing registration number
  * and position timestamp. It will also records the latest position timestamp of the aircrafts so if
  * there are no update for an aircraft it will not be emitted from this source.
@@ -50,7 +50,7 @@ public class FlightDataSource extends AbstractProcessor {
             throw ExceptionUtil.rethrow(e);
         }
         this.intervalMillis = pollIntervalMillis;
-    }              
+    }
 
     @Override
     public boolean complete() {
@@ -125,8 +125,8 @@ public class FlightDataSource extends AbstractProcessor {
         return dontParallelize(() -> new FlightDataSource(url, intervalMillis));
     }
 
-    public static Source<Aircraft> streamAircraft(String url, long intervalMillis) {
-        return fromProcessor("streamAircraft", streamAircraftP(url, intervalMillis));
+    public static StreamSource<Aircraft> streamAircraft(String url, long intervalMillis) {
+        return  streamFromProcessor("streamAircraft", streamAircraftP(url, intervalMillis));
     }
 
 }

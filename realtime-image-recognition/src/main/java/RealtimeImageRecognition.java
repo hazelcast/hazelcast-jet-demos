@@ -4,10 +4,12 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.pipeline.TumblingWindowDef;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map.Entry;
@@ -23,6 +25,7 @@ import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
+import static java.util.Collections.singletonList;
 
 /**
  * An application which uses webcam frame stream as input and classifies those frames
@@ -56,32 +59,34 @@ public class RealtimeImageRecognition {
         Vertex webcamSource = dag.newVertex("webcam source", WebcamSource.webcam());
         Vertex classifierVertex = dag.newVertex("classifier", of(() -> new ClassifierProcessor(modelPath)));
 
-        WindowDefinition tumbling = WindowDefinition.tumblingWindowDef(1000);
+        TumblingWindowDef tumbling = WindowDefinition.tumbling(1000);
         DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
                 (DistributedToLongFunction<TimestampedEntry>) TimestampedEntry::getTimestamp,
                 limitingTimestampAndWallClockLag(500, 500),
-                emitByFrame(tumbling),
+                emitByFrame(tumbling.toSlidingWindowPolicy()),
                 60000L
         ));
         Vertex insertWm = dag.newVertex("insertWm", insertWMP);
 
         Vertex localMaxScore = dag.newVertex("localMaxScore", accumulateByFrameP(
-                (TimestampedEntry<SerializableBufferedImage, Entry<String, Double>> input) -> "MAX_SCORE",
-                TimestampedEntry::getTimestamp,
+                singletonList((DistributedFunction<TimestampedEntry, String>) input -> "MAX_SCORE"),
+                singletonList((DistributedToLongFunction<TimestampedEntry>) TimestampedEntry::getTimestamp),
                 TimestampKind.EVENT,
-                tumbling,
+                tumbling.toSlidingWindowPolicy(),
                 maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input) -> {
                             Entry<String, Double> maxScoredCategory = input.getValue();
                             return maxScoredCategory.getValue();
                         })
-                ))).localParallelism(1);
+                ))
+        ).localParallelism(1);
         Vertex globalMaxScore = dag.newVertex("globalMaxScore", combineToSlidingWindowP(
-                tumbling,
+                tumbling.toSlidingWindowPolicy(),
                 maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input) -> {
                             Entry<String, Double> maxScoredCategory = input.getValue();
                             return maxScoredCategory.getValue();
                         })
-                ))).localParallelism(1);
+                ),
+                TimestampedEntry::new)).localParallelism(1);
 
         Vertex guiSink = dag.newVertex("gui", peekInputP(GUISink.sink()));
 
