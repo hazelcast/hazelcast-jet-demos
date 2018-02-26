@@ -14,7 +14,6 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<hazelcast-jet.version>0.6-SNAPSHOT</hazelcast-jet.version>
 		<java.version>1.8</java.version>
 		<kafka_2.11.version>1.0.0</kafka_2.11.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

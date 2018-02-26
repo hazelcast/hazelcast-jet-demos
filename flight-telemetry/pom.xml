@@ -59,11 +59,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>0.6-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.python</groupId>
             <artifactId>jython</artifactId>
             <version>2.7.1b3</version>

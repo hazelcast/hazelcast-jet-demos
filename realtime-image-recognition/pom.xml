@@ -76,11 +76,6 @@
             <artifactId>boofcv-WebcamCapture</artifactId>
             <version>0.28</version>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>0.6-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <repositories>

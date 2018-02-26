@@ -10,6 +10,7 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 
+    <name>Markov Chain Generator</name>
     <artifactId>markov-chain-generator</artifactId>
     <version>0.1-SNAPSHOT</version>
     <build>
@@ -35,11 +36,6 @@
     <repositories>
     </repositories>
     <dependencies>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>0.6-SNAPSHOT</version>
-        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

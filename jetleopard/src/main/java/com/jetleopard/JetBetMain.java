@@ -1,39 +1,45 @@
 package com.jetleopard;
 
-import com.betleopard.domain.Horse;
-import com.betleopard.domain.Event;
-import com.betleopard.domain.Race;
-import com.betleopard.domain.Bet;
-import com.betleopard.domain.CentralFactory;
-import com.betleopard.domain.User;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.betleopard.JSONSerializable;
 import com.betleopard.Utils;
+import com.betleopard.domain.Bet;
+import com.betleopard.domain.CentralFactory;
+import com.betleopard.domain.Event;
+import com.betleopard.domain.Horse;
+import com.betleopard.domain.Race;
+import com.betleopard.domain.User;
 import com.betleopard.hazelcast.HazelcastFactory;
 import com.betleopard.hazelcast.HazelcastHorseFactory;
 import com.betleopard.hazelcast.RandomSimulator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-
-import com.hazelcast.jet.*;
-
-import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple3;
-import static com.hazelcast.jet.Traversers.traverseStream;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JetConfig;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-
-import java.util.*;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import static java.util.function.Function.identity;
 import java.util.stream.Collectors;
+
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static java.util.function.Function.identity;
 
 /**
  * The main example driver class. Uses both Hazelcast Jet backed by IMDG to perform
@@ -90,7 +96,7 @@ public final class JetBetMain implements RandomSimulator {
     }
 
     /**
-     * Main run loop 
+     * Main run loop
      */
     public void run() {
         while (!shutdown) {
@@ -110,26 +116,26 @@ public final class JetBetMain implements RandomSimulator {
 
     /**
      * Helper method to construct the pipeline for the job
-     * 
+     *
      * @return the pipeline for the real-time analysis
      */
     public static Pipeline buildPipeline() {
         final Pipeline pipeline = Pipeline.create();
 
         // Draw users from the Hazelcast IMDG source
-        ComputeStage<User> users = pipeline.drawFrom(Sources.<Long, User, User>map(USER_ID, e -> true, Entry::getValue));
+        BatchStage<User> users = pipeline.drawFrom(Sources.<User, Long, User>map(USER_ID, e -> true, Entry::getValue));
 
         // All bet legs which are single
-        ComputeStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
+        BatchStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
                 user.getKnownBets().stream()
                     .filter(Bet::single)
                     .flatMap(bet -> bet.getLegs().stream().map(leg -> tuple3(leg.getRace(), leg.getBacking(), bet)))
-            )
+                )
         );
 
         // Find for each race the projected loss if each horse was to win
-        ComputeStage<Entry<Race, Map<Horse, Double>>> betsByRace = bets.groupBy(
-                Tuple3::f0, AggregateOperations.toMap(
+        BatchStage<Entry<Race, Map<Horse, Double>>> betsByRace = bets.groupingKey(Tuple3::f0).aggregate(
+                AggregateOperations.toMap(
                         Tuple3::f1,
                         t -> t.f2().projectedPayout(t.f1()), // payout if backed horse was to win
                         (l, r) -> l + r
@@ -144,15 +150,15 @@ public final class JetBetMain implements RandomSimulator {
 
     /**
      * Pick the largest exposure from a input map.
-     * 
+     *
      * @param exposures exposed amount per horse
      * @return the maximal horse-amount pair
      */
     public static final Tuple2<Horse, Double> getMaxExposureAsTuple(Map<Horse, Double> exposures) {
         return exposures.entrySet().stream()
-                .max(Entry.comparingByValue())
-                .map(e -> tuple2(e.getKey(), e.getValue()))
-                .get();
+                        .max(Entry.comparingByValue())
+                        .map(e -> tuple2(e.getKey(), e.getValue()))
+                        .get();
     }
 
     /**
@@ -163,25 +169,25 @@ public final class JetBetMain implements RandomSimulator {
         final IMap<Race, Map<Horse, Double>> risks = jet.getHazelcastInstance().getMap(WORST_ID);
 
         final Double apocalypse = risks.entrySet().stream()
-                .map(e -> tuple2(e.getKey(), getMaxExposureAsTuple(e.getValue())))
-                .sorted((t1, t2) -> t1.f1().f1().compareTo(t2.f1().f1()))
-                .limit(20)
-                
-                // Output "perfect storm" combination of top 20 results that caused the losses
-                .peek(t -> System.out.println("Horse: " + t.f1().f0().getName() + " ; Losses: " + t.f1().f1()))
-                
-                // Finally output the maximum possible loss
-                .map(tr -> tr.f1())
-                .map(Entry<Horse, Double>::getValue)
-                .reduce(0.0, (ra, rb) -> ra + rb);
+                                       .map(e -> tuple2(e.getKey(), getMaxExposureAsTuple(e.getValue())))
+                                       .sorted((t1, t2) -> t1.f1().f1().compareTo(t2.f1().f1()))
+                                       .limit(20)
+
+                                       // Output "perfect storm" combination of top 20 results that caused the losses
+                                       .peek(t -> System.out.println("Horse: " + t.f1().f0().getName() + " ; Losses: " + t.f1().f1()))
+
+                                       // Finally output the maximum possible loss
+                                       .map(tr -> tr.f1())
+                                       .map(Entry<Horse, Double>::getValue)
+                                       .reduce(0.0, (ra, rb) -> ra + rb);
 
         System.out.println("Worst case total losses: " + apocalypse);
     }
 
     /**
-     * Loads in historical data and stores in Hazelcast IMDG. This is mostly to 
+     * Loads in historical data and stores in Hazelcast IMDG. This is mostly to
      * provide a source of horses for the bet simulation.
-     * 
+     *
      * @throws IOException some form of IO problem was encountered when opening the historical data
      */
     public void loadHistoricalRaces() throws IOException {
@@ -191,15 +197,15 @@ public final class JetBetMain implements RandomSimulator {
 
         final List<Event> events
                 = eventsText.stream()
-                .map(s -> JSONSerializable.parse(s, Event::parseBag))
-                .collect(Collectors.toList());
+                            .map(s -> JSONSerializable.parse(s, Event::parseBag))
+                            .collect(Collectors.toList());
 
         final HazelcastInstance client = jet.getHazelcastInstance();
 
         final Function<Event, Horse> fptp = raceEvent -> raceEvent.getRaces().get(0).getWinner().orElse(Horse.PALE);
         final Map<Event, Horse> winners
                 = events.stream()
-                .collect(Collectors.toMap(identity(), fptp));
+                        .collect(Collectors.toMap(identity(), fptp));
 
         final Map<Horse, List<Event>> inverted = new HashMap<>();
         for (Map.Entry<Event, Horse> entry : winners.entrySet()) {
@@ -218,12 +224,12 @@ public final class JetBetMain implements RandomSimulator {
         final Function<Map.Entry<Horse, List<Event>>, Integer> setCount = entry -> entry.getValue().size();
         final Map<Horse, Integer> withWinCount
                 = inverted.entrySet().stream()
-                .collect(Collectors.toMap(under1, setCount));
+                          .collect(Collectors.toMap(under1, setCount));
 
         final Map<Horse, Integer> multipleWinners
                 = withWinCount.entrySet().stream()
-                .filter(entry -> entry.getValue() > 1)
-                .collect(Collectors.toMap(under1, under2));
+                              .filter(entry -> entry.getValue() > 1)
+                              .collect(Collectors.toMap(under1, under2));
 
         final IMap<Horse, Integer> fromHC = client.getMap("winners");
         for (final Horse horse : multipleWinners.keySet()) {

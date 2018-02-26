@@ -1,34 +1,34 @@
 package com.jetleopard;
 
+import com.betleopard.JSONSerializable;
+import com.betleopard.domain.Bet;
+import com.betleopard.domain.Bet.BetBuilder;
+import com.betleopard.domain.CentralFactory;
 import com.betleopard.domain.Event;
 import com.betleopard.domain.Horse;
-import com.betleopard.domain.Bet;
-import com.betleopard.domain.User;
-import com.betleopard.domain.CentralFactory;
-import com.betleopard.domain.Race;
-import com.betleopard.domain.OddsType;
 import com.betleopard.domain.Leg;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.stream.IStreamMap;
-import static com.jetleopard.JetBetMain.WORST_ID;
-import com.betleopard.domain.Bet.BetBuilder;
+import com.betleopard.domain.OddsType;
+import com.betleopard.domain.Race;
+import com.betleopard.domain.User;
 import com.betleopard.hazelcast.HazelcastFactory;
 import com.betleopard.hazelcast.HazelcastHorseFactory;
-import com.betleopard.JSONSerializable;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetInstance;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import static java.time.temporal.TemporalAdjusters.next;
 import java.util.Map;
-import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.jetleopard.JetBetMain.WORST_ID;
+import static java.time.temporal.TemporalAdjusters.next;
+import static org.junit.Assert.assertNotNull;
+
 /**
- *
  * @author ben
  */
 public class TestJetMain {
@@ -37,7 +37,7 @@ public class TestJetMain {
     private JetInstance jet;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         jet = Jet.newJetInstance();
         client = jet.getHazelcastInstance();
 
@@ -49,13 +49,13 @@ public class TestJetMain {
     }
 
     @Test
-    public void testBuildDAG() throws Exception {
+    public void testBuildDAG() {
         User u = makeUser();
         Bet b = makeBet();
         u.addBet(b);
         assertNotNull(b);
         try {
-            IStreamMap<String, ?> ism = jet.getMap(WORST_ID);
+            IMapJet<String, ?> ism = jet.getMap(WORST_ID);
             System.out.println(ism);
             System.out.println("Size: " + ism.size());
             for (String s : ism.keySet()) {

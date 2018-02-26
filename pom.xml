@@ -21,6 +21,18 @@
         <module>online-training-traffic-predictor</module>
     </modules>
 
+    <properties>
+        <hazelcast-jet.version>0.6-SNAPSHOT</hazelcast-jet.version>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet</artifactId>
+            <version>${hazelcast-jet.version}</version>
+        </dependency>
+    </dependencies>
+
     <repositories>
         <repository>
             <id>snapshot-repository</id>
