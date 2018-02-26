@@ -64,7 +64,7 @@ for Scala 2.11 not 2.12, as the former is more widespread.
 
 `KAFKA_HOME` environment variable should be set to where Kafka is installed. 
 You can use the command  `export KAFKA_HOME=<install dir>` to set the variable. 
-There are five command scripts in `src/main/scripts` to run in this sequence.
+There are five command scripts in `bin` to run in this sequence.
 
 1. `start-zookeeper.sh` 
 This script will start a single Zookeeper configuration server, running on port 2181 on the current machine.
