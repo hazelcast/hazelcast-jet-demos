@@ -1,35 +1,41 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import boofcv.abst.scene.ImageClassifier;
 import boofcv.abst.scene.ImageClassifier.Score;
 import boofcv.deepboof.ImageClassifierVggCifar10;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.Planar;
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.impl.pipeline.JetEvent;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
+import static com.hazelcast.jet.Traverser.over;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
 
 /**
- * date: 1/23/18
- * author: emindemirci
+ * Processor implementation which does the actual classification of the images
+ * by using the pre-trained model.
  */
 public class ClassifierProcessor extends AbstractProcessor {
 
@@ -50,9 +56,9 @@ public class ClassifierProcessor extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) throws Exception {
-        TimestampedEntry entry = (TimestampedEntry) item;
-        SerializableBufferedImage serializableBufferedImage = (SerializableBufferedImage) entry.getKey();
+    protected boolean tryProcess(int ordinal, Object item) {
+        JetEvent<SerializableBufferedImage> event = (JetEvent<SerializableBufferedImage>) item;
+        SerializableBufferedImage serializableBufferedImage = event.payload();
         BufferedImage image = serializableBufferedImage.getImage();
 
         Planar<GrayF32> planar = new Planar<>(GrayF32.class, image.getWidth(), image.getHeight(), 3);
@@ -65,49 +71,7 @@ public class ClassifierProcessor extends AbstractProcessor {
                 .stream()
                 .max(Comparator.comparing(Entry::getValue))
                 .get();
-        return emitFromTraverser(Traverser.over(new TimestampedEntry<>(entry.getTimestamp(), serializableBufferedImage, maxScoredCategory)));
-    }
-
-    private void unzip(String zipFilePath, String destDir) {
-        try (ZipFile file = new ZipFile(zipFilePath)) {
-            FileSystem fileSystem = FileSystems.getDefault();
-            //Get file entries
-            Enumeration<? extends ZipEntry> entries = file.entries();
-
-            //We will unzip files in this folder
-            String uncompressedDirectory = destDir + "/";
-            Path path = fileSystem.getPath(uncompressedDirectory);
-            if (path.toFile().exists()) {
-                return;
-            }
-            Files.createDirectory(path);
-
-            //Iterate over entries
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                //If directory then create a new directory in uncompressed folder
-                if (entry.isDirectory()) {
-                    System.out.println("Creating Directory:" + uncompressedDirectory + entry.getName());
-                    Files.createDirectories(fileSystem.getPath(uncompressedDirectory + entry.getName()));
-                }
-                //Else create the file
-                else {
-                    InputStream is = file.getInputStream(entry);
-                    BufferedInputStream bis = new BufferedInputStream(is);
-                    String uncompressedFileName = uncompressedDirectory + entry.getName();
-                    Path uncompressedFilePath = fileSystem.getPath(uncompressedFileName);
-                    Files.createFile(uncompressedFilePath);
-                    FileOutputStream fileOutput = new FileOutputStream(uncompressedFileName);
-                    while (bis.available() > 0) {
-                        fileOutput.write(bis.read());
-                    }
-                    fileOutput.close();
-                    System.out.println("Written :" + entry.getName());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return emitFromTraverser(over(jetEvent(entry(serializableBufferedImage, maxScoredCategory), event.timestamp())));
     }
 
 }

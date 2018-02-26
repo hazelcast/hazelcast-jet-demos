@@ -1,31 +1,29 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.pipeline.TumblingWindowDef;
-import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.pipeline.Pipeline;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.ProcessorSupplier.of;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingTimestampAndWallClockLag;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
-import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
-import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
-import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
-import static java.util.Collections.singletonList;
+import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 
 /**
  * An application which uses webcam frame stream as input and classifies those frames
@@ -42,60 +40,26 @@ public class RealtimeImageRecognition {
     public static void main(String[] args) {
         Path modelPath = Paths.get(args[0]).toAbsolutePath();
 
-        JetInstance jet = Jet.newJetInstance();
+        Pipeline pipeline = buildPipeline(modelPath.toString());
 
-        DAG dag = buildDAG(modelPath.toString());
+        JetInstance jet = Jet.newJetInstance();
         try {
-            jet.newJob(dag).join();
+            jet.newJob(pipeline).join();
         } finally {
             Jet.shutdownAll();
         }
     }
 
-
-    private static DAG buildDAG(String modelPath) {
-        DAG dag = new DAG();
-
-        Vertex webcamSource = dag.newVertex("webcam source", WebcamSource.webcam());
-        Vertex classifierVertex = dag.newVertex("classifier", of(() -> new ClassifierProcessor(modelPath)));
-
-        TumblingWindowDef tumbling = WindowDefinition.tumbling(1000);
-        DistributedSupplier<Processor> insertWMP = insertWatermarksP(wmGenParams(
-                (DistributedToLongFunction<TimestampedEntry>) TimestampedEntry::getTimestamp,
-                limitingTimestampAndWallClockLag(500, 500),
-                emitByFrame(tumbling.toSlidingWindowPolicy()),
-                60000L
-        ));
-        Vertex insertWm = dag.newVertex("insertWm", insertWMP);
-
-        Vertex localMaxScore = dag.newVertex("localMaxScore", accumulateByFrameP(
-                singletonList((DistributedFunction<TimestampedEntry, String>) input -> "MAX_SCORE"),
-                singletonList((DistributedToLongFunction<TimestampedEntry>) TimestampedEntry::getTimestamp),
-                TimestampKind.EVENT,
-                tumbling.toSlidingWindowPolicy(),
-                maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input) -> {
-                            Entry<String, Double> maxScoredCategory = input.getValue();
-                            return maxScoredCategory.getValue();
-                        })
-                ))
-        ).localParallelism(1);
-        Vertex globalMaxScore = dag.newVertex("globalMaxScore", combineToSlidingWindowP(
-                tumbling.toSlidingWindowPolicy(),
-                maxBy(comparingDouble((Entry<SerializableBufferedImage, Entry<String, Double>> input) -> {
-                            Entry<String, Double> maxScoredCategory = input.getValue();
-                            return maxScoredCategory.getValue();
-                        })
-                ),
-                TimestampedEntry::new)).localParallelism(1);
-
-        Vertex guiSink = dag.newVertex("gui", peekInputP(GUISink.sink()));
-
-        dag.edge(between(webcamSource, classifierVertex))
-           .edge(between(classifierVertex, insertWm))
-           .edge(between(insertWm, localMaxScore).partitioned(o -> "MAX_SCORE"))
-           .edge(between(localMaxScore, globalMaxScore).partitioned(input -> "gui").distributed())
-           .edge(between(globalMaxScore, guiSink).partitioned(input -> "gui"));
-        return dag;
+    private static Pipeline buildPipeline(String modelPath) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.drawFrom(WebcamSource.webcam())
+                .addTimestamps()
+                .<Entry<SerializableBufferedImage, Entry<String, Double>>>
+                        customTransform("classifier", () -> new ClassifierProcessor(modelPath))
+                .window(tumbling(1000))
+                .aggregate(maxBy(comparingDouble(e -> e.getValue().getValue())))
+                .drainTo(GUISink.sink());
+        return pipeline;
     }
 
 }
