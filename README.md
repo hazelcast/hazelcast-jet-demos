@@ -7,7 +7,7 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 * [Real-time Image Recognition](./realtime-image-recognition) - Recognizes images present in the webcam video input with a model trained with CIFAR-10 dataset.
 
-* [Cryptocurrency Realtime Trend](./cryptocurrency-realtime-trend) - Twitter and Reddit content is analyzed in real time to calculate cryptocurrency trend list with popularity index.                                                                   
+* [Cryptocurrency Realtime Trend](./cryptocurrency-realtime-trend) - Twitter content is analyzed in real time to calculate cryptocurrency trend list with popularity index.                                                                   
 * [Online Training Traffic Predictor](./online-training-traffic-predictor) - Continuously computes linear regression models from current traffic. Uses the trend from week ago to predict traffic now.
 
 * [Jet Leopard](./jetleopard) - This is a simple example of a sports book and is a good introduction to the Pipeline API. It also uses Hazelcast IMDG as an in-memory data store.
