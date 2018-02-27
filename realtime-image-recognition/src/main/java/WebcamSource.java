@@ -21,19 +21,12 @@ import com.github.sarxos.webcam.Webcam;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.nio.Address;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import java.awt.image.BufferedImage;
 import java.io.Closeable;
-import java.util.List;
 
-import static java.util.Collections.singletonList;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
 /**
  * A source that emits the frames captured from webcam stream.
@@ -82,46 +75,15 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
 
 
     public static StreamSource<SerializableBufferedImage> webcam() {
-        return Sources.streamFromProcessor("webcam", new MetaSupplier());
-    }
-
-    public static ProcessorMetaSupplier metaSupplier() {
-        return new MetaSupplier();
+        return Sources.streamFromProcessor("webcam",
+                forceTotalParallelismOne(new CloseableProcessorSupplier<>(WebcamSource::new))
+        );
     }
 
     @Override
     public void close() {
         if (webcam != null) {
             webcam.close();
-        }
-    }
-
-
-    private static class MetaSupplier implements ProcessorMetaSupplier {
-
-        private Address ownerAddress;
-
-        @Override
-        public int preferredLocalParallelism() {
-            return 1;
-        }
-
-        @Override
-        public void init(Context context) {
-            String partitionKey = StringPartitioningStrategy.getPartitionKey("webcam");
-            ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
-                                  .getPartition(partitionKey).getOwner().getAddress();
-        }
-
-        @Override
-        public DistributedFunction<Address, ProcessorSupplier> get(List<Address> addresses) {
-            return address -> {
-                if (address.equals(ownerAddress)) {
-                    return new CloseableProcessorSupplier<>(WebcamSource::new);
-                }
-                // return empty producer on all other nodes
-                return c -> singletonList(Processors.noopP().get());
-            };
         }
     }
 }

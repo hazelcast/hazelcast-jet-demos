@@ -18,21 +18,16 @@ import boofcv.abst.scene.ImageClassifier.Score;
 import boofcv.gui.ImageClassificationPanel;
 import boofcv.gui.image.ShowImages;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedItem;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.nio.Address;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import java.awt.*;
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Map.Entry;
 import javax.swing.*;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static java.util.Collections.singletonList;
 
 /**
@@ -84,40 +79,6 @@ public class GUISink extends AbstractProcessor {
     }
 
     public static Sink<TimestampedItem> sink() {
-        return Sinks.fromProcessor("guiSink", new MetaSupplier());
+        return Sinks.fromProcessor("guiSink", forceTotalParallelismOne(of(GUISink::new)));
     }
-
-    public static ProcessorMetaSupplier metaSupplier() {
-        return new MetaSupplier();
-    }
-
-
-    private static class MetaSupplier implements ProcessorMetaSupplier {
-
-        private Address ownerAddress;
-
-        @Override
-        public int preferredLocalParallelism() {
-            return 1;
-        }
-
-        @Override
-        public void init(Context context) {
-            String partitionKey = StringPartitioningStrategy.getPartitionKey("gui");
-            ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
-                                  .getPartition(partitionKey).getOwner().getAddress();
-        }
-
-        @Override
-        public DistributedFunction<Address, ProcessorSupplier> get(List<Address> addresses) {
-            return address -> {
-                if (address.equals(ownerAddress)) {
-                    return ProcessorSupplier.of(GUISink::new);
-                }
-                // return empty producer on all other nodes
-                return c -> singletonList(Processors.noopP().get());
-            };
-        }
-    }
-
 }

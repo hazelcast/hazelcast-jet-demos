@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 import org.json.JSONObject;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 
 public class StreamTwitterP extends AbstractProcessor implements Closeable {
 
@@ -97,7 +97,7 @@ public class StreamTwitterP extends AbstractProcessor implements Closeable {
     }
 
     public static ProcessorMetaSupplier streamTwitterP(Properties properties, List<String> terms) {
-        return dontParallelize(new CloseableProcessorSupplier<>(() -> new StreamTwitterP(properties, terms)));
+        return preferLocalParallelismOne(new CloseableProcessorSupplier<>(() -> new StreamTwitterP(properties, terms)));
     }
 
     public static StreamSource<String> streamTwitter(Properties properties, List<String> terms) {

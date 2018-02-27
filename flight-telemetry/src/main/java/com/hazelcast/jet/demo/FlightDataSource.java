@@ -20,7 +20,8 @@ import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.pipeline.Sources.streamFromProcessor;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -122,7 +123,7 @@ public class FlightDataSource extends AbstractProcessor {
     }
 
     public static ProcessorMetaSupplier streamAircraftP(String url, long intervalMillis) {
-        return dontParallelize(() -> new FlightDataSource(url, intervalMillis));
+        return forceTotalParallelismOne(of(() -> new FlightDataSource(url, intervalMillis)));
     }
 
     public static StreamSource<Aircraft> streamAircraft(String url, long intervalMillis) {
