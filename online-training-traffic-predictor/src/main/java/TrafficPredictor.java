@@ -33,7 +33,7 @@ import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
-import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.pipeline.Sources.files;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;

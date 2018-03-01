@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Traverser.over;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 
 /**
  * Processor implementation which does the actual classification of the images

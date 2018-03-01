@@ -4,11 +4,12 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.pipeline.JetEvent;
 import edu.stanford.nlp.util.CoreMap;
+
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
-import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 
