@@ -28,7 +28,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>RealtimeImageRecognition</mainClass>
+                    <mainClass>RealTimeImageRecognition</mainClass>
                     <arguments>
                         <argument>likevgg_cifar10</argument>
                     </arguments>
@@ -47,7 +47,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>RealtimeImageRecognition</mainClass>
+                                    <mainClass>RealTimeImageRecognition</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
