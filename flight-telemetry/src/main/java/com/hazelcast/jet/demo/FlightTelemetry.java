@@ -48,60 +48,59 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The DAG used to model Flight Telemetry calculations can be seen below :
- *
- *                                                  ┌──────────────────┐
- *                                                  │Flight Data Source│
- *                                                  └─────────┬────────┘
- *                                                            │
- *                                                            v
- *                                           ┌─────────────────────────────────┐
- *                                           │Filter Aircraft  in Low Altitudes│
- *                                           └────────────────┬────────────────┘
- *                                                            │
- *                                                            v
- *                                                  ┌───────────────────┐
- *                                                  │Assign Airport Info│
- *                                                  └─────────┬─────────┘
- *                                                            │
- *                                                            v
- *                                                   ┌─────────────────┐
- *                                                   │Insert Watermarks│
- *                                                   └────────┬────────┘
- *                                                            │
- *                                                            v
- *                                          ┌───────────────────────────────────┐
- *                                          │Calculate Linear Trend of Altitudes│
- *                                          └─────────────────┬─────────────────┘
- *                                                            │
- *                                                            v
- *                                               ┌─────────────────────────┐
- *                                               │Assign Vertical Direction│
- *                                               └────┬────┬──┬───┬───┬────┘
- *                                                    │    │  │   │   │
- *                        ┌───────────────────────────┘    │  │   │   └──────────────────────────┐
- *                        │                                │  │   └─────────┐                    │
- *                        │                                │  └─────────┐   │                    │
- *                        v                                v            │   │                    │
- *             ┌────────────────────┐          ┌──────────────────────┐ │   │                    │
- *             │Enrich with C02 Info│          │Enrich with Noise Info│ │   │                    │
- *             └──┬─────────────────┘          └───────────┬──────────┘ │   │                    │
- *                │                                        │            │   │                    │
- *                │                          ┌─────────────┘            │   │                    │
- *                │                          │          ┌───────────────┘   │                    │
- *                v                          v          │                   v                    v
- *┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
- *│Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircraft │ │Filter Ascending Aircraft │
- *└──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
- *               │                       │              │               │                         │
- *               │  ┌────────────────────┘              │               │                         │
- *               │  │  ┌────────────────────────────────┘               │                         │
- *               │  │  │                                                │                         │
- *               │  │  │                                                │                         │
- *               v  v  v                                                v                         v
- *           ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
- *           │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
- *           └─────────────┘                               └──────────────────────┘     └────────────────────────┘
- *
+ * <p>
+ * ┌──────────────────┐
+ * │Flight Data Source│
+ * └─────────┬────────┘
+ * │
+ * v
+ * ┌─────────────────────────────────┐
+ * │Filter Aircraft  in Low Altitudes│
+ * └────────────────┬────────────────┘
+ * │
+ * v
+ * ┌───────────────────┐
+ * │Assign Airport Info│
+ * └─────────┬─────────┘
+ * │
+ * v
+ * ┌─────────────────┐
+ * │Insert Watermarks│
+ * └────────┬────────┘
+ * │
+ * v
+ * ┌───────────────────────────────────┐
+ * │Calculate Linear Trend of Altitudes│
+ * └─────────────────┬─────────────────┘
+ * │
+ * v
+ * ┌─────────────────────────┐
+ * │Assign Vertical Direction│
+ * └────┬────┬──┬───┬───┬────┘
+ * │    │  │   │   │
+ * ┌───────────────────────────┘    │  │   │   └──────────────────────────┐
+ * │                                │  │   └─────────┐                    │
+ * │                                │  └─────────┐   │                    │
+ * v                                v            │   │                    │
+ * ┌────────────────────┐          ┌──────────────────────┐ │   │                    │
+ * │Enrich with C02 Info│          │Enrich with Noise Info│ │   │                    │
+ * └──┬─────────────────┘          └───────────┬──────────┘ │   │                    │
+ * │                                        │            │   │                    │
+ * │                          ┌─────────────┘            │   │                    │
+ * │                          │          ┌───────────────┘   │                    │
+ * v                          v          │                   v                    v
+ * ┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
+ * │Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircraft │ │Filter Ascending Aircraft │
+ * └──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
+ * │                       │              │               │                         │
+ * │  ┌────────────────────┘              │               │                         │
+ * │  │  ┌────────────────────────────────┘               │                         │
+ * │  │  │                                                │                         │
+ * │  │  │                                                │                         │
+ * v  v  v                                                v                         v
+ * ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
+ * │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
+ * └─────────────┘                               └──────────────────────┘     └────────────────────────┘
  */
 public class FlightTelemetry {
 
@@ -154,28 +153,28 @@ public class FlightTelemetry {
                 .filter(e -> e.getValue().verticalDirection == ASCENDING);
 
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
-        takingOffFlights.drainTo(graphiteSink); // (aircraft_id, aircraft)
 
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
                 .filter(e -> e.getValue().verticalDirection == DESCENDING);
 
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
-        landingFlights.drainTo(graphiteSink); // (aircraft_id, aircraft)
 
-        flights
+        StreamStage<TimestampedEntry<String, Entry<Aircraft, Integer>>> maxNoise = flights
                 .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(comparingInt(Entry::getValue)))
-                .drainTo(graphiteSink); // (airport, max_noise)
+                .aggregate(maxBy(comparingInt(Entry::getValue)));
+        // (airport, max_noise)
 
-        flights
+        StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
                 .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
                 .window(slidingWindow)
                 .groupingKey(entry -> entry.getKey().getAirport() + "_C02_EMISSION")
-                .aggregate(summingDouble(Entry::getValue))
-                .drainTo(graphiteSink); // (airport, total_co2)
+                .aggregate(summingDouble(Entry::getValue));
+        // (airport, total_co2)
 
+
+        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
         return p;
     }
 
