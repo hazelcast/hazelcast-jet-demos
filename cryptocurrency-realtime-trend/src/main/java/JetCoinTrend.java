@@ -1,11 +1,16 @@
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
+import com.hazelcast.jet.pipeline.TransformContext;
+import edu.stanford.nlp.util.CoreMap;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,6 +29,8 @@ import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class JetCoinTrend {
@@ -64,31 +71,43 @@ public class JetCoinTrend {
         Properties properties = loadProperties();
         List<String> terms = loadTerms();
 
-        StreamStage<Entry<String, Double>> tweetsWithSentiment = pipeline
+        StreamStageWithGrouping<Entry<String, Double>, String> tweetsWithSentiment = pipeline
                 .drawFrom(StreamTwitterP.streamTwitter(properties, terms))
                 .addTimestamps()
                 .flatMap(JetCoinTrend::flatMapToRelevant)
-                .customTransform("sentiment", SentimentProcessor::new);
+                .mapUsingContext(TransformContext.withCreate(jet -> new SentimentAnalyzer()),
+                        JetCoinTrend::calculateSentiment)
+                .groupingKey(entryKey());
 
         AggregateOperation1<Entry<String, Double>, ?, Tuple2<Double, Long>> aggrOp =
                 allOf(averagingDouble(Entry::getValue), counting());
 
         tweetsWithSentiment.window(sliding(30_000, 10_000))
-                           .groupingKey(entryKey())
                            .aggregate(aggrOp)
                            .drainTo(map(MAP_NAME_30_SECONDS));
 
         tweetsWithSentiment.window(sliding(60_000, 10_000))
-                           .groupingKey(entryKey())
                            .aggregate(aggrOp)
                            .drainTo(map(MAP_NAME_1_MINUTE));
 
         tweetsWithSentiment.window(sliding(300_000, 10_000))
-                           .groupingKey(entryKey())
                            .aggregate(aggrOp)
                            .drainTo(map(MAP_NAME_5_MINUTE));
 
         return pipeline;
+    }
+
+    @Nullable
+    private static Entry<String, Double> calculateSentiment(SentimentAnalyzer analyzer, Entry<String, String> entry) {
+        List<CoreMap> annotations = analyzer.getAnnotations(entry.getValue());
+        double sentimentType = analyzer.getSentimentClass(annotations);
+        double sentimentScore = analyzer.getScore(annotations, sentimentType);
+
+        double score = sentimentType * sentimentScore;
+        if (isNaN(score) || isInfinite(score)) {
+            return null;
+        }
+        return Util.entry(entry.getKey(), score);
     }
 
 
