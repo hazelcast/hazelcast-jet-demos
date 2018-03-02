@@ -1,5 +1,3 @@
-package common;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -7,7 +5,7 @@ import java.util.Map;
 
 public class CoinDefs {
 
-    public static Map<String, List<String>> COIN_MAP = new HashMap<>();
+    static Map<String, List<String>> COIN_MAP = new HashMap<>();
 
     static {
         COIN_MAP.put("BTC", Arrays.asList("bitcoin", "#btc", "#bitcoin"));

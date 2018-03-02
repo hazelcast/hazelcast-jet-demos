@@ -1,5 +1,3 @@
-package common;
-
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;

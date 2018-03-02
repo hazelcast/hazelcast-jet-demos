@@ -1,5 +1,3 @@
-package pipeline;
-
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -8,7 +6,6 @@ import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStage;
-import common.StreamTwitterP;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,7 +24,6 @@ import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static common.CoinDefs.COIN_MAP;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class JetCoinTrend {
@@ -99,8 +95,8 @@ public class JetCoinTrend {
     // returns a traverser which flat maps each tweet to (coin, tweet) pairs by finding coins relevant to this tweet
     private static Traverser<? extends Entry<String, String>> flatMapToRelevant(String text) {
         AppendableTraverser<Entry<String, String>> traverser = new AppendableTraverser<>(4);
-        for (String coin : COIN_MAP.keySet()) {
-            for (String keyword : COIN_MAP.get(coin)) {
+        for (String coin : CoinDefs.COIN_MAP.keySet()) {
+            for (String keyword : CoinDefs.COIN_MAP.get(coin)) {
                 if (text.contains(keyword)) {
                     traverser.append(entry(coin, text));
                 }
@@ -111,7 +107,7 @@ public class JetCoinTrend {
 
     private static List<String> loadTerms() {
         List<String> terms = new ArrayList<>();
-        COIN_MAP.forEach((key, value) -> {
+        CoinDefs.COIN_MAP.forEach((key, value) -> {
             terms.add(key);
             terms.addAll(value);
         });
@@ -121,7 +117,7 @@ public class JetCoinTrend {
     private static Properties loadProperties() {
         Properties tokens = new Properties();
         try {
-            tokens.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("twitter-security.properties"));
+            tokens.load(JetCoinTrend.class.getResourceAsStream("twitter-security.properties"));
         } catch (IOException e) {
             throw rethrow(e);
         }
