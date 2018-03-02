@@ -5,9 +5,9 @@ import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
-import com.hazelcast.jet.pipeline.TransformContext;
 import edu.stanford.nlp.util.CoreMap;
 import org.jetbrains.annotations.Nullable;
 
@@ -75,7 +75,7 @@ public class JetCoinTrend {
                 .drawFrom(StreamTwitterP.streamTwitter(properties, terms))
                 .addTimestamps()
                 .flatMap(JetCoinTrend::flatMapToRelevant)
-                .mapUsingContext(TransformContext.withCreate(jet -> new SentimentAnalyzer()),
+                .mapUsingContext(ContextFactory.withCreateFn(jet -> new SentimentAnalyzer()),
                         JetCoinTrend::calculateSentiment)
                 .groupingKey(entryKey());
 

@@ -21,8 +21,8 @@ import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.Planar;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.TransformContext;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -107,8 +107,8 @@ public class RealTimeImageRecognition {
         return entry(serializableBufferedImage, maxScoredCategory);
     }
 
-    private static TransformContext<ImageClassifierVggCifar10> classifierContext(String modelPath) {
-        return TransformContext.withCreate(jet -> {
+    private static ContextFactory<ImageClassifierVggCifar10> classifierContext(String modelPath) {
+        return ContextFactory.withCreateFn(jet -> {
             ImageClassifierVggCifar10 classifier = new ImageClassifierVggCifar10();
             try {
                 classifier.loadModel(new File(modelPath));

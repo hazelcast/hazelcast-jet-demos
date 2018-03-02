@@ -17,10 +17,10 @@
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.pipeline.ContextFactories;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.jet.pipeline.TransformContext;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -104,7 +104,7 @@ public class TrafficPredictor {
                 .drainTo(Sinks.map("trends"));
 
         carCounts
-                .mapUsingContext(TransformContext.withCreate(jet -> jet.<TrendKey, Double>getMap("trends")),
+                .mapUsingContext(ContextFactories.<TrendKey, Double>iMapContext("trends"),
                         (trendMap, cc) -> {
                             int[] counts = new int[NUM_PREDICTIONS];
                             double trend = 0.0;
@@ -163,12 +163,12 @@ public class TrafficPredictor {
         // time of the first prediction
         private final long time;
         // predictions, one for each minute
-        private final int[] counts;
+        private final int[] predictedCounts;
 
-        private Prediction(String location, long time, int[] counts) {
+        private Prediction(String location, long time, int[] predictedCounts) {
             this.location = location;
             this.time = time;
-            this.counts = counts;
+            this.predictedCounts = predictedCounts;
         }
 
         public String getLocation() {
@@ -179,8 +179,8 @@ public class TrafficPredictor {
             return time;
         }
 
-        public int[] getCounts() {
-            return counts;
+        public int[] getPredictedCounts() {
+            return predictedCounts;
         }
 
         @Override
@@ -188,7 +188,7 @@ public class TrafficPredictor {
             return "Prediction{" +
                     "location='" + location + '\'' +
                     ", time=" + toLocalDateTime(time) + " (" + time + ")" +
-                    ", counts=" + Arrays.toString(counts) +
+                    ", predictedCounts=" + Arrays.toString(predictedCounts) +
                     '}';
         }
     }
