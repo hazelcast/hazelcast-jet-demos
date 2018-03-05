@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.pipeline.ContextFactories;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -33,7 +33,6 @@ import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
-import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.pipeline.Sources.files;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
@@ -51,14 +50,24 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public class TrafficPredictor {
 
     private static final long GRANULARITY_STEP_MS = MINUTES.toMillis(15);
+    private static final int NUM_PREDICTIONS = 8;
 
     static {
         System.setProperty("hazelcast.multicast.group", "224.18.19.21");
     }
 
     public static void main(String[] args) {
+        if (args.length != 2) {
+            System.err.println("Missing command-line arguments: <input file> <output directory>");
+            System.exit(1);
+        }
+
         Path sourceFile = Paths.get(args[0]).toAbsolutePath();
-        final String targetDirectory = "predictions";
+        final String targetDirectory = args[1];
+        if (!Files.isReadable(sourceFile)) {
+            System.err.println("Source file does not exist or is not readable (" + sourceFile + ")");
+            System.exit(1);
+        }
 
         JetInstance instance = Jet.newJetInstance();
         Pipeline pipeline = buildPipeline(sourceFile, targetDirectory);
@@ -94,38 +103,23 @@ public class TrafficPredictor {
                         entry(new TrendKey(e.getKey(), e.getTimestamp()), e.getValue()))
                 .drainTo(Sinks.map("trends"));
 
-        carCounts.customTransform("useTrend", PredictionP::new)
-                 .drainTo(Sinks.files(targetDirectory));
+        carCounts
+                .mapUsingContext(ContextFactories.<TrendKey, Double>iMapContext("trends"),
+                        (trendMap, cc) -> {
+                            int[] counts = new int[NUM_PREDICTIONS];
+                            double trend = 0.0;
+                            for (int i = 0; i < NUM_PREDICTIONS; i++) {
+                                Double newTrend = trendMap.get(new TrendKey(cc.location, cc.time - DAYS.toMillis(7)));
+                                if (newTrend != null) {
+                                    trend = newTrend;
+                                }
+                                double prediction = cc.count + i * GRANULARITY_STEP_MS * trend;
+                                counts[i] = (int) Math.round(prediction);
+                            }
+                            return new Prediction(cc.location, cc.time + GRANULARITY_STEP_MS, counts);
+                        })
+                .drainTo(Sinks.files(targetDirectory));
         return pipeline;
-    }
-
-    private static class PredictionP extends AbstractProcessor {
-        private static final int NUM_PREDICTIONS = 8;
-
-        private IMap<TrendKey, Double> trendMap;
-
-        @Override
-        protected void init(Context context) {
-            trendMap = context.jetInstance().getMap("trends");
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, Object item) {
-            JetEvent<CarCount> event = ((JetEvent<CarCount>) item);
-            CarCount cc = event.payload();
-            int[] counts = new int[NUM_PREDICTIONS];
-            double trend = 0.0;
-            for (int i = 0; i < NUM_PREDICTIONS; i++) {
-                Double newTrend = trendMap.get(new TrendKey(cc.location, cc.time - DAYS.toMillis(7)));
-                if (newTrend != null) {
-                    trend = newTrend;
-                }
-                double prediction = cc.count + i * GRANULARITY_STEP_MS * trend;
-                counts[i] = (int) Math.round(prediction);
-            }
-            Prediction prediction = new Prediction(cc.location, cc.time + GRANULARITY_STEP_MS, counts);
-            return tryEmit(jetEvent(prediction, event.timestamp()));
-        }
     }
 
     private static class TrendKey implements Serializable {
@@ -169,12 +163,12 @@ public class TrafficPredictor {
         // time of the first prediction
         private final long time;
         // predictions, one for each minute
-        private final int[] counts;
+        private final int[] predictedCounts;
 
-        private Prediction(String location, long time, int[] counts) {
+        private Prediction(String location, long time, int[] predictedCounts) {
             this.location = location;
             this.time = time;
-            this.counts = counts;
+            this.predictedCounts = predictedCounts;
         }
 
         public String getLocation() {
@@ -185,8 +179,8 @@ public class TrafficPredictor {
             return time;
         }
 
-        public int[] getCounts() {
-            return counts;
+        public int[] getPredictedCounts() {
+            return predictedCounts;
         }
 
         @Override
@@ -194,7 +188,7 @@ public class TrafficPredictor {
             return "Prediction{" +
                     "location='" + location + '\'' +
                     ", time=" + toLocalDateTime(time) + " (" + time + ")" +
-                    ", counts=" + Arrays.toString(counts) +
+                    ", predictedCounts=" + Arrays.toString(predictedCounts) +
                     '}';
         }
     }

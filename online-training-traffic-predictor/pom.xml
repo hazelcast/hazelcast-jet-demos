@@ -29,6 +29,7 @@
                     <mainClass>TrafficPredictor</mainClass>
                     <arguments>
                         <argument>15-minute-counts-sorted.csv</argument>
+                        <argument>predictions</argument>
                     </arguments>
                 </configuration>
             </plugin>
