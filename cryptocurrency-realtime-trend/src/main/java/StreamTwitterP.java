@@ -11,14 +11,15 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.json.JSONObject;
+
+import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import javax.annotation.Nonnull;
-import org.json.JSONObject;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -97,7 +98,7 @@ public class StreamTwitterP extends AbstractProcessor implements Closeable {
     }
 
     public static ProcessorMetaSupplier streamTwitterP(Properties properties, List<String> terms) {
-        return preferLocalParallelismOne(new CloseableProcessorSupplier<>(() -> new StreamTwitterP(properties, terms)));
+        return preferLocalParallelismOne(CloseableProcessorSupplier.of(() -> new StreamTwitterP(properties, terms)));
     }
 
     public static StreamSource<String> streamTwitter(Properties properties, List<String> terms) {

@@ -76,7 +76,7 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
 
     public static StreamSource<SerializableBufferedImage> webcam() {
         return Sources.streamFromProcessor("webcam",
-                forceTotalParallelismOne(new CloseableProcessorSupplier<>(WebcamSource::new))
+                forceTotalParallelismOne(CloseableProcessorSupplier.of(WebcamSource::new))
         );
     }
 
