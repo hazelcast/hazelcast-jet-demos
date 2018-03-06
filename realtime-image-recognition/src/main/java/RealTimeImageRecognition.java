@@ -16,30 +16,38 @@
 
 import boofcv.abst.scene.ImageClassifier.Score;
 import boofcv.deepboof.ImageClassifierVggCifar10;
+import boofcv.gui.ImageClassificationPanel;
+import boofcv.gui.image.ShowImages;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.Planar;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
-
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Sinks;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import javax.swing.*;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.Collections.singletonList;
 
 /**
  * An application which uses webcam frame stream as the input and classifies the
@@ -83,8 +91,50 @@ public class RealTimeImageRecognition {
                 .mapUsingContext(classifierContext(modelPath), RealTimeImageRecognition::classifyWithModel)
                 .window(tumbling(1000))
                 .aggregate(maxBy(comparingDouble(e -> e.getValue().getValue())))
-                .drainTo(GUISink.sink());
+                .drainTo(buildGUISink());
         return pipeline;
+    }
+
+    /**
+     * A GUI Sink which will show the frames with the maximum classification scores.
+     */
+    private static Sink<TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>> buildGUISink() {
+        return Sinks.<ImageClassificationPanel, TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>>
+                builder((instance) -> createPanel())
+                .onReceiveFn(RealTimeImageRecognition::addItemToPanel)
+                .build();
+    }
+
+    private static void addItemToPanel(ImageClassificationPanel panel,
+                                       TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>> item) {
+        SerializableBufferedImage image = item.item().getKey();
+        Entry<String, Double> category = item.item().getValue();
+        Score score = new Score();
+        score.set(category.getValue(), 0);
+        String timestampString = new Timestamp(item.timestamp()).toString();
+        panel.addImage(image.getImage(), timestampString, singletonList(score), singletonList(category.getKey()));
+        scrollToBottomAndRepaint(panel);
+    }
+
+    private static void scrollToBottomAndRepaint(ImageClassificationPanel panel) {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JScrollPane) {
+                JScrollPane scrollPane = (JScrollPane) component;
+                JList list = (JList) scrollPane.getViewport().getView();
+                int size = list.getModel().getSize();
+                list.setSelectedIndex(Math.max(size - 2, list.getLastVisibleIndex()));
+                JScrollBar vertical = scrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
+                panel.repaint(scrollPane.getBounds());
+            }
+        }
+    }
+
+    private static ImageClassificationPanel createPanel() {
+        ImageClassificationPanel panel = new ImageClassificationPanel();
+        ShowImages.showWindow(panel, "Results", true);
+        return panel;
     }
 
     /**
