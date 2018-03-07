@@ -15,6 +15,9 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+/**
+ * Contains utility methods to load properties files and starting/stopping console printer threads
+ */
 public class Util {
 
     public static final String MAP_NAME_30_SECONDS = "map30Seconds";
