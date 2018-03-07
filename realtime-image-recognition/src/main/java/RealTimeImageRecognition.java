@@ -55,6 +55,35 @@ import static java.util.Collections.singletonList;
  * <p>
  * Second-worth of frames will be aggregated to find the classification with
  * maximum score that will be sent to a GUI sink to be shown on the screen.
+ *
+ * The DAG used to model image recognition calculations can be seen below :
+ *
+ *              ┌───────────────────┐
+ *              │Webcam Video Source│
+ *              └─────────┬─────────┘
+ *                        │
+ *                        v
+ *                ┌──────────────┐
+ *                │Add Timestamps│
+ *                └────────┬─────┘
+ *                         │
+ *                         v
+ *        ┌────────────────────────────────┐
+ *        │Classify Images with pre-trained│
+ *        │     machine learning model     │
+ *        └───────────────┬────────────────┘
+ *                        │
+ *                        v
+ *            ┌───────────────────────┐
+ *            │Calculate maximum score│
+ *            │    in 1 sec windows   │
+ *            └───────────┬───────────┘
+ *                        │
+ *                        v
+ *              ┌───────────────────┐
+ *              │Show results on GUI│
+ *              └───────────────────┘
+
  */
 public class RealTimeImageRecognition {
 
@@ -84,6 +113,9 @@ public class RealTimeImageRecognition {
         }
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
     private static Pipeline buildPipeline(String modelPath) {
         Pipeline pipeline = Pipeline.create();
         pipeline.drawFrom(WebcamSource.webcam())
@@ -105,6 +137,9 @@ public class RealTimeImageRecognition {
                 .build();
     }
 
+    /**
+     * Adds an new image to the result GUI panel
+     */
     private static void addItemToPanel(ImageClassificationPanel panel,
                                        TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>> item) {
         SerializableBufferedImage image = item.item().getKey();
@@ -116,6 +151,10 @@ public class RealTimeImageRecognition {
         scrollToBottomAndRepaint(panel);
     }
 
+    /**
+     * Scrolls the GUI panel to the bottom to show latest result
+     * whenever a new image added to the GUI panel
+     */
     private static void scrollToBottomAndRepaint(ImageClassificationPanel panel) {
         Component[] components = panel.getComponents();
         for (Component component : components) {
@@ -131,6 +170,9 @@ public class RealTimeImageRecognition {
         }
     }
 
+    /**
+     * Creates and returns image result GUI panel
+     */
     private static ImageClassificationPanel createPanel() {
         ImageClassificationPanel panel = new ImageClassificationPanel();
         ShowImages.showWindow(panel, "Results", true);
@@ -157,6 +199,11 @@ public class RealTimeImageRecognition {
         return entry(serializableBufferedImage, maxScoredCategory);
     }
 
+    /**
+     * Loads the pre-trained model from the specified path
+     *
+     * @param modelPath path of the model
+     */
     private static ContextFactory<ImageClassifierVggCifar10> classifierContext(String modelPath) {
         return ContextFactory.withCreateFn(jet -> {
             ImageClassifierVggCifar10 classifier = new ImageClassifierVggCifar10();
