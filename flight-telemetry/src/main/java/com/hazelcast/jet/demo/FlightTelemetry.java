@@ -59,6 +59,25 @@ import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
+ * Reads a ADB-S telemetry stream from [ADB-S Exchange](https://www.adsbexchange.com/)
+ * on all commercial aircraft flying anywhere in the world.
+ * The service provides real-time information about flights.
+ *
+ * Flights in the low altitudes are filtered for determining whether
+ * they are ascending or descending. This has been done with calculation of
+ * linear trend of altitudes. After vertical direction determination, ascending
+ * and descending flight are written to a Hazelcast Map.
+ *
+ * For interested airports, the pipeline also calculates average C02 emission
+ * and maximum noise level.
+ * C02 emission and maximum noise level are calculated by enriching the data
+ * stream with average landing/take-off emissions and noise levels at the
+ * specific altitudes for airplanes models and categories which can be found
+ * on {@link Constants}.
+ *
+ * After all those calculations results are forwarded to a Graphite
+ * metrics storage which feds the Grafana Dashboard.
+ *
  * The DAG used to model Flight Telemetry calculations can be seen below :
  *
  *                                                  ┌──────────────────┐
