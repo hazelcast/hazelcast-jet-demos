@@ -40,6 +40,39 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.groupingBy;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 
+/**
+ * This application calculates word transition probabilities
+ * from the classical books and stores those in a Hazelcast IMap.
+ * Then they are used to create markov chains of specified length.
+ *
+ * The DAG used to model markov chain calculation can be seen below :
+ *
+ *               ┌─────────────────────────┐
+ *               │Read books from directory│
+ *               └─────────────┬───────────┘
+ *                             │
+ *                             v
+ *                ┌────────────────────────┐
+ *                │  FlatMap the book in   │
+ *                │consecutive 2-word pairs│
+ *                └────────────┬───────────┘
+ *                             │
+ *                             v
+ *              ┌────────────────────────────┐
+ *              │Group by with the first word│
+ *              └──────────────┬─────────────┘
+ *                             │
+ *                             v
+ *         ┌──────────────────────────────────────┐
+ *         │Calculate probability map for the word│
+ *         └───────────────────┬──────────────────┘
+ *                             │
+ *                             v
+ *         ┌───────────────────────────────────────┐
+ *         │Write results to IMap(stateTransitions)│
+ *         └───────────────────────────────────────┘
+ *
+ */
 public class MarkovChainGenerator {
 
     private static final String INPUT_FILE = MarkovChainGenerator.class.getResource("books").getPath();
@@ -51,7 +84,7 @@ public class MarkovChainGenerator {
 
     public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
-        Pipeline p = createPipeline();
+        Pipeline p = buildPipeline();
 
         System.out.println("Generating model...");
         try {
@@ -62,6 +95,23 @@ public class MarkovChainGenerator {
         }
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
+    private static Pipeline buildPipeline() {
+        Pipeline p = Pipeline.create();
+        BatchStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
+        Pattern twoWords = Pattern.compile("(\\.|\\w+)\\s(\\.|\\w+)");
+        lines.flatMap(e -> traverseMatcher(twoWords.matcher(e.toLowerCase()), m -> tuple2(m.group(1), m.group(2))))
+             .groupingKey(Tuple2::f0)
+             .aggregate(buildAggregateOp())
+             .drainTo(Sinks.map("stateTransitions"));
+        return p;
+    }
+
+    /**
+     * Prints state transitions from IMap, generates the markov chain and prints it
+     */
     private static void printTransitionsAndMarkovChain(JetInstance jet) {
         IMapJet<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
         printTransitions(transitions);
@@ -69,6 +119,13 @@ public class MarkovChainGenerator {
         System.out.println(chain);
     }
 
+
+    /**
+     * Generates a markov chain of specified length
+     *
+     * @param length      length of the markov chain
+     * @param transitions transitions map for the words
+     */
     private static String generateMarkovChain(int length, Map<String, SortedMap<Double, String>> transitions) {
         StringBuilder builder = new StringBuilder();
         String word = nextWord(transitions.get("."));
@@ -89,26 +146,23 @@ public class MarkovChainGenerator {
         }
         return builder.toString();
     }
-
+    /**
+     * Returns the next word from the transitions table.
+     */
     private static String nextWord(SortedMap<Double, String> transitions) {
         return transitions.tailMap(RANDOM.nextDouble()).values().iterator().next();
     }
 
+    /**
+     * Capitalizes the first character on the word
+     */
     private static String capitalizeFirst(String word) {
         return word.substring(0, 1).toUpperCase() + word.substring(1);
     }
 
-    private static Pipeline createPipeline() {
-        Pipeline p = Pipeline.create();
-        BatchStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
-        Pattern twoWords = Pattern.compile("(\\.|\\w+)\\s(\\.|\\w+)");
-        lines.flatMap(e -> traverseMatcher(twoWords.matcher(e.toLowerCase()), m -> tuple2(m.group(1), m.group(2))))
-             .groupingKey(Tuple2::f0)
-             .aggregate(buildAggregateOp())
-             .drainTo(Sinks.map("stateTransitions"));
-        return p;
-    }
-
+    /**
+     * Creates an aggregation operation for calculating probabilities for a word
+     */
     private static AggregateOperation1<Tuple2<String, String>, ?, SortedMap<Double, String>> buildAggregateOp() {
         return allOf(
                 counting(),
@@ -125,10 +179,16 @@ public class MarkovChainGenerator {
         );
     }
 
+    /**
+     * Prints the transition table for 10 entries.
+     */
     private static void printTransitions(Map<String, SortedMap<Double, String>> counts) {
         counts.entrySet().stream().limit(10).forEach(e -> printTransitions(e.getKey(), e.getValue()));
     }
 
+    /**
+     * Prints the transition table for the supplied word
+     */
     private static void printTransitions(String key, SortedMap<Double, String> probabilities) {
         System.out.println("Transitions for: " + key);
         System.out.println("/-------------+-------------\\");
@@ -138,6 +198,10 @@ public class MarkovChainGenerator {
         System.out.println("\\-------------+-------------/");
     }
 
+    /**
+     * Creates and returns a traverser which traverses matched items on the supplied matcher.
+     * Also applies the supplied mapping function to the matched items.
+     */
     private static <R> Traverser<R> traverseMatcher(Matcher m, Function<Matcher, R> mapperFn) {
         AppendableTraverser<R> traverser = new AppendableTraverser<>(1);
         while (m.find()) {
