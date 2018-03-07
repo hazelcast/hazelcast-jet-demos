@@ -1,8 +1,11 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * The type of speed that Spd represents.
+ * 0/missing = ground speed,
+ * 1 = ground speed reversing,
+ * 2 = indicated air speed,
+ * 3 = true air speed
  */
 public enum SpeedType {
     GROUND_SPEED(0),

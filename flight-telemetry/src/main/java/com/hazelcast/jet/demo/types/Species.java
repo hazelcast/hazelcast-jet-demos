@@ -1,8 +1,7 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * The species of the aircraft (helicopter, jet etc.)
  */
 public enum Species {
     NONE(0),

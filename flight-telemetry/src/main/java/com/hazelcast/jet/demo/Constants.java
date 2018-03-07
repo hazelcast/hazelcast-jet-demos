@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+/**
+ * Contains look-up values for C02 emission and Noise Level calculation
+ */
 class Constants {
 
     static final SortedMap<Integer, Integer> mediumWTCDescendAltitudeToNoiseDb = new TreeMap<Integer, Integer>() {{

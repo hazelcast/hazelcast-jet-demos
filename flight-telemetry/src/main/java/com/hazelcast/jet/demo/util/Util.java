@@ -7,8 +7,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.EMPTY_LIST;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * Helper methods for JSON parsing and geographic calculations.
  */
 public class Util {
 

@@ -159,6 +159,9 @@ public class FlightTelemetry {
         }
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
@@ -180,12 +183,12 @@ public class FlightTelemetry {
                 ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
         StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
-                .filter(e -> e.getValue().verticalDirection == ASCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING);
 
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
-                .filter(e -> e.getValue().verticalDirection == DESCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING);
 
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
@@ -268,7 +271,7 @@ public class FlightTelemetry {
      */
     private static Aircraft assignAirport(Aircraft aircraft) {
         if (aircraft.getAlt() > 0 && !aircraft.isGnd()) {
-            String airport = getAirport(aircraft.lon, aircraft.lat);
+            String airport = getAirport(aircraft.getLon(), aircraft.getLat());
             if (airport == null) {
                 return null;
             }
@@ -372,7 +375,7 @@ public class FlightTelemetry {
 
         private void fromAirCraftEntry(TimestampedEntry<Long, Aircraft> aircraftEntry) {
             Aircraft aircraft = aircraftEntry.getValue();
-            metricName = new PyString(replaceWhiteSpace(aircraft.getAirport()) + "." + aircraft.verticalDirection);
+            metricName = new PyString(replaceWhiteSpace(aircraft.getAirport()) + "." + aircraft.getVerticalDirection());
             timestamp = new PyInteger(getEpochSecond(aircraft.getPosTime()));
             metricValue = new PyFloat(1);
         }

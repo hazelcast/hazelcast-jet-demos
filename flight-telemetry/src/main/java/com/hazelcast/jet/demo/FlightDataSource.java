@@ -97,19 +97,19 @@ public class FlightDataSource extends AbstractProcessor {
         List<Aircraft> newEvents =
                 acList.values().stream()
                       .map(this::parseAc)
-                      .filter(a -> !isNullOrEmpty(a.reg)) // there should be a reg number
-                      .filter(a -> a.posTime > 0) // there should be a timestamp
+                      .filter(a -> !isNullOrEmpty(a.getReg())) // there should be a reg number
+                      .filter(a -> a.getPosTime() > 0) // there should be a timestamp
                       .filter(a -> {
                           // only emit updated newEvents
-                          Long newTs = a.posTime;
+                          Long newTs = a.getPosTime();
                           if (newTs <= 0) {
                               return false;
                           }
-                          Long oldTs = idToTimestamp.get(a.id);
+                          Long oldTs = idToTimestamp.get(a.getId());
                           if (oldTs != null && newTs <= oldTs) {
                               return false;
                           }
-                          idToTimestamp.put(a.id, newTs);
+                          idToTimestamp.put(a.getId(), newTs);
                           return true;
                       }).collect(toList());
         getLogger().info("Polled " + acList.size() + " aircraft, " + newEvents.size() + " new locations.");
