@@ -12,6 +12,9 @@ import javax.annotation.Nonnull;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 
+/**
+ * Calculates sentiment score for a coin.
+ */
 public class SentimentProcessor extends AbstractProcessor {
 
     private final SentimentAnalyzer analyzer = new SentimentAnalyzer();

@@ -1,8 +1,7 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * The type of engine the aircraft uses
  */
 public enum EngineTypes {
     NONE(0),

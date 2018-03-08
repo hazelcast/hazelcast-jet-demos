@@ -1,8 +1,7 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * The wake turbulence category of the aircraft
  */
 public enum WakeTurbulanceCategory {
     NONE(0),

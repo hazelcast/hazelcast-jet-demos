@@ -5,6 +5,17 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+/**
+ * Contains look-up values for C02 emission and Noise Level calculation.
+ *
+ * There are two wake turbulence categories (medium-heavy) and both have
+ * different ascending and descending noise levels. In total there are 4
+ * different lookup tables for noise levels at altitudes.
+ *
+ * For C02 emissions, there is a lookup table which contains typical C02
+ * emissions for a landing/take-off(LTO) cycle for the most common aircraft types.
+ *
+ */
 class Constants {
 
     static final SortedMap<Integer, Integer> mediumWTCDescendAltitudeToNoiseDb = new TreeMap<Integer, Integer>() {{

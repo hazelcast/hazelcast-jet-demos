@@ -43,7 +43,56 @@ import static com.hazelcast.jet.demo.util.Util.stopConsolePrinterThread;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.util.Collections.singletonList;
-
+/**
+ * Twitter content is analyzed in real time to calculate cryptocurrency
+ * trend list with its popularity index. The tweets are read from Twitter
+ * and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP
+ * sentimental analysis is applied to each tweet to calculate the sentiment
+ * score of the respective tweet. This score says whether the Tweet has rather
+ * positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
+ *
+ * For each cryptocurrency, Jet aggregates scores from last 30 seconds,
+ * last minute and last 5 minutes and prints the coin popularity table.
+ *
+ * The DAG used to model cryptocurrency calculations can be seen below :
+ *
+ *                                  ┌───────────────────┐
+ *                                  │Twitter Data Source│
+ *                                  └──────────┬────────┘
+ *                                             │
+ *                                             v
+ *                                     ┌──────────────┐
+ *                                     │Add Timestamps│
+ *                                     └───────┬──────┘
+ *                                             │
+ *                                             v
+ *                                 ┌──────────────────────┐
+ *                                 │FlatMap Relevant Coins│
+ *                                 └──────────┬───────────┘
+ *                                            │
+ *                                            v
+ *                               ┌─────────────────────────┐
+ *                               │Calculate Sentiment Score│
+ *                               └─────────────┬───────────┘
+ *                                             │
+ *                                             v
+ *                                   ┌──────────────────┐
+ *                                   │Group by Coin Name│
+ *                                   └────┬───┬─────┬───┘
+ *                                        │   │     │
+ *               ┌────────────────────────┘   │     └──────────────────────┐
+ *               │                            │                            │
+ *               v                            v                            v
+ *  ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
+ *  │    Calcutate 5min      │   │    Calcutate 30sec     │   │    Calcutate 1min      │
+ *  │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
+ *  └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
+ *              │                              │                              │
+ *              v                              v                              v
+ *┌───────────────────────────┐ ┌─────────────────────────────┐ ┌───────────────────────────┐
+ *│Write results to IMap(5Min)│ │Write results to IMap(30secs)│ │Write results to IMap(1Min)│
+ *└───────────────────────────┘ └─────────────────────────────┘ └───────────────────────────┘
+ */
 public class JetCoinTrendWithCoreAPI {
 
     static {
@@ -66,6 +115,9 @@ public class JetCoinTrendWithCoreAPI {
         }
     }
 
+    /**
+     * Builds and returns the DAG which represents the actual computation.
+     */
     private static DAG buildDag() {
         DAG dag = new DAG();
 

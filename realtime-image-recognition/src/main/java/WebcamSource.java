@@ -29,8 +29,8 @@ import java.io.Closeable;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
 /**
- * A source that emits the frames captured from webcam stream.
- * Also creates an GUI to show current captures.
+ * A source that emits the frames captured from webcam video stream.
+ * Also creates a GUI to show current captures.
  */
 public class WebcamSource extends AbstractProcessor implements Closeable {
 

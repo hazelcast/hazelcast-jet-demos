@@ -1,8 +1,7 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * The placement of engines on the aircraft
  */
 public enum EngineMount {
     NONE(0),

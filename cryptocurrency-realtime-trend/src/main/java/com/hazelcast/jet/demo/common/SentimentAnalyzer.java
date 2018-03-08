@@ -12,6 +12,9 @@ import org.ejml.simple.SimpleMatrix;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Sentiment analyzer uses {@link StanfordCoreNLP} class to calculate sentiment scores.
+ */
 public class SentimentAnalyzer {
 
     private final StanfordCoreNLP pipeline;

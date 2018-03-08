@@ -35,6 +35,56 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 
+/**
+ * Twitter content is analyzed in real time to calculate cryptocurrency
+ * trend list with its popularity index. The tweets are read from Twitter
+ * and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP
+ * sentimental analysis is applied to each tweet to calculate the sentiment
+ * score of the respective tweet. This score says whether the Tweet has rather
+ * positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
+ *
+ * For each cryptocurrency, Jet aggregates scores from last 30 seconds,
+ * last minute and last 5 minutes and prints the coin popularity table.
+ *
+ * The DAG used to model cryptocurrency calculations can be seen below :
+ *
+ *                                  ┌───────────────────┐
+ *                                  │Twitter Data Source│
+ *                                  └──────────┬────────┘
+ *                                             │
+ *                                             v
+ *                                     ┌──────────────┐
+ *                                     │Add Timestamps│
+ *                                     └───────┬──────┘
+ *                                             │
+ *                                             v
+ *                                 ┌──────────────────────┐
+ *                                 │FlatMap Relevant Coins│
+ *                                 └──────────┬───────────┘
+ *                                            │
+ *                                            v
+ *                               ┌─────────────────────────┐
+ *                               │Calculate Sentiment Score│
+ *                               └─────────────┬───────────┘
+ *                                             │
+ *                                             v
+ *                                   ┌──────────────────┐
+ *                                   │Group by Coin Name│
+ *                                   └────┬───┬─────┬───┘
+ *                                        │   │     │
+ *               ┌────────────────────────┘   │     └──────────────────────┐
+ *               │                            │                            │
+ *               v                            v                            v
+ *  ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
+ *  │    Calcutate 5min      │   │    Calcutate 30sec     │   │    Calcutate 1min      │
+ *  │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
+ *  └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
+ *              │                              │                              │
+ *              v                              v                              v
+ *┌───────────────────────────┐ ┌─────────────────────────────┐ ┌───────────────────────────┐
+ *│Write results to IMap(5Min)│ │Write results to IMap(30secs)│ │Write results to IMap(1Min)│
+ *└───────────────────────────┘ └─────────────────────────────┘ └───────────────────────────┘
+ */
 public class JetCoinTrend {
 
     static {
@@ -57,6 +107,9 @@ public class JetCoinTrend {
         }
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
     private static Pipeline buildPipeline() {
         Pipeline pipeline = Pipeline.create();
         Properties properties = loadProperties();
@@ -88,6 +141,12 @@ public class JetCoinTrend {
         return pipeline;
     }
 
+    /**
+     * Calculates sentiment score for a coin and returns it as (coin,score) pair.
+     *
+     * @param analyzer NLP sentiment analyzer
+     * @param entry    (coin,tweet) pair
+     */
     @Nullable
     private static Entry<String, Double> calculateSentiment(SentimentAnalyzer analyzer, Entry<String, String> entry) {
         List<CoreMap> annotations = analyzer.getAnnotations(entry.getValue());
@@ -102,7 +161,12 @@ public class JetCoinTrend {
     }
 
 
-    // returns a traverser which flat maps each tweet to (coin, tweet) pairs by finding coins relevant to this tweet
+    /**
+     * Returns a traverser which flat maps each tweet to (coin, tweet) pairs
+     * by finding coins relevant to this tweet
+     *
+     * @param text content of the tweet
+     */
     private static Traverser<? extends Entry<String, String>> flatMapToRelevant(String text) {
         AppendableTraverser<Entry<String, String>> traverser = new AppendableTraverser<>(4);
         for (String coin : CoinDefs.COIN_MAP.keySet()) {

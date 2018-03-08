@@ -26,6 +26,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 
+/**
+ * A streaming source that connects and pull the tweets from Twitter using official Twitter client.
+ */
 public class StreamTwitterP extends AbstractProcessor implements Closeable {
 
     private final Properties properties;

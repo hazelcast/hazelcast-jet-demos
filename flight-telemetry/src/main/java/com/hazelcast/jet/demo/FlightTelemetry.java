@@ -59,6 +59,25 @@ import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
+ * Reads a ADB-S telemetry stream from [ADB-S Exchange](https://www.adsbexchange.com/)
+ * on all commercial aircraft flying anywhere in the world.
+ * The service provides real-time information about flights.
+ *
+ * Flights in the low altitudes are filtered for determining whether
+ * they are ascending or descending. This has been done with calculation of
+ * linear trend of altitudes. After vertical direction determination, ascending
+ * and descending flight are written to a Hazelcast Map.
+ *
+ * For interested airports, the pipeline also calculates average C02 emission
+ * and maximum noise level.
+ * C02 emission and maximum noise level are calculated by enriching the data
+ * stream with average landing/take-off emissions and noise levels at the
+ * specific altitudes for airplanes models and categories which can be found
+ * on {@link Constants}.
+ *
+ * After all those calculations results are forwarded to a Graphite
+ * metrics storage which feds the Grafana Dashboard.
+ *
  * The DAG used to model Flight Telemetry calculations can be seen below :
  *
  *                                                  ┌──────────────────┐
@@ -140,10 +159,15 @@ public class FlightTelemetry {
         }
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
+        // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
+        // and assign vertical directions to the aircrafts.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
                 .drawFrom(streamAircraft(SOURCE_URL, 10000))
                 .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
@@ -160,16 +184,20 @@ public class FlightTelemetry {
                                 })
                 ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
+        // Filter ascending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
-                .filter(e -> e.getValue().verticalDirection == ASCENDING);
-
+                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING);
+        // Write ascending flights to an IMap
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
+        //Filter descending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
-                .filter(e -> e.getValue().verticalDirection == DESCENDING);
-
+                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING);
+        // Write descending flights to an IMap
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
+        // Enrich aircraft with the noise info and calculate max noise
+        // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Integer>> maxNoise = flights
                 .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
                 .window(slidingWindow)
@@ -178,6 +206,8 @@ public class FlightTelemetry {
                 .map(e -> new TimestampedEntry<>(e.getTimestamp(), e.getKey(), e.getValue().getValue()));
         // (airport, max_noise)
 
+        // Enrich aircraft with the C02 emission info and calculate total noise
+        // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
                 .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
                 .window(slidingWindow)
@@ -185,8 +215,10 @@ public class FlightTelemetry {
                 .aggregate(summingDouble(Entry::getValue));
         // (airport, total_co2)
 
+        // Build Graphite sink
         Sink<TimestampedEntry> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
 
+        // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
         return p;
     }
@@ -249,7 +281,7 @@ public class FlightTelemetry {
      */
     private static Aircraft assignAirport(Aircraft aircraft) {
         if (aircraft.getAlt() > 0 && !aircraft.isGnd()) {
-            String airport = getAirport(aircraft.lon, aircraft.lat);
+            String airport = getAirport(aircraft.getLon(), aircraft.getLat());
             if (airport == null) {
                 return null;
             }
@@ -353,7 +385,7 @@ public class FlightTelemetry {
 
         private void fromAirCraftEntry(TimestampedEntry<Long, Aircraft> aircraftEntry) {
             Aircraft aircraft = aircraftEntry.getValue();
-            metricName = new PyString(replaceWhiteSpace(aircraft.getAirport()) + "." + aircraft.verticalDirection);
+            metricName = new PyString(replaceWhiteSpace(aircraft.getAirport()) + "." + aircraft.getVerticalDirection());
             timestamp = new PyInteger(getEpochSecond(aircraft.getPosTime()));
             metricValue = new PyFloat(1);
         }

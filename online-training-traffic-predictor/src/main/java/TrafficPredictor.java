@@ -42,10 +42,56 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
+ * 
+ * This application reads the traffic data from file. Each input record contains timestamp, location and
+ * respective car count. After ingestion, the records are routed to two separate computations.
+ * First computation uses the car count to train the model. Jet collects data from last two hours
+ * and computes the trend using the linear regression algorithm. This trend is updated every 15 minutes
+ * and stored into an IMap. Sliding Windows are used to select two hour blocks from the time series.
+ * Second computation combines current car count with the trend from previous week to predict car count
+ * in next two hours. Prediction results are stored in a file in predictions/ directory.
+ *
  * The training data is obtained from:
  * https://catalog.data.gov/dataset/nys-thruway-origin-and-destination-points-for-all-vehicles-15-minute-intervals-2016-q1
  * <p>
  * We've grouped the data by date and entry location and sorted them.
+ *
+ * The DAG used to model traffic predictor can be seen below :
+ *
+ *                           ┌────────────────────────┐
+ *                           │Read historic car counts│
+ *                           │       from file        │
+ *                           └──┬──────────────┬──────┘
+ *                              │              │
+ *                              │              └─────────┐
+ *                              v                        │
+ *                      ┌──────────────┐                 │
+ *                      │Add timestamps│                 │
+ *                      └───────┬──────┘                 │
+ *                              │                        │
+ *                              v                        │
+ *                     ┌─────────────────┐               │
+ *                     │Group by location│               │
+ *                     └─────────┬───────┘               │
+ *                               │                       │
+ *                               v                       │
+ *                  ┌─────────────────────────┐          │
+ *                  │Calculate linear trend of│          │
+ *                  │ counts in 2hour windows │          │
+ *                  │     slides by 15mins    │          │
+ *                  └────────────┬────────────┘          │
+ *                               │                       │
+ *                 ┌─────────────┘                       │
+ *                 │                                     │
+ *                 v                                     v
+ *   ┌──────────────────────────┐ ┌────────────────────────────────────────────┐
+ *   │Format linear trend output│ │Make predictions based on the historic trend│
+ *   └────────────────┬─────────┘ └──────────────────────────┬─────────────────┘
+ *                    │                                      │
+ *                    v                                      v
+ *   ┌────────────────────────────────┐ ┌────────────────────────────────────────┐
+ *   │Write results to an IMap(trends)│ │Write results to a file(targetDirectory)│
+ *   └────────────────────────────────┘ └────────────────────────────────────────┘
  */
 public class TrafficPredictor {
 
@@ -77,9 +123,13 @@ public class TrafficPredictor {
             Jet.shutdownAll();
         }
     }
-
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
     private static Pipeline buildPipeline(Path sourceFile, String targetDirectory) {
         Pipeline pipeline = Pipeline.create();
+
+        // Calculate car counts from the file.
         StreamStage<CarCount> carCounts = pipeline.drawFrom(
                 files(
                         sourceFile.getParent().toString(),
@@ -95,6 +145,8 @@ public class TrafficPredictor {
                 )
         ).addTimestamps(CarCount::getTime, MINUTES.toMillis(300));
 
+        // Calculate linear trends of car counts and writes them into an IMap
+        // in 2 hour windows sliding by 15 minutes.
         carCounts
                 .groupingKey(CarCount::getLocation)
                 .window(sliding(MINUTES.toMillis(120), MINUTES.toMillis(15)))
@@ -103,6 +155,7 @@ public class TrafficPredictor {
                         entry(new TrendKey(e.getKey(), e.getTimestamp()), e.getValue()))
                 .drainTo(Sinks.map("trends"));
 
+        // Makes predictions using the trends calculated above from an IMap and writes them to a file
         carCounts
                 .mapUsingContext(ContextFactories.<TrendKey, Double>iMapContext("trends"),
                         (trendMap, cc) -> {
@@ -122,6 +175,9 @@ public class TrafficPredictor {
         return pipeline;
     }
 
+    /**
+     * Composite key object of time and location which used on IMap
+     */
     private static class TrendKey implements Serializable {
         private final String location;
         private final long time;
@@ -158,6 +214,9 @@ public class TrafficPredictor {
         }
     }
 
+    /**
+     * DTO for predictions
+     */
     private static class Prediction implements Serializable {
         private final String location;
         // time of the first prediction
@@ -193,6 +252,9 @@ public class TrafficPredictor {
         }
     }
 
+    /**
+     * DTO for car counts of a location on a specific time
+     */
     private static class CarCount {
         private final String location;
         private final long time;

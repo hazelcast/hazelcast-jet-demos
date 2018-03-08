@@ -1,8 +1,10 @@
 package com.hazelcast.jet.demo.types;
 
 /**
- * date: 1/8/18
- * author: emindemirci
+ * Vertical speed type.
+ * 0 = vertical speed is barometric,
+ * 1 = vertical speed is geometric.
+ * Default to barometric until told otherwise.
  */
 public enum VerticalSpeedType {
     BAROMETRIC(0),

@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Contains coin to hash-tags lookup table.
+ */
 public class CoinDefs {
 
     public static Map<String, List<String>> COIN_MAP = new HashMap<>();
