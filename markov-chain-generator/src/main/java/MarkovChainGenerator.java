@@ -97,11 +97,18 @@ public class MarkovChainGenerator {
 
     /**
      * Builds and returns the Pipeline which represents the actual computation.
+     * To compute the probability of finding word B after A, one has to know
+     * how many pairs contain word A as a first entry and how many of them
+     * contain B as a second entry. The pipeline creates pairs from consecutive
+     * words and computes the probabilities of A->B.
      */
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
+        // Reads files line-by-line
         BatchStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
         Pattern twoWords = Pattern.compile("(\\.|\\w+)\\s(\\.|\\w+)");
+        // Calculates probabilities by flatmapping lines into two-word consecutive pairs using regular expressions
+        // and aggregates them into an IMap.
         lines.flatMap(e -> traverseMatcher(twoWords.matcher(e.toLowerCase()), m -> tuple2(m.group(1), m.group(2))))
              .groupingKey(Tuple2::f0)
              .aggregate(buildAggregateOp())
