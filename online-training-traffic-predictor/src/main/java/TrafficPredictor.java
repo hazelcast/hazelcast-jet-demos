@@ -128,6 +128,8 @@ public class TrafficPredictor {
      */
     private static Pipeline buildPipeline(Path sourceFile, String targetDirectory) {
         Pipeline pipeline = Pipeline.create();
+
+        // Calculate car counts from the file.
         StreamStage<CarCount> carCounts = pipeline.drawFrom(
                 files(
                         sourceFile.getParent().toString(),
@@ -143,6 +145,8 @@ public class TrafficPredictor {
                 )
         ).addTimestamps(CarCount::getTime, MINUTES.toMillis(300));
 
+        // Calculate linear trends of car counts and writes them into an IMap
+        // in 2 hour windows sliding by 15 minutes.
         carCounts
                 .groupingKey(CarCount::getLocation)
                 .window(sliding(MINUTES.toMillis(120), MINUTES.toMillis(15)))
@@ -151,6 +155,7 @@ public class TrafficPredictor {
                         entry(new TrendKey(e.getKey(), e.getTimestamp()), e.getValue()))
                 .drainTo(Sinks.map("trends"));
 
+        // Makes predictions using the trends calculated above from an IMap and writes them to a file
         carCounts
                 .mapUsingContext(ContextFactories.<TrendKey, Double>iMapContext("trends"),
                         (trendMap, cc) -> {
