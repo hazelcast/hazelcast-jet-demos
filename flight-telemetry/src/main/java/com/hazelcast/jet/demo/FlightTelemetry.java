@@ -166,6 +166,8 @@ public class FlightTelemetry {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
+        // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
+        // and assign vertical directions to the aircrafts.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
                 .drawFrom(streamAircraft(SOURCE_URL, 10000))
                 .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
@@ -182,16 +184,20 @@ public class FlightTelemetry {
                                 })
                 ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
+        // Filter ascending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
                 .filter(e -> e.getValue().getVerticalDirection() == ASCENDING);
-
+        // Write ascending flights to an IMap
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
+        //Filter descending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
                 .filter(e -> e.getValue().getVerticalDirection() == DESCENDING);
-
+        // Write descending flights to an IMap
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
+        // Enrich aircraft with the noise info and calculate max noise
+        // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Integer>> maxNoise = flights
                 .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
                 .window(slidingWindow)
@@ -200,6 +206,8 @@ public class FlightTelemetry {
                 .map(e -> new TimestampedEntry<>(e.getTimestamp(), e.getKey(), e.getValue().getValue()));
         // (airport, max_noise)
 
+        // Enrich aircraft with the C02 emission info and calculate total noise
+        // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
                 .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
                 .window(slidingWindow)
@@ -207,8 +215,10 @@ public class FlightTelemetry {
                 .aggregate(summingDouble(Entry::getValue));
         // (airport, total_co2)
 
+        // Build Graphite sink
         Sink<TimestampedEntry> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
 
+        // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
         return p;
     }
