@@ -4,6 +4,15 @@ Twitter content is analyzed in real time to calculate cryptocurrency trend list 
 
 This demo shows how to ingest a Tweet stream and how to use streaming operations in Jet (windowing, event-time processing, streaming aggregations). It also demonstrates integrating of 3rd party NLP library into the parallel data pipeline.      
 
+
+## Package Level Structure
+At the highest level, the source code is organized into four packages
+
+- com.hazelcast.jet.demo        The main class (`JetCoinTrend`) with the main method resides in this package.
+- com.hazelcast.jet.demo.core   The expert Core API version of the demo classes reside in this package.
+- com.hazelcast.jet.demo.common The common data source, NLP analyzer and lookup table classes shared in both Pipeline and Core APIs resides in this package.
+- com.hazelcast.jet.demo.util   The utility helper classes reside in this package.
+
 # Data Pipeline
 
 ![](./diagram.png)
