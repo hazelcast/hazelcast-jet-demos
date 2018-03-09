@@ -7,6 +7,10 @@ frame with the maximum score will be shown in a GUI application.
 
 This application shows how you can implement a custom streaming source and sink and how to make streaming aggregations in Hazelast Jet.
 
+## Package Level Structure
+
+The main class (`RealTimeImageRecognition`) with the main method, webcam data source (`WebcamSource`) and serialiable version of the buffered image(`SerializableBufferedImage`) classes resides in the default package.
+
 
 # Building the Application
 

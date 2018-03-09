@@ -7,6 +7,10 @@ Then they are used to create sentences of specified length.
 
 To learn more about Markov Chains, see: [Wikipedia Article](https://en.wikipedia.org/wiki/Markov_chain)
 
+## Package Level Structure
+
+The main class (`MarkovChainGenerator`) with the main method resides in the default package.
+
 # Data Pipeline
 
 There is almost 100 MB of classical literature on the input, see [the resources](https://github.com/hazelcast/hazelcast-jet-demos/tree/master/markov-chain-generator/src/main/resources). Jet pipeline builds the Markov Chain based on this data set. The Markov Chain is then used to generate random sentences such as 

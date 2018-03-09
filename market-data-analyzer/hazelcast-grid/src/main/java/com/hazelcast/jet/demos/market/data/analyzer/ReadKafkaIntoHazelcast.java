@@ -1,6 +1,6 @@
 package com.hazelcast.jet.demos.market.data.analyzer;
 
-import com.hazelcast.jet.KafkaSources;
+import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import java.util.Properties;

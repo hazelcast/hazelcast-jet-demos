@@ -1,4 +1,4 @@
-## Online Training with Jet - Traffic predictor
+# Online Training with Jet - Traffic predictor
 
 This demo shows how to use Jet for real-time machine learning use-case. It combines real-time model training and prediction into one Jet Pipeline.
 
@@ -19,6 +19,10 @@ For the sake of simplicity, this demo reads the traffic data from the [CSV file]
 Sample data were extracted from 
 [catalog.data.gov](https://catalog.data.gov/dataset/nys-thruway-origin-and-destination-points-for-all-vehicles-15-minute-intervals-2016-q1).
  
+
+## Package Level Structure
+
+The main class (`TrafficPredictor`) with the main method resides in the default package.
 
 # Building the Application
 
