@@ -73,3 +73,27 @@ that are emitted from the Flight Telemetry application.
 
 Note: The ADB-S data stream publishes ~3 MB of data per update. We are polling it every 10 seconds by default, so you might need a decent internet connection for demo to work properly. Otherwise you might see some delay on the charts/output.
 
+## Fault Tolerant Mode
+
+This demo has two modes. The default mode, as described above, works with `mvn exec:java` and is not fault tolerant. 
+The second mode is fault tolerant and offers exactly-once processing guarantee. In this mode, you can start multiple 
+Jet nodes and form a Jet cluster. In addition, you can start new nodes while the job is running and scale out the job,
+or you can kill some of the nodes. To start a Jet node, run: 
+
+```bash
+mvn exec:java -Pft -Dtype=server
+```
+
+After the Jet node is started, the job is not automatically submitted. Instead, a command line console starts. 
+In one of the consoles that start with the Jet nodes, type `submit` to submit the job. Then, in other nodes, 
+you can type `get` to get a reference to the submitted job. After this point, you can track and manage the 
+running job in any Jet node. You can type `help` to see the available commands.     
+
+This mode replaces the source processor with a reliable map journal. Instead of polling the aircraft events directly 
+from the external API, the job uses a map journal as its source. For this reason, we have another process to poll the 
+data from the external API and populate the source map. To start the source process, run:
+```bash
+mvn exec:java -Pft -Dtype=source
+```
+
+Please see `com.hazelcast.jet.demo.FaultTolerantFlightTelemetry` for more information.

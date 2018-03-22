@@ -3,10 +3,11 @@ package com.hazelcast.jet.demos.market.data.analyzer;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import java.util.Properties;
-import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+
+import java.util.Properties;
+import java.util.UUID;
 
 public class ReadKafkaIntoHazelcast {
 
@@ -20,8 +21,7 @@ public class ReadKafkaIntoHazelcast {
 
         Pipeline pipeline = Pipeline.create();
 
-        pipeline
-                .drawFrom(KafkaSources.kafka(properties, Constants.TOPIC_NAME_PRECIOUS))
+        pipeline.drawFrom(KafkaSources.kafka(properties, Constants.TOPIC_NAME_PRECIOUS))
                 .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
 
         return pipeline;

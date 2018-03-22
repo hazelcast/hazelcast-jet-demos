@@ -14,12 +14,6 @@
     <artifactId>cryptocurrency-realtime-trend</artifactId>
     <version>0.1-SNAPSHOT</version>
 
-    <properties>
-        <jdk.version>1.8</jdk.version>
-        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <hazelcast.version>3.9.2</hazelcast.version>
-    </properties>
     <build>
         <plugins>
             <plugin>
@@ -27,15 +21,15 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>${maven.exec.plugin.version}</version>
                 <configuration>
                     <mainClass>com.hazelcast.jet.demo.JetCoinTrend</mainClass>
                 </configuration>

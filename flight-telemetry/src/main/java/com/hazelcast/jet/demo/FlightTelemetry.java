@@ -11,9 +11,17 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.map.listener.EntryAddedListener;
+import org.python.core.PyFloat;
+import org.python.core.PyInteger;
+import org.python.core.PyList;
+import org.python.core.PyString;
+import org.python.core.PyTuple;
+import org.python.modules.cPickle;
+
 import java.io.BufferedOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -21,12 +29,6 @@ import java.time.Instant;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.function.Consumer;
-import org.python.core.PyFloat;
-import org.python.core.PyInteger;
-import org.python.core.PyList;
-import org.python.core.PyString;
-import org.python.core.PyTuple;
-import org.python.modules.cPickle;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
@@ -43,7 +45,6 @@ import static com.hazelcast.jet.demo.Constants.heavyWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCClimbingAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.typeToLTOCycyleC02Emission;
-import static com.hazelcast.jet.demo.FlightDataSource.streamAircraft;
 import static com.hazelcast.jet.demo.types.WakeTurbulanceCategory.HEAVY;
 import static com.hazelcast.jet.demo.util.Util.inAtlanta;
 import static com.hazelcast.jet.demo.util.Util.inFrankfurt;
@@ -86,7 +87,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *                                                            │
  *                                                            v
  *                                           ┌─────────────────────────────────┐
- *                                           │Filter Aircraft  in Low Altitudes│
+ *                                           │Filter Aircraft in Low Altitudes │
  *                                           └────────────────┬────────────────┘
  *                                                            │
  *                                                            v
@@ -136,23 +137,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class FlightTelemetry {
 
-    private static final String SOURCE_URL = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json";
     private static final String TAKE_OFF_MAP = "takeOffMap";
     private static final String LANDING_MAP = "landingMap";
 
-    static {
-        System.setProperty("hazelcast.logging.type", "log4j");
-    }
-
     public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
-
-        Pipeline pipeline = buildPipeline();
-        addListener(jet.getMap(TAKE_OFF_MAP), a -> System.out.println("New aircraft taking off: " + a));
-        addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
+        Pipeline p = buildPipeline(jet, FlightDataSource.streamAircraft(10000));
 
         try {
-            Job job = jet.newJob(pipeline);
+            Job job = jet.newJob(p);
             job.join();
         } finally {
             Jet.shutdownAll();
@@ -162,17 +155,17 @@ public class FlightTelemetry {
     /**
      * Builds and returns the Pipeline which represents the actual computation.
      */
-    private static Pipeline buildPipeline() {
+    static Pipeline buildPipeline(JetInstance jet, StreamSource<Aircraft> streamSource) {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
         // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
         // and assign vertical directions to the aircrafts.
-        StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
-                .drawFrom(streamAircraft(SOURCE_URL, 10000))
-                .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
+
+        StreamStage<TimestampedEntry<Long, Aircraft>> flights = p.drawFrom(streamSource)
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000)
                 .map(FlightTelemetry::assignAirport)
+                .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
                 .window(slidingWindow)
                 .groupingKey(Aircraft::getId)
                 .aggregate(
@@ -220,6 +213,10 @@ public class FlightTelemetry {
 
         // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
+
+        addListener(jet.getMap(TAKE_OFF_MAP), a -> System.out.println("New aircraft taking off: " + a));
+        addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
+
         return p;
     }
 
