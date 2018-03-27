@@ -2,8 +2,8 @@ package com.hazelcast.jet.demo.common;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.twitter.hbc.ClientBuilder;
@@ -16,7 +16,6 @@ import com.twitter.hbc.httpclient.auth.OAuth1;
 import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -29,7 +28,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelis
 /**
  * A streaming source that connects and pull the tweets from Twitter using official Twitter client.
  */
-public class StreamTwitterP extends AbstractProcessor implements Closeable {
+public class StreamTwitterP extends AbstractProcessor {
 
     private final Properties properties;
     private final List<String> terms;
@@ -96,14 +95,14 @@ public class StreamTwitterP extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close(Throwable error) {
         if (client != null) {
             client.stop();
         }
     }
 
     public static ProcessorMetaSupplier streamTwitterP(Properties properties, List<String> terms) {
-        return preferLocalParallelismOne(CloseableProcessorSupplier.of(() -> new StreamTwitterP(properties, terms)));
+        return preferLocalParallelismOne(ProcessorSupplier.of(() -> new StreamTwitterP(properties, terms)));
     }
 
     public static StreamSource<String> streamTwitter(Properties properties, List<String> terms) {

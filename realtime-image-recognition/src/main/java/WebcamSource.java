@@ -20,11 +20,11 @@ import boofcv.io.webcamcapture.UtilWebcamCapture;
 import com.github.sarxos.webcam.Webcam;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+
 import java.awt.image.BufferedImage;
-import java.io.Closeable;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
@@ -32,7 +32,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelism
  * A source that emits the frames captured from webcam video stream.
  * Also creates a GUI to show current captures.
  */
-public class WebcamSource extends AbstractProcessor implements Closeable {
+public class WebcamSource extends AbstractProcessor {
 
     private Traverser<SerializableBufferedImage> traverser;
     private Webcam webcam;
@@ -76,12 +76,12 @@ public class WebcamSource extends AbstractProcessor implements Closeable {
 
     public static StreamSource<SerializableBufferedImage> webcam() {
         return Sources.streamFromProcessor("webcam",
-                forceTotalParallelismOne(CloseableProcessorSupplier.of(WebcamSource::new))
+                forceTotalParallelismOne(ProcessorSupplier.of(WebcamSource::new))
         );
     }
 
     @Override
-    public void close() {
+    public void close(Throwable error) {
         if (webcam != null) {
             webcam.close();
         }
