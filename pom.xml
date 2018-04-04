@@ -5,39 +5,32 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.hazelcast.jet.demos</groupId>
-    <artifactId>demos</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <artifactId>hazelcast-jet-demos</artifactId>
+    <version>0.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Hazelcast Jet Demo Applications</name>
 
     <modules>
         <!--<module>customer-churn-predictor</module>-->
-        <module>cryptocurrency-realtime-trend</module>
+        <module>cryptocurrency-sentiment-analysis</module>
         <module>flight-telemetry</module>
-        <module>realtime-image-recognition</module>
         <module>jetleopard</module>
-        <module>market-data-analyzer</module>
+        <module>market-data-ingest</module>
         <module>markov-chain-generator</module>
-        <module>online-training-traffic-predictor</module>
+        <module>realtime-image-recognition</module>
+        <module>road-traffic-predictor</module>
     </modules>
-
-    <properties>
-        <hazelcast-jet.version>0.6-SNAPSHOT</hazelcast-jet.version>
-    </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>${hazelcast-jet.version}</version>
-        </dependency>
-    </dependencies>
 
     <repositories>
         <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+        <repository>
+            <id>release-repository</id>
+            <name>release repository</name>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
         </repository>
         <repository>
             <id>main-repo</id>
@@ -47,32 +40,44 @@
             <id>backup-repo</id>
             <url>http://repo2.maven.org/maven2/</url>
         </repository>
-        <repository>
-            <id>release-repository</id>
-            <name>release repository</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
-        </repository>
-        <repository>
-            <id>private-repository</id>
-            <name>Hazelcast Private Repository</name>
-            <url>https://repository-hazelcast-l337.forge.cloudbees.com/release/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>private-snapshot-repository</id>
-            <name>Hazelcast Private Repository</name>
-            <url>https://repository-hazelcast-l337.forge.cloudbees.com/snapshot/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
     </repositories>
+
+    <properties>
+        <jdk.version>1.8</jdk.version>
+        <hazelcast-jet.version>0.6-SNAPSHOT</hazelcast-jet.version>
+        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet</artifactId>
+            <version>${hazelcast-jet.version}</version>
+        </dependency>
+    </dependencies>
 </project>

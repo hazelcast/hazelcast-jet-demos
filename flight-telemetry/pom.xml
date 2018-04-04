@@ -6,23 +6,16 @@
 
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
-        <artifactId>demos</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <artifactId>hazelcast-jet-demos</artifactId>
+        <version>0.6-SNAPSHOT</version>
     </parent>
 
     <name>ADB-S Flight Telemetry Stream Processing Demo</name>
     <artifactId>flight-telemetry</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.6-SNAPSHOT</version>
+
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.1.0</version>
@@ -49,7 +42,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
                 <configuration>
                     <mainClass>com.hazelcast.jet.demo.FlightTelemetry</mainClass>
                 </configuration>
@@ -69,4 +61,5 @@
             <version>1.2.17</version>
         </dependency>
     </dependencies>
+
 </project>
