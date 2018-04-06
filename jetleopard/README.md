@@ -1,4 +1,4 @@
-# jetleopard
+# Real-time Sports Betting Engine
 
 A simple distributed sports book example, to demonstrate Hazlecast Jet.
 
