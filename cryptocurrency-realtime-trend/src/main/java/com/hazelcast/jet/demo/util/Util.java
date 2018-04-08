@@ -12,6 +12,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.jet.demo.common.CoinDefs.COIN_MAP;
+import static com.hazelcast.jet.demo.common.CoinDefs.SYMBOL;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -44,22 +46,38 @@ public class Util {
             while (running) {
                 Set<String> coins = new HashSet<>();
 
+                if (map30secs.isEmpty()) {
+                    continue;
+                }
+
                 coins.addAll(map30secs.keySet());
                 coins.addAll(map1min.keySet());
                 coins.addAll(map5min.keySet());
 
-                System.out.println("/------+---------------+---------------+----------------\\");
-                System.out.println("|      |          Sentiment (tweet count)               |");
-                System.out.println("| Coin | Last 30 sec   | Last minute   | Last 5 minutes |");
-                System.out.println("|------+---------------+---------------+----------------|");
-                coins.forEach((c) ->
+                System.out.println("\n");
+                System.out.println("/----------------+---------------+---------------+----------------\\");
+                System.out.println("|                |          Sentiment (tweet count)               |");
+                System.out.println("| Coin           | Last 30 sec   | Last minute   | Last 5 minutes |");
+                System.out.println("|----------------+---------------+---------------+----------------|");
+                coins.forEach((coin) ->
                         System.out.format("| %s  | %s | %s | %s  |%n",
-                                c, format(map30secs.get(c)), format(map1min.get(c)), format(map5min.get(c))));
-                System.out.println("\\------+---------------+---------------+----------------/");
+                            coinName(coin), format(map30secs.get(coin)), format(map1min.get(coin)), format(map5min.get(coin))));
+                System.out.println("\\----------------+---------------+---------------+----------------/");
 
                 LockSupport.parkNanos(MILLISECONDS.toNanos(PRINT_INTERNAL_MILLIS));
             }
         }).start();
+    }
+
+    /**
+     * Gets the full name given the code and pads it to a length of 16 characters
+     */
+    private static Object coinName(String coin) {
+        String name = COIN_MAP.get(coin).get(SYMBOL);
+        for (int i = name.length(); i < 13; i++){
+            name = name.concat(" ");
+        }
+        return name;
     }
 
     public static void stopConsolePrinterThread() {
@@ -69,7 +87,7 @@ public class Util {
 
     public static List<String> loadTerms() {
         List<String> terms = new ArrayList<>();
-        CoinDefs.COIN_MAP.forEach((key, value) -> {
+        COIN_MAP.forEach((key, value) -> {
             terms.add(key);
             terms.addAll(value);
         });
