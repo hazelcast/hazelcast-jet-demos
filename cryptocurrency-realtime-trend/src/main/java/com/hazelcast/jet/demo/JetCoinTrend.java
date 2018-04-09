@@ -76,7 +76,7 @@ import static java.lang.Double.isNaN;
  *               │                            │                            │
  *               v                            v                            v
  *  ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
- *  │    Calcutate 5min      │   │    Calcutate 30sec     │   │    Calcutate 1min      │
+ *  │    Calculate 5min      │   │    Calculate 30sec     │   │    Calculate 1min      │
  *  │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
  *  └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
  *              │                              │                              │
@@ -92,7 +92,7 @@ public class JetCoinTrend {
     }
 
     public static void main(String[] args) {
-        System.out.println("DISCLAIMER: This is not an investment advice");
+        System.out.println("DISCLAIMER: This is not investment advice");
 
         Pipeline pipeline = buildPipeline();
         // Start Jet

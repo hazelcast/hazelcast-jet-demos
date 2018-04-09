@@ -80,7 +80,6 @@ public class WebcamSource extends AbstractProcessor {
         );
     }
 
-    @Override
     public void close(Throwable error) {
         if (webcam != null) {
             webcam.close();
