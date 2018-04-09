@@ -2,7 +2,7 @@ version: '2'
 services:
   grafana_graphite:
     build: .
-    image: eminn/grafana-dashboard
+    image: hazelcast/docker-grafana-graphite 
     container_name: grafana-dashboard
     ports:
       - '80:80'
