@@ -79,7 +79,8 @@ public class WebcamSource extends AbstractProcessor {
                 forceTotalParallelismOne(ProcessorSupplier.of(WebcamSource::new))
         );
     }
-
+    
+    @Override
     public void close(Throwable error) {
         if (webcam != null) {
             webcam.close();

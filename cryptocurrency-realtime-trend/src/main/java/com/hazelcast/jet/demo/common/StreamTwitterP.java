@@ -94,6 +94,7 @@ public class StreamTwitterP extends AbstractProcessor {
         return false;
     }
 
+    @Override
     public void close(Throwable error) {
         if (client != null) {
             client.stop();
