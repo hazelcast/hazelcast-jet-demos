@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,7 +171,7 @@ public final class JetBetMain implements RandomSimulator {
 
         final Double apocalypse = risks.entrySet().stream()
                                        .map(e -> tuple2(e.getKey(), getMaxExposureAsTuple(e.getValue())))
-                                       .sorted((t1, t2) -> t1.f1().f1().compareTo(t2.f1().f1()))
+                                       .sorted(Comparator.comparing(t -> t.f1().f1()))
                                        .limit(20)
 
                                        // Output "perfect storm" combination of top 20 results that caused the losses

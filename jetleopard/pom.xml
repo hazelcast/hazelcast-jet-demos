@@ -9,15 +9,11 @@
 
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
-        <artifactId>demos</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <artifactId>hazelcast-jet-demos</artifactId>
+        <version>0.6-SNAPSHOT</version>
     </parent>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <!-- Library versions -->
         <junit.version>4.12</junit.version>
         <jackson.version>2.9.4</jackson.version>
@@ -26,19 +22,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
                 <configuration>
                     <mainClass>com.jetleopard.AnalysisJet</mainClass>
                 </configuration>

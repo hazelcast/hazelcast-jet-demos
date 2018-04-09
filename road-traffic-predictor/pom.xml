@@ -10,35 +10,28 @@
         <version>0.6-SNAPSHOT</version>
     </parent>
 
-    <name>Markov Chain Generator</name>
-    <artifactId>markov-chain-generator</artifactId>
+    <artifactId>road-traffic-predictor</artifactId>
     <version>0.6-SNAPSHOT</version>
+    <name>Real-Time Road Traffic Analysis and Prediction</name>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
                 <configuration>
-                    <mainClass>MarkovChainGenerator</mainClass>
+                    <mainClass>TrafficPredictor</mainClass>
+                    <arguments>
+                        <argument>15-minute-counts-sorted.csv</argument>
+                        <argument>predictions</argument>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>annotations</artifactId>
-            <version>3.0.1u2</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
 </project>
