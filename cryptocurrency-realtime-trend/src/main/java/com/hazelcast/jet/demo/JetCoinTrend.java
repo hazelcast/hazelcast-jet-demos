@@ -14,21 +14,15 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
 import edu.stanford.nlp.util.CoreMap;
+
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
-import javax.annotation.Nullable;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
-import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_1_MINUTE;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_30_SECONDS;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_5_MINUTE;
-import static com.hazelcast.jet.demo.util.Util.loadProperties;
-import static com.hazelcast.jet.demo.util.Util.loadTerms;
-import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
+import static com.hazelcast.jet.aggregate.AggregateOperations.*;
+import static com.hazelcast.jet.demo.util.Util.*;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
@@ -119,7 +113,9 @@ public class JetCoinTrend {
                 .drawFrom(StreamTwitterP.streamTwitter(properties, terms))
                 .addTimestamps()
                 .flatMap(JetCoinTrend::flatMapToRelevant)
-                .mapUsingContext(ContextFactory.withCreateFn(jet -> new SentimentAnalyzer()),
+                .mapUsingContext(ContextFactory
+                                .withCreateFn(jet -> new SentimentAnalyzer())
+                                .shareLocally(),
                         JetCoinTrend::calculateSentiment)
                 .groupingKey(entryKey());
 
@@ -127,16 +123,16 @@ public class JetCoinTrend {
                 allOf(averagingDouble(Entry::getValue), counting());
 
         tweetsWithSentiment.window(sliding(30_000, 10_000))
-                           .aggregate(aggrOp)
-                           .drainTo(map(MAP_NAME_30_SECONDS));
+                .aggregate(aggrOp)
+                .drainTo(map(MAP_NAME_30_SECONDS));
 
         tweetsWithSentiment.window(sliding(60_000, 10_000))
-                           .aggregate(aggrOp)
-                           .drainTo(map(MAP_NAME_1_MINUTE));
+                .aggregate(aggrOp)
+                .drainTo(map(MAP_NAME_1_MINUTE));
 
         tweetsWithSentiment.window(sliding(300_000, 10_000))
-                           .aggregate(aggrOp)
-                           .drainTo(map(MAP_NAME_5_MINUTE));
+                .aggregate(aggrOp)
+                .drainTo(map(MAP_NAME_5_MINUTE));
 
         return pipeline;
     }
