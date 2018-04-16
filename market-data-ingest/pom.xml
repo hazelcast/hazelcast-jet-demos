@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.hazelcast.jet.demos</groupId>
 		<artifactId>hazelcast-jet-demos</artifactId>
-		<version>0.6-SNAPSHOT</version>
+		<version>0.6</version>
 	</parent>
 
 	<name>Market Data Ingestion</name>
