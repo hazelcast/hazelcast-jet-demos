@@ -44,6 +44,12 @@ import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.util.Collections.singletonList;
 /**
+ * NOTE: This class implements the same logic as {@link com.hazelcast.jet.demo.CryptocurrencySentimentAnalysis},
+ * but it uses low-level Core API. This API is for experts only and most users can safely ignore it.
+ *
+ * {@see https://jet.hazelcast.org/faq/#WhichAPIshouldIuse}
+ *
+ *
  * Twitter content is analyzed in real time to calculate cryptocurrency
  * trend list with its popularity index. The tweets are read from Twitter
  * and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP
