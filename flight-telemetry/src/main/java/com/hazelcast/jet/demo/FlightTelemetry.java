@@ -4,9 +4,11 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
+import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -152,7 +154,7 @@ public class FlightTelemetry {
         addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
 
         try {
-            Job job = jet.newJob(pipeline);
+            Job job = jet.newJob(pipeline, new JobConfig().setName("FlightTelemetry"));
             job.join();
         } finally {
             Jet.shutdownAll();
@@ -171,8 +173,9 @@ public class FlightTelemetry {
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
                 .drawFrom(streamAircraft(SOURCE_URL, 10000))
                 .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
-                .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000)
-                .map(FlightTelemetry::assignAirport)
+                .setName("Flight Data Source")
+                .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
+                .map(FlightTelemetry::assignAirport).setName("Assign airport")
                 .window(slidingWindow)
                 .groupingKey(Aircraft::getId)
                 .aggregate(
@@ -182,44 +185,51 @@ public class FlightTelemetry {
                                     aircraft.setVerticalDirection(getVerticalDirection(coefficient));
                                     return aircraft;
                                 })
-                ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
+                ).setName("Calculate linear trend of aircraft"); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
         // Filter ascending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
-                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING)
+                .setName("Filter ascending aircraft");
         // Write ascending flights to an IMap
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
         //Filter descending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
-                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING)
+                .setName("Filter descending aircraft");
         // Write descending flights to an IMap
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
         // Enrich aircraft with the noise info and calculate max noise
         // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Integer>> maxNoise = flights
-                .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
+                .map(e -> entry(e.getValue(), getNoise(e.getValue())))
+                .setName("Enrich with noise info")// (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(comparingInt(Entry::getValue)))
-                .map(e -> new TimestampedEntry<>(e.getTimestamp(), e.getKey(), e.getValue().getValue()));
+                .aggregate(maxBy(comparingInt(Entry::getValue)),
+                        (winStart, winEnd, key, e) -> new TimestampedEntry<>(winEnd, key, e.getValue()))
+                .setName("Calculate max noise level");
         // (airport, max_noise)
 
         // Enrich aircraft with the C02 emission info and calculate total noise
         // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
-                .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
+                .map(e -> entry(e.getValue(), getCO2Emission(e.getValue())))
+                .setName("Enrich with CO2 info") // (aircraft, co2_emission)
                 .window(slidingWindow)
                 .groupingKey(entry -> entry.getKey().getAirport() + "_C02_EMISSION")
-                .aggregate(summingDouble(Entry::getValue));
+                .aggregate(summingDouble(Entry::getValue))
+                .setName("Calculate avg CO2 level");
         // (airport, total_co2)
 
         // Build Graphite sink
         Sink<TimestampedEntry> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
 
         // Drain all results to the Graphite sink
-        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
+        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
+         .setName("graphiteSink");
         return p;
     }
 
