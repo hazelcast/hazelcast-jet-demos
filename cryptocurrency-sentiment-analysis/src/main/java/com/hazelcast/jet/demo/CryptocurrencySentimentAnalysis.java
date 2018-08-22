@@ -12,7 +12,7 @@ import com.hazelcast.jet.demo.common.StreamTwitterP;
 import com.hazelcast.jet.demo.util.Util;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
+import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import edu.stanford.nlp.util.CoreMap;
 
 import javax.annotation.Nullable;
@@ -109,7 +109,7 @@ public class CryptocurrencySentimentAnalysis {
         Properties properties = loadProperties();
         List<String> terms = loadTerms();
 
-        StreamStageWithGrouping<Entry<String, Double>, String> tweetsWithSentiment = pipeline
+        StreamStageWithKey<Entry<String, Double>, String> tweetsWithSentiment = pipeline
                 .drawFrom(StreamTwitterP.streamTwitter(properties, terms))
                 .addTimestamps()
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)

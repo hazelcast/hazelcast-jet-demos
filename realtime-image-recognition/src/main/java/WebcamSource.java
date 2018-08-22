@@ -43,6 +43,7 @@ public class WebcamSource extends AbstractProcessor {
     @Override
     protected void init(Context context) throws Exception {
         super.init(context);
+        setCooperative(false);
         webcam = UtilWebcamCapture.openDefault(640, 480);
         gui = new ImagePanel();
         gui.setPreferredSize(webcam.getViewSize());
@@ -68,12 +69,6 @@ public class WebcamSource extends AbstractProcessor {
         return false;
     }
 
-    @Override
-    public boolean isCooperative() {
-        return false;
-    }
-
-
     public static StreamSource<SerializableBufferedImage> webcam() {
         return Sources.streamFromProcessor("webcam",
                 forceTotalParallelismOne(ProcessorSupplier.of(WebcamSource::new))
@@ -81,7 +76,7 @@ public class WebcamSource extends AbstractProcessor {
     }
     
     @Override
-    public void close(Throwable error) {
+    public void close() {
         if (webcam != null) {
             webcam.close();
         }

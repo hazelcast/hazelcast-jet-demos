@@ -5,10 +5,10 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -16,6 +16,13 @@ import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.map.listener.EntryAddedListener;
+import org.python.core.PyFloat;
+import org.python.core.PyInteger;
+import org.python.core.PyList;
+import org.python.core.PyString;
+import org.python.core.PyTuple;
+import org.python.modules.cPickle;
+
 import java.io.BufferedOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -23,12 +30,6 @@ import java.time.Instant;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.function.Consumer;
-import org.python.core.PyFloat;
-import org.python.core.PyInteger;
-import org.python.core.PyList;
-import org.python.core.PyString;
-import org.python.core.PyTuple;
-import org.python.modules.cPickle;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
@@ -154,7 +155,7 @@ public class FlightTelemetry {
         addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
 
         try {
-            Job job = jet.newJob(pipeline, new JobConfig().setName("FlightTelemetry"));
+            Job job = jet.newJob(pipeline, new JobConfig().setName("FlightTelemetry").setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
             job.join();
         } finally {
             Jet.shutdownAll();
@@ -241,10 +242,11 @@ public class FlightTelemetry {
      * @param port Graphite port
      */
     private static Sink<TimestampedEntry> buildGraphiteSink(String host, int port) {
-        return Sinks.<BufferedOutputStream, TimestampedEntry>builder(instance -> uncheckCall(()
+        return Sinks.builder(
+                "graphite", instance -> uncheckCall(()
                 -> new BufferedOutputStream(new Socket(host, port).getOutputStream())
         ))
-                .onReceiveFn((bos, entry) -> uncheckRun(() -> {
+                .<TimestampedEntry>receiveFn((bos, entry) -> uncheckRun(() -> {
                     GraphiteMetric metric = new GraphiteMetric();
                     metric.from(entry);
 

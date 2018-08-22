@@ -23,7 +23,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,7 +33,7 @@ import java.util.Objects;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
-import static com.hazelcast.jet.pipeline.Sources.files;
+import static com.hazelcast.jet.pipeline.Sources.filesBuilder;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.lang.Integer.parseInt;
 import static java.time.ZoneId.systemDefault;
@@ -131,10 +130,9 @@ public class TrafficPredictor {
 
         // Calculate car counts from the file.
         StreamStage<CarCount> carCounts = pipeline.drawFrom(
-                files(
-                        sourceFile.getParent().toString(),
-                        StandardCharsets.UTF_8,
-                        sourceFile.getFileName().toString(), (filename, line) -> {
+                filesBuilder(sourceFile.getParent().toString())
+                        .glob(sourceFile.getFileName().toString())
+                        .build((filename, line) -> {
                             String[] split = line.split(",");
                             long time = LocalDateTime.parse(split[0])
                                                      .atZone(systemDefault())

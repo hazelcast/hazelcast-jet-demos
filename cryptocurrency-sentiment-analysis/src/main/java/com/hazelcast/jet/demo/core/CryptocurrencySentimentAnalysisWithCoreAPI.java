@@ -152,7 +152,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf30Sec.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex slidingWin1min = dag.newVertex("slidingWin1Min", aggregateToSlidingWindowP(
@@ -161,7 +161,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf1Min.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex slidingWin5min = dag.newVertex("slidingWin5Min", aggregateToSlidingWindowP(
@@ -170,7 +170,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf5Min.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex map30Seconds = dag.newVertex(MAP_NAME_30_SECONDS, writeMapP(MAP_NAME_30_SECONDS));

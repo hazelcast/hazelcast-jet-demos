@@ -45,6 +45,7 @@ public class FlightDataSource extends AbstractProcessor {
     private long lastPoll;
 
     public FlightDataSource(String url, long pollIntervalMillis) {
+        setCooperative(false);
         try {
             this.url = new URL(url);
         } catch (MalformedURLException e) {
@@ -67,11 +68,6 @@ public class FlightDataSource extends AbstractProcessor {
         if (emitFromTraverser(traverser)) {
             traverser = null;
         }
-        return false;
-    }
-
-    @Override
-    public boolean isCooperative() {
         return false;
     }
 

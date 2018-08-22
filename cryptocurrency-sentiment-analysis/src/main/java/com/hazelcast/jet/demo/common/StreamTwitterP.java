@@ -39,6 +39,7 @@ public class StreamTwitterP extends AbstractProcessor {
     private BasicClient client;
 
     private StreamTwitterP(Properties properties, List<String> terms) {
+        setCooperative(false);
         this.properties = properties;
         this.terms = terms;
     }
@@ -90,12 +91,7 @@ public class StreamTwitterP extends AbstractProcessor {
     }
 
     @Override
-    public boolean isCooperative() {
-        return false;
-    }
-
-    @Override
-    public void close(Throwable error) {
+    public void close() {
         if (client != null) {
             client.stop();
         }

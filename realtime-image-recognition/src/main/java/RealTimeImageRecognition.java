@@ -131,9 +131,8 @@ public class RealTimeImageRecognition {
      * A GUI Sink which will show the frames with the maximum classification scores.
      */
     private static Sink<TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>> buildGUISink() {
-        return Sinks.<ImageClassificationPanel, TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>>
-                builder((instance) -> createPanel())
-                .onReceiveFn(RealTimeImageRecognition::addItemToPanel)
+        return Sinks.builder("GUI", (instance) -> createPanel())
+                .receiveFn(RealTimeImageRecognition::addItemToPanel)
                 .build();
     }
 
