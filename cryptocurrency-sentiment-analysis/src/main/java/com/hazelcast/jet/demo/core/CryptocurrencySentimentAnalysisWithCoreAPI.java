@@ -14,7 +14,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.common.CoinDefs;
-import com.hazelcast.jet.demo.common.StreamTwitterP;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;

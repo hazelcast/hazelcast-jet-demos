@@ -27,6 +27,7 @@ import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -45,6 +46,7 @@ import javax.swing.*;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
+import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singletonList;
@@ -131,7 +133,7 @@ public class RealTimeImageRecognition {
      * A GUI Sink which will show the frames with the maximum classification scores.
      */
     private static Sink<TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>> buildGUISink() {
-        return Sinks.builder("GUI", (instance) -> createPanel())
+        return sinkBuilder("GUI", (instance) -> createPanel())
                 .receiveFn(RealTimeImageRecognition::addItemToPanel)
                 .build();
     }

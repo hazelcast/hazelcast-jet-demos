@@ -35,7 +35,7 @@ import static java.util.stream.Collectors.toList;
  * and position timestamp. It will also records the latest position timestamp of the aircrafts so if
  * there are no update for an aircraft it will not be emitted from this source.
  */
-public class FlightDataSource extends AbstractProcessor {
+public class StreamAircraftP extends AbstractProcessor {
 
     private final URL url;
     private final long intervalMillis;
@@ -44,8 +44,7 @@ public class FlightDataSource extends AbstractProcessor {
     private Traverser<Aircraft> traverser;
     private long lastPoll;
 
-    public FlightDataSource(String url, long pollIntervalMillis) {
-        setCooperative(false);
+    public StreamAircraftP(String url, long pollIntervalMillis) {
         try {
             this.url = new URL(url);
         } catch (MalformedURLException e) {
@@ -68,6 +67,11 @@ public class FlightDataSource extends AbstractProcessor {
         if (emitFromTraverser(traverser)) {
             traverser = null;
         }
+        return false;
+    }
+
+    @Override
+    public boolean isCooperative() {
         return false;
     }
 
@@ -119,7 +123,7 @@ public class FlightDataSource extends AbstractProcessor {
     }
 
     public static ProcessorMetaSupplier streamAircraftP(String url, long intervalMillis) {
-        return forceTotalParallelismOne(of(() -> new FlightDataSource(url, intervalMillis)));
+        return forceTotalParallelismOne(of(() -> new StreamAircraftP(url, intervalMillis)));
     }
 
     public static StreamSource<Aircraft> streamAircraft(String url, long intervalMillis) {

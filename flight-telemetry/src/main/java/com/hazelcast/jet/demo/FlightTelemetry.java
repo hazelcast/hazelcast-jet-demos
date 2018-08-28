@@ -11,6 +11,7 @@ import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -46,7 +47,7 @@ import static com.hazelcast.jet.demo.Constants.heavyWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCClimbingAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.typeToLTOCycyleC02Emission;
-import static com.hazelcast.jet.demo.FlightDataSource.streamAircraft;
+import static com.hazelcast.jet.demo.StreamAircraftP.streamAircraft;
 import static com.hazelcast.jet.demo.types.WakeTurbulanceCategory.HEAVY;
 import static com.hazelcast.jet.demo.util.Util.inAtlanta;
 import static com.hazelcast.jet.demo.util.Util.inFrankfurt;
@@ -56,8 +57,7 @@ import static com.hazelcast.jet.demo.util.Util.inNYC;
 import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
 import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -65,77 +65,76 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Reads a ADB-S telemetry stream from [ADB-S Exchange](https://www.adsbexchange.com/)
  * on all commercial aircraft flying anywhere in the world.
  * The service provides real-time information about flights.
- *
+ * <p>
  * Flights in the low altitudes are filtered for determining whether
  * they are ascending or descending. This has been done with calculation of
  * linear trend of altitudes. After vertical direction determination, ascending
  * and descending flight are written to a Hazelcast Map.
- *
+ * <p>
  * For interested airports, the pipeline also calculates average C02 emission
  * and maximum noise level.
  * C02 emission and maximum noise level are calculated by enriching the data
  * stream with average landing/take-off emissions and noise levels at the
  * specific altitudes for airplanes models and categories which can be found
  * on {@link Constants}.
- *
+ * <p>
  * After all those calculations results are forwarded to a Graphite
  * metrics storage which feds the Grafana Dashboard.
- *
+ * <p>
  * The DAG used to model Flight Telemetry calculations can be seen below :
- *
- *                                                  ┌──────────────────┐
- *                                                  │Flight Data Source│
- *                                                  └─────────┬────────┘
- *                                                            │
- *                                                            v
- *                                           ┌─────────────────────────────────┐
- *                                           │Filter Aircraft  in Low Altitudes│
- *                                           └────────────────┬────────────────┘
- *                                                            │
- *                                                            v
- *                                                  ┌───────────────────┐
- *                                                  │Assign Airport Info│
- *                                                  └─────────┬─────────┘
- *                                                            │
- *                                                            v
- *                                                   ┌─────────────────┐
- *                                                   │Insert Watermarks│
- *                                                   └────────┬────────┘
- *                                                            │
- *                                                            v
- *                                          ┌───────────────────────────────────┐
- *                                          │Calculate Linear Trend of Altitudes│
- *                                          └─────────────────┬─────────────────┘
- *                                                            │
- *                                                            v
- *                                               ┌─────────────────────────┐
- *                                               │Assign Vertical Direction│
- *                                               └────┬────┬──┬───┬───┬────┘
- *                                                    │    │  │   │   │
- *                        ┌───────────────────────────┘    │  │   │   └──────────────────────────┐
- *                        │                                │  │   └─────────┐                    │
- *                        │                                │  └─────────┐   │                    │
- *                        v                                v            │   │                    │
- *             ┌────────────────────┐          ┌──────────────────────┐ │   │                    │
- *             │Enrich with C02 Info│          │Enrich with Noise Info│ │   │                    │
- *             └──┬─────────────────┘          └───────────┬──────────┘ │   │                    │
- *                │                                        │            │   │                    │
- *                │                          ┌─────────────┘            │   │                    │
- *                │                          │          ┌───────────────┘   │                    │
- *                v                          v          │                   v                    v
- *┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
- *│Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircraft │ │Filter Ascending Aircraft │
- *└──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
- *               │                       │              │               │                         │
- *               │  ┌────────────────────┘              │               │                         │
- *               │  │  ┌────────────────────────────────┘               │                         │
- *               │  │  │                                                │                         │
- *               │  │  │                                                │                         │
- *               v  v  v                                                v                         v
- *           ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
- *           │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
- *           └─────────────┘                               └──────────────────────┘     └────────────────────────┘
- *
+ * <p>
+ * ┌──────────────────┐
+ * │Flight Data Source│
+ * └─────────┬────────┘
+ * │
+ * v
+ * ┌─────────────────────────────────┐
+ * │Filter Aircraft  in Low Altitudes│
+ * └────────────────┬────────────────┘
+ * │
+ * v
+ * ┌───────────────────┐
+ * │Assign Airport Info│
+ * └─────────┬─────────┘
+ * │
+ * v
+ * ┌─────────────────┐
+ * │Insert Watermarks│
+ * └────────┬────────┘
+ * │
+ * v
+ * ┌───────────────────────────────────┐
+ * │Calculate Linear Trend of Altitudes│
+ * └─────────────────┬─────────────────┘
+ * │
+ * v
+ * ┌─────────────────────────┐
+ * │Assign Vertical Direction│
+ * └────┬────┬──┬───┬───┬────┘
+ * │    │  │   │   │
+ * ┌───────────────────────────┘    │  │   │   └──────────────────────────┐
+ * │                                │  │   └─────────┐                    │
+ * │                                │  └─────────┐   │                    │
+ * v                                v            │   │                    │
+ * ┌────────────────────┐          ┌──────────────────────┐ │   │                    │
+ * │Enrich with C02 Info│          │Enrich with Noise Info│ │   │                    │
+ * └──┬─────────────────┘          └───────────┬──────────┘ │   │                    │
+ * │                                        │            │   │                    │
+ * │                          ┌─────────────┘            │   │                    │
+ * │                          │          ┌───────────────┘   │                    │
+ * v                          v          │                   v                    v
+ * ┌───────────────────────┐ ┌─────────────────────────┐ │ ┌───────────────────────────┐ ┌──────────────────────────┐
+ * │Calculate Avg C02 Level│ │Calculate Max Noise Level│ │ │Filter Descending Aircraft │ │Filter Ascending Aircraft │
+ * └──────────────┬────────┘ └────────────┬────────────┘ │ └─────────────┬─────────────┘ └─────────┬────────────────┘
+ * │                       │              │               │                         │
+ * │  ┌────────────────────┘              │               │                         │
+ * │  │  ┌────────────────────────────────┘               │                         │
+ * │  │  │                                                │                         │
+ * │  │  │                                                │                         │
+ * v  v  v                                                v                         v
+ * ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
+ * │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
+ * └─────────────┘                               └──────────────────────┘     └────────────────────────┘
  */
 public class FlightTelemetry {
 
@@ -230,7 +229,7 @@ public class FlightTelemetry {
 
         // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
-         .setName("graphiteSink");
+                .setName("graphiteSink");
         return p;
     }
 
@@ -242,11 +241,9 @@ public class FlightTelemetry {
      * @param port Graphite port
      */
     private static Sink<TimestampedEntry> buildGraphiteSink(String host, int port) {
-        return Sinks.builder(
-                "graphite", instance -> uncheckCall(()
-                -> new BufferedOutputStream(new Socket(host, port).getOutputStream())
-        ))
-                .<TimestampedEntry>receiveFn((bos, entry) -> uncheckRun(() -> {
+        return sinkBuilder("graphite", instance ->
+                new BufferedOutputStream(new Socket(host, port).getOutputStream()))
+                .<TimestampedEntry>receiveFn((bos, entry) -> {
                     GraphiteMetric metric = new GraphiteMetric();
                     metric.from(entry);
 
@@ -255,9 +252,9 @@ public class FlightTelemetry {
 
                     bos.write(header);
                     bos.write(payload.toBytes());
-                }))
-                .flushFn((bos) -> uncheckRun(bos::flush))
-                .destroyFn((bos) -> uncheckRun(bos::close))
+                })
+                .flushFn(BufferedOutputStream::flush)
+                .destroyFn(BufferedOutputStream::close)
                 .build();
     }
 
