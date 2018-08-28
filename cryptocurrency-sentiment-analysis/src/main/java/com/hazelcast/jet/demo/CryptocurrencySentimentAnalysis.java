@@ -51,48 +51,43 @@ import static java.lang.Double.isNaN;
  * sentimental analysis is applied to each tweet to calculate the sentiment
  * score of the respective tweet. This score says whether the Tweet has rather
  * positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
- * <p>
+ *
  * For each cryptocurrency, Jet aggregates scores from last 30 seconds,
  * last minute and last 5 minutes and prints the coin popularity table.
- * <p>
+ *
  * The DAG used to model cryptocurrency calculations can be seen below :
- * <p>
- * ┌───────────────────┐
- * │Twitter Data Source│
- * └──────────┬────────┘
- * │
- * v
- * ┌──────────────┐
- * │Add Timestamps│
- * └───────┬──────┘
- * │
- * v
- * ┌──────────────────────┐
- * │FlatMap Relevant Coins│
- * └──────────┬───────────┘
- * │
- * v
- * ┌─────────────────────────┐
- * │Calculate Sentiment Score│
- * └─────────────┬───────────┘
- * │
- * v
- * ┌──────────────────┐
- * │Group by Coin Name│
- * └────┬───┬─────┬───┘
- * │   │     │
- * ┌────────────────────────┘   │     └──────────────────────┐
- * │                            │                            │
- * v                            v                            v
- * ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
- * │    Calculate 5min      │   │    Calculate 30sec     │   │    Calculate 1min      │
- * │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
- * └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
- * │                              │                              │
- * v                              v                              v
- * ┌───────────────────────────┐ ┌─────────────────────────────┐ ┌───────────────────────────┐
- * │Write results to IMap(5Min)│ │Write results to IMap(30secs)│ │Write results to IMap(1Min)│
- * └───────────────────────────┘ └─────────────────────────────┘ └───────────────────────────┘
+ *
+ *                                  ┌───────────────────┐
+ *                                  │Twitter Data Source│
+ *                                  └──────────┬────────┘
+ *                                             │
+ *                                             v
+ *                                 ┌──────────────────────┐
+ *                                 │FlatMap Relevant Coins│
+ *                                 └──────────┬───────────┘
+ *                                            │
+ *                                            v
+ *                               ┌─────────────────────────┐
+ *                               │Calculate Sentiment Score│
+ *                               └─────────────┬───────────┘
+ *                                             │
+ *                                             v
+ *                                   ┌──────────────────┐
+ *                                   │Group by Coin Name│
+ *                                   └────┬───┬─────┬───┘
+ *                                        │   │     │
+ *               ┌────────────────────────┘   │     └──────────────────────┐
+ *               │                            │                            │
+ *               v                            v                            v
+ *  ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
+ *  │    Calculate 5min      │   │    Calculate 30sec     │   │    Calculate 1min      │
+ *  │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
+ *  └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
+ *              │                              │                              │
+ *              v                              v                              v
+ *┌───────────────────────────┐ ┌─────────────────────────────┐ ┌───────────────────────────┐
+ *│Write results to IMap(5Min)│ │Write results to IMap(30secs)│ │Write results to IMap(1Min)│
+ *└───────────────────────────┘ └─────────────────────────────┘ └───────────────────────────┘
  */
 public class CryptocurrencySentimentAnalysis {
 
