@@ -11,7 +11,6 @@ import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -47,7 +46,7 @@ import static com.hazelcast.jet.demo.Constants.heavyWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCClimbingAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.typeToLTOCycyleC02Emission;
-import static com.hazelcast.jet.demo.StreamAircraftP.streamAircraft;
+import static com.hazelcast.jet.demo.FlightDataSource.flightDataSource;
 import static com.hazelcast.jet.demo.types.WakeTurbulanceCategory.HEAVY;
 import static com.hazelcast.jet.demo.util.Util.inAtlanta;
 import static com.hazelcast.jet.demo.util.Util.inFrankfurt;
@@ -171,8 +170,7 @@ public class FlightTelemetry {
         // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
         // and assign vertical directions to the aircrafts.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
-                .drawFrom(streamAircraft(SOURCE_URL, 10000))
-                .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
+                .drawFrom(flightDataSource(SOURCE_URL, 10000, SECONDS.toMillis(15)))
                 .setName("Flight Data Source")
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
                 .map(FlightTelemetry::assignAirport).setName("Assign airport")
