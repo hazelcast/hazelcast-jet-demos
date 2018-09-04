@@ -21,6 +21,8 @@ import com.github.sarxos.webcam.Webcam;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 
@@ -32,56 +34,40 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelism
  * A source that emits the frames captured from webcam video stream.
  * Also creates a GUI to show current captures.
  */
-public class WebcamSource extends AbstractProcessor {
+public class WebcamSource  {
 
-    private Traverser<SerializableBufferedImage> traverser;
-    private Webcam webcam;
-    private ImagePanel gui;
+    private final Webcam webcam;
+    private final ImagePanel gui;
+    private final long pollIntervalMillis;
+
     private long lastPoll;
-    private long intervalMillis = 500;
 
-    @Override
-    protected void init(Context context) throws Exception {
-        super.init(context);
+    public WebcamSource(long pollIntervalMillis) {
+        this.pollIntervalMillis = pollIntervalMillis;
         webcam = UtilWebcamCapture.openDefault(640, 480);
         gui = new ImagePanel();
         gui.setPreferredSize(webcam.getViewSize());
         ShowImages.showWindow(gui, "Webcam Input", true);
     }
 
-    @Override
-    public boolean complete() {
-        if (traverser == null) {
+    public void addToBufferFn(TimestampedSourceBuffer<BufferedImage> buffer) {
             long now = System.currentTimeMillis();
-            if (now > lastPoll + intervalMillis) {
-                lastPoll = now;
-                BufferedImage image = webcam.getImage();
-                gui.setImageRepaint(image);
-                traverser = Traverser.over(new SerializableBufferedImage(image));
-            } else {
-                return false;
-            }
+        if (now <= (lastPoll + pollIntervalMillis)) {
+            return;
         }
-        if (emitFromTraverser(traverser)) {
-            traverser = null;
-        }
-        return false;
+        lastPoll = now;
+        BufferedImage image = webcam.getImage();
+        gui.setImageRepaint(image);
+        buffer.add(image, System.currentTimeMillis());
     }
 
-    @Override
-    public boolean isCooperative() {
-        return false;
+    public static StreamSource<BufferedImage> webcam(long pollIntervalMillis) {
+        return SourceBuilder.timestampedStream("webcam", ctx -> new WebcamSource(pollIntervalMillis))
+                .fillBufferFn(WebcamSource::addToBufferFn)
+                .destroyFn(WebcamSource::close)
+                .build();
     }
 
-    public static StreamSource<SerializableBufferedImage> webcam() {
-        return Sources.streamFromProcessor("webcam",
-                forceTotalParallelismOne(ProcessorSupplier.of(WebcamSource::new))
-        );
-    }
-
-
-
-    @Override
     public void close() {
         if (webcam != null) {
             webcam.close();

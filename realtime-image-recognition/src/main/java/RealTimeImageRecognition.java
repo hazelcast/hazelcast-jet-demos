@@ -24,31 +24,28 @@ import boofcv.struct.image.Planar;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.SinkBuilder;
-import com.hazelcast.jet.pipeline.Sinks;
+
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import javax.swing.*;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
 import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singletonList;
 
 /**
@@ -93,6 +90,24 @@ public class RealTimeImageRecognition {
         System.setProperty("hazelcast.logging.type", "slf4j");
     }
 
+    /**
+     * Builds and returns the Pipeline which represents the actual computation.
+     */
+    private static Pipeline buildPipeline(String modelPath) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.drawFrom(WebcamSource.webcam(500))
+                .mapUsingContext(classifierContext(modelPath),
+                        (ctx, img) -> {
+                            Entry<String, Double> classification = classifyWithModel(ctx, img);
+                            return tuple3(img, classification.getKey(), classification.getValue());
+                        }
+                )
+                .window(tumbling(1000))
+                .aggregate(maxBy(comparingDouble(Tuple3::f2)))
+                .drainTo(buildGUISink());
+        return pipeline;
+    }
+
     public static void main(String[] args) {
         if (args.length != 1) {
             System.err.println("Missing command-line argument: <model path>");
@@ -116,40 +131,23 @@ public class RealTimeImageRecognition {
     }
 
     /**
-     * Builds and returns the Pipeline which represents the actual computation.
-     */
-    private static Pipeline buildPipeline(String modelPath) {
-        Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(WebcamSource.webcam())
-                .addTimestamps()
-                .mapUsingContext(classifierContext(modelPath), RealTimeImageRecognition::classifyWithModel)
-                .window(tumbling(1000))
-                .aggregate(maxBy(comparingDouble(e -> e.getValue().getValue())))
-                .drainTo(buildGUISink());
-        return pipeline;
-    }
-
-    /**
      * A GUI Sink which will show the frames with the maximum classification scores.
      */
-    private static Sink<TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>>> buildGUISink() {
+    private static Sink<TimestampedItem<Tuple3<BufferedImage, String, Double>>> buildGUISink() {
         return sinkBuilder("GUI", (instance) -> createPanel())
-                .receiveFn(RealTimeImageRecognition::addItemToPanel)
+                .<TimestampedItem<Tuple3<BufferedImage, String, Double>>>receiveFn((panel, tsItem) -> {
+                    BufferedImage image = tsItem.item().f0();
+                    Score score = new Score();
+                    score.set(tsItem.item().f2(), 0);
+                    panel.addImage(
+                            image,
+                            new Timestamp(tsItem.timestamp()).toString(),
+                            singletonList(score),
+                            singletonList(tsItem.item().f1())
+                    );
+                    scrollToBottomAndRepaint(panel);
+                })
                 .build();
-    }
-
-    /**
-     * Adds an new image to the result GUI panel
-     */
-    private static void addItemToPanel(ImageClassificationPanel panel,
-                                       TimestampedItem<Entry<SerializableBufferedImage, Entry<String, Double>>> item) {
-        SerializableBufferedImage image = item.item().getKey();
-        Entry<String, Double> category = item.item().getValue();
-        Score score = new Score();
-        score.set(category.getValue(), 0);
-        String timestampString = new Timestamp(item.timestamp()).toString();
-        panel.addImage(image.getImage(), timestampString, singletonList(score), singletonList(category.getKey()));
-        scrollToBottomAndRepaint(panel);
     }
 
     /**
@@ -183,21 +181,13 @@ public class RealTimeImageRecognition {
     /**
      * The actual classification of the images by using the pre-trained model.
      */
-    private static Entry<SerializableBufferedImage, Entry<String, Double>> classifyWithModel(
-            ImageClassifierVggCifar10 classifier, SerializableBufferedImage serializableBufferedImage) {
-        BufferedImage image = serializableBufferedImage.getImage();
-
+    private static Entry<String, Double> classifyWithModel(ImageClassifierVggCifar10 classifier, BufferedImage image) {
         Planar<GrayF32> planar = new Planar<>(GrayF32.class, image.getWidth(), image.getHeight(), 3);
         ConvertBufferedImage.convertFromPlanar(image, planar, true, GrayF32.class);
-
         classifier.classify(planar);
-        List<Score> results = classifier.getAllResults();
-        List<Entry<String, Double>> categoryWithScores = results.stream().map(score -> entry(classifier.getCategories().get(score.category), score.score)).collect(Collectors.toList());
-        Entry<String, Double> maxScoredCategory = categoryWithScores
-                .stream()
-                .max(Comparator.comparing(Entry::getValue))
-                .get();
-        return entry(serializableBufferedImage, maxScoredCategory);
+        return classifier.getAllResults().stream()
+                .map(score -> entry(classifier.getCategories().get(score.category), score.score))
+                .max(Comparator.comparing(Entry::getValue)).get();
     }
 
     /**
@@ -208,11 +198,7 @@ public class RealTimeImageRecognition {
     private static ContextFactory<ImageClassifierVggCifar10> classifierContext(String modelPath) {
         return ContextFactory.withCreateFn(jet -> {
             ImageClassifierVggCifar10 classifier = new ImageClassifierVggCifar10();
-            try {
-                classifier.loadModel(new File(modelPath));
-            } catch (IOException e) {
-                throw rethrow(e);
-            }
+            classifier.loadModel(new File(modelPath));
             return classifier;
         });
     }

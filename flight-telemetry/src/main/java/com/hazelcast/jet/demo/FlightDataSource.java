@@ -54,6 +54,7 @@ public class FlightDataSource {
         if ((lastPoll + pollIntervalMillis) > System.currentTimeMillis()) {
             return;
         }
+        lastPoll = System.currentTimeMillis();
 
         JsonArray aircraftList = pollForAircraft();
         long newEventCount = aircraftList.values().stream()
@@ -67,7 +68,6 @@ public class FlightDataSource {
                     buffer.add(a, a.getPosTime());
                 }).count();
 
-        lastPoll = System.currentTimeMillis();
         logger.info("Polled " + aircraftList.size() + " aircraft, " + newEventCount + " new positions.");
     }
 
