@@ -62,11 +62,6 @@ import static java.util.Collections.singletonList;
  *              └─────────┬─────────┘
  *                        │
  *                        v
- *                ┌──────────────┐
- *                │Add Timestamps│
- *                └────────┬─────┘
- *                         │
- *                         v
  *        ┌────────────────────────────────┐
  *        │Classify Images with pre-trained│
  *        │     machine learning model     │
@@ -82,7 +77,6 @@ import static java.util.Collections.singletonList;
  *              ┌───────────────────┐
  *              │Show results on GUI│
  *              └───────────────────┘
-
  */
 public class RealTimeImageRecognition {
 
@@ -202,5 +196,4 @@ public class RealTimeImageRecognition {
             return classifier;
         });
     }
-
 }
