@@ -1,12 +1,10 @@
 package com.hazelcast.jet.demo.core;
 
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.demo.common.SentimentAnalyzer;
-import edu.stanford.nlp.util.CoreMap;
-import java.util.List;
+
 import javax.annotation.Nonnull;
 
 import static java.lang.Double.isInfinite;
@@ -22,15 +20,10 @@ public class SentimentProcessor extends AbstractProcessor {
             ResettableSingletonTraverser<>();
     private final FlatMapper<TimestampedEntry<String, String>, TimestampedEntry<String, Double>> mapper =
             flatMapper(e -> {
-                List<CoreMap> annotations = analyzer.getAnnotations(e.getValue());
-                double sentimentType = analyzer.getSentimentClass(annotations);
-                double sentimentScore = analyzer.getScore(annotations, sentimentType);
-
-                double score = sentimentType * sentimentScore;
-                if (isNaN(score) || isInfinite(score)) {
-                    return Traversers.empty();
+                double score = analyzer.getSentimentScore(e.getValue());
+                if (!isNaN(score) && !isInfinite(score)) {
+                    traverser.accept(new TimestampedEntry<>(e.getTimestamp(), e.getKey(), score));
                 }
-                traverser.accept(new TimestampedEntry<>(e.getTimestamp(), e.getKey(), score));
                 return traverser;
             });
 

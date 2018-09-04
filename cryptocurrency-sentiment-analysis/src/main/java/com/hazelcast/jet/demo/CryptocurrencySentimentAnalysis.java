@@ -22,10 +22,9 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
-import edu.stanford.nlp.util.CoreMap;
 import org.json.JSONObject;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -37,12 +36,16 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.demo.util.Util.*;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_1_MINUTE;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_30_SECONDS;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_5_MINUTE;
+import static com.hazelcast.jet.demo.util.Util.isMissing;
+import static com.hazelcast.jet.demo.util.Util.loadProperties;
+import static com.hazelcast.jet.demo.util.Util.loadTerms;
+import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
 
 /**
  * Twitter content is analyzed in real time to calculate cryptocurrency
@@ -122,10 +125,9 @@ public class CryptocurrencySentimentAnalysis {
         StreamStageWithKey<Entry<String, Double>, String> tweetsWithSentiment = pipeline
                 .drawFrom(twitterSource(properties, terms))
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
-                .mapUsingContext(ContextFactory
-                                .withCreateFn(jet -> new SentimentAnalyzer())
-                                .shareLocally(),
-                        CryptocurrencySentimentAnalysis::calculateSentiment)
+                .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e) ->
+                        entry(e.getKey(), analyzer.getSentimentScore(e.getValue())))
+                .filter(e -> !e.getValue().isInfinite() && !e.getValue().isNaN())
                 .groupingKey(entryKey());
 
         AggregateOperation1<Entry<String, Double>, ?, Tuple2<Double, Long>> aggrOp =
@@ -146,25 +148,12 @@ public class CryptocurrencySentimentAnalysis {
         return pipeline;
     }
 
-    /**
-     * Calculates sentiment score for a coin and returns it as (coin,score) pair.
-     *
-     * @param analyzer NLP sentiment ingest
-     * @param entry    (coin,tweet) pair
-     */
-    @Nullable
-    private static Entry<String, Double> calculateSentiment(SentimentAnalyzer analyzer, Entry<String, String> entry) {
-        List<CoreMap> annotations = analyzer.getAnnotations(entry.getValue());
-        double sentimentType = analyzer.getSentimentClass(annotations);
-        double sentimentScore = analyzer.getScore(annotations, sentimentType);
-
-        double score = sentimentType * sentimentScore;
-        if (isNaN(score) || isInfinite(score)) {
-            return null;
-        }
-        return entry(entry.getKey(), score);
+    @Nonnull
+    private static ContextFactory<SentimentAnalyzer> sentimentAnalyzerContext() {
+        return ContextFactory
+                        .withCreateFn(jet -> new SentimentAnalyzer())
+                        .shareLocally();
     }
-
 
     /**
      * Returns a traverser which flat maps each tweet to (coin, tweet) pairs
