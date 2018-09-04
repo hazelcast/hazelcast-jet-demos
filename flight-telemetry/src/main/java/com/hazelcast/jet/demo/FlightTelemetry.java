@@ -167,11 +167,10 @@ public class FlightTelemetry {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
-        // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
-        // and assign vertical directions to the aircrafts.
+        // Filter aircraft whose altitude less then 3000ft, calculate linear trend of their altitudes
+        // and assign vertical directions to the aircraft.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
                 .drawFrom(flightDataSource(SOURCE_URL, 10000, SECONDS.toMillis(15)))
-                .setName("Flight Data Source")
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
                 .map(FlightTelemetry::assignAirport).setName("Assign airport")
                 .window(slidingWindow)

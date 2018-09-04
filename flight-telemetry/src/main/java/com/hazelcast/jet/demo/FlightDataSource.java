@@ -51,10 +51,11 @@ public class FlightDataSource {
     }
 
     private void fillBuffer(TimestampedSourceBuffer<Aircraft> buffer) throws IOException {
-        if ((lastPoll + pollIntervalMillis) > System.currentTimeMillis()) {
+        long now = System.currentTimeMillis();
+        if (now < (lastPoll + pollIntervalMillis)) {
             return;
         }
-        lastPoll = System.currentTimeMillis();
+        lastPoll = now;
 
         JsonArray aircraftList = pollForAircraft();
         long newEventCount = aircraftList.values().stream()

@@ -18,17 +18,11 @@ import boofcv.gui.image.ImagePanel;
 import boofcv.gui.image.ShowImages;
 import boofcv.io.webcamcapture.UtilWebcamCapture;
 import com.github.sarxos.webcam.Webcam;
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
-import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 
 import java.awt.image.BufferedImage;
-
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
 /**
  * A source that emits the frames captured from webcam video stream.
@@ -51,8 +45,8 @@ public class WebcamSource  {
     }
 
     public void addToBufferFn(TimestampedSourceBuffer<BufferedImage> buffer) {
-            long now = System.currentTimeMillis();
-        if (now <= (lastPoll + pollIntervalMillis)) {
+        long now = System.currentTimeMillis();
+        if (now < (lastPoll + pollIntervalMillis)) {
             return;
         }
         lastPoll = now;
