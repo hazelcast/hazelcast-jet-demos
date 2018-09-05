@@ -52,7 +52,7 @@ public class WebcamSource  {
         lastPoll = now;
         BufferedImage image = webcam.getImage();
         gui.setImageRepaint(image);
-        buffer.add(image, System.currentTimeMillis());
+        buffer.add(image);
     }
 
     public static StreamSource<BufferedImage> webcam(long pollIntervalMillis) {

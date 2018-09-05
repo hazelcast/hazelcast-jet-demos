@@ -58,18 +58,18 @@ public class FlightDataSource {
         lastPoll = now;
 
         JsonArray aircraftList = pollForAircraft();
-        long newEventCount = aircraftList.values().stream()
+        aircraftList.values().stream()
                 .map(FlightDataSource::parseAircraft)
                 .filter(a -> !isNullOrEmpty(a.getReg())) // there should be a reg number
                 // only add new positions to buffer
                 .filter(a -> a.getPosTime() > aircraftLastSeenAt.getOrDefault(a.getId(), 0L))
-                .peek(a -> {
+                .forEach(a -> {
                     // update cache
                     aircraftLastSeenAt.put(a.getId(), a.getPosTime());
                     buffer.add(a, a.getPosTime());
-                }).count();
+                });
 
-        logger.info("Polled " + aircraftList.size() + " aircraft, " + newEventCount + " new positions.");
+        logger.info("Polled " + aircraftList.size() + " aircraft, " + buffer.size() + " new positions.");
     }
 
     private JsonArray pollForAircraft() throws IOException {
@@ -108,7 +108,7 @@ public class FlightDataSource {
         return SourceBuilder.timestampedStream("Flight Data Source",
                 ctx -> new FlightDataSource(ctx.logger(), url, pollIntervalMillis))
                 .fillBufferFn(FlightDataSource::fillBuffer)
-                .allowedLateness((int)allowedLateness)
+                .allowedLateness(allowedLateness)
                 .build();
 
     }
