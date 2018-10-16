@@ -8,26 +8,44 @@ import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.common.CoinDefs;
 import com.hazelcast.jet.demo.common.SentimentAnalyzer;
-import com.hazelcast.jet.demo.common.StreamTwitterP;
 import com.hazelcast.jet.demo.util.Util;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
-import edu.stanford.nlp.util.CoreMap;
+import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
+import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pipeline.StreamStageWithKey;
+import com.twitter.hbc.ClientBuilder;
+import com.twitter.hbc.core.Constants;
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import com.twitter.hbc.core.processor.StringDelimitedProcessor;
+import com.twitter.hbc.httpclient.BasicClient;
+import com.twitter.hbc.httpclient.auth.Authentication;
+import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.json.JSONObject;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.aggregate.AggregateOperations.*;
-import static com.hazelcast.jet.demo.util.Util.*;
+import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
+import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_1_MINUTE;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_30_SECONDS;
+import static com.hazelcast.jet.demo.util.Util.MAP_NAME_5_MINUTE;
+import static com.hazelcast.jet.demo.util.Util.isMissing;
+import static com.hazelcast.jet.demo.util.Util.loadProperties;
+import static com.hazelcast.jet.demo.util.Util.loadTerms;
+import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
 
 /**
  * Twitter content is analyzed in real time to calculate cryptocurrency
@@ -45,11 +63,6 @@ import static java.lang.Double.isNaN;
  *                                  ┌───────────────────┐
  *                                  │Twitter Data Source│
  *                                  └──────────┬────────┘
- *                                             │
- *                                             v
- *                                     ┌──────────────┐
- *                                     │Add Timestamps│
- *                                     └───────┬──────┘
  *                                             │
  *                                             v
  *                                 ┌──────────────────────┐
@@ -109,14 +122,12 @@ public class CryptocurrencySentimentAnalysis {
         Properties properties = loadProperties();
         List<String> terms = loadTerms();
 
-        StreamStageWithGrouping<Entry<String, Double>, String> tweetsWithSentiment = pipeline
-                .drawFrom(StreamTwitterP.streamTwitter(properties, terms))
-                .addTimestamps()
+        StreamStageWithKey<Entry<String, Double>, String> tweetsWithSentiment = pipeline
+                .drawFrom(twitterSource(properties, terms))
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
-                .mapUsingContext(ContextFactory
-                                .withCreateFn(jet -> new SentimentAnalyzer())
-                                .shareLocally(),
-                        CryptocurrencySentimentAnalysis::calculateSentiment)
+                .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e) ->
+                        entry(e.getKey(), analyzer.getSentimentScore(e.getValue())))
+                .filter(e -> !e.getValue().isInfinite() && !e.getValue().isNaN())
                 .groupingKey(entryKey());
 
         AggregateOperation1<Entry<String, Double>, ?, Tuple2<Double, Long>> aggrOp =
@@ -137,25 +148,12 @@ public class CryptocurrencySentimentAnalysis {
         return pipeline;
     }
 
-    /**
-     * Calculates sentiment score for a coin and returns it as (coin,score) pair.
-     *
-     * @param analyzer NLP sentiment ingest
-     * @param entry    (coin,tweet) pair
-     */
-    @Nullable
-    private static Entry<String, Double> calculateSentiment(SentimentAnalyzer analyzer, Entry<String, String> entry) {
-        List<CoreMap> annotations = analyzer.getAnnotations(entry.getValue());
-        double sentimentType = analyzer.getSentimentClass(annotations);
-        double sentimentScore = analyzer.getScore(annotations, sentimentType);
-
-        double score = sentimentType * sentimentScore;
-        if (isNaN(score) || isInfinite(score)) {
-            return null;
-        }
-        return entry(entry.getKey(), score);
+    @Nonnull
+    private static ContextFactory<SentimentAnalyzer> sentimentAnalyzerContext() {
+        return ContextFactory
+                        .withCreateFn(jet -> new SentimentAnalyzer())
+                        .shareLocally();
     }
-
 
     /**
      * Returns a traverser which flat maps each tweet to (coin, tweet) pairs
@@ -176,4 +174,59 @@ public class CryptocurrencySentimentAnalysis {
     }
 
 
+    private static StreamSource<String> twitterSource(Properties properties, List<String> terms) {
+        return SourceBuilder.timestampedStream("twitter", ignored -> new TwitterSource(properties, terms))
+                .fillBufferFn(TwitterSource::addToBuffer)
+                .destroyFn(TwitterSource::destroy)
+                .build();
+    }
+
+    private static class TwitterSource {
+
+        private final BlockingQueue<String> queue = new LinkedBlockingQueue<>(10000);
+        private final ArrayList<String> buffer = new ArrayList<>();
+        private final BasicClient client;
+
+        TwitterSource(Properties properties, List<String> terms) {
+            StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint().trackTerms(terms);
+
+            String consumerKey = properties.getProperty("consumerKey");
+            String consumerSecret = properties.getProperty("consumerSecret");
+            String token = properties.getProperty("token");
+            String tokenSecret = properties.getProperty("tokenSecret");
+
+            if (isMissing(consumerKey) || isMissing(consumerSecret) || isMissing(token) || isMissing(tokenSecret)) {
+                throw new IllegalArgumentException("Twitter credentials are missing!");
+            }
+
+            Authentication auth = new OAuth1(consumerKey, consumerSecret, token, tokenSecret);
+            client = new ClientBuilder()
+                    .hosts(Constants.STREAM_HOST)
+                    .endpoint(endpoint)
+                    .authentication(auth)
+                    .processor(new StringDelimitedProcessor(queue))
+                    .build();
+            client.connect();
+        }
+
+        void addToBuffer(TimestampedSourceBuffer<String> sourceBuffer) {
+            // drain everything at once for optimal performance and also naturally limit batch size
+            queue.drainTo(buffer);
+            for (String tweet : buffer) {
+                JSONObject object = new JSONObject(tweet);
+                if (object.has("text") && object.has("timestamp_ms")) {
+                    String text = object.getString("text");
+                    long timestamp = object.getLong("timestamp_ms");
+                    sourceBuffer.add(text, timestamp);
+                }
+            }
+            buffer.clear();
+        }
+
+        void destroy() {
+            if (client != null) {
+                client.stop();
+            }
+        }
+    }
 }

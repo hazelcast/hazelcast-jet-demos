@@ -25,24 +25,28 @@ public class SentimentAnalyzer {
         pipeline = new StanfordCoreNLP(props);
     }
 
-    public double getSentimentClass(List<CoreMap> sentences) {
+    public double getSentimentScore(String text) {
+        List<CoreMap> annotations = getAnnotations(text);
+        double sentimentType = getSentimentClass(annotations);
+        double sentimentScore = getScore(annotations, sentimentType);
+        return sentimentType * sentimentScore;
+    }
+
+    private double getSentimentClass(List<CoreMap> sentences) {
         double sum = 0;
         int numberOfSentences = 0;
         for (CoreMap sentence : sentences) {
             Tree sentiments = sentence.get(SentimentCoreAnnotations.SentimentAnnotatedTree.class);
             int predictedClass = RNNCoreAnnotations.getPredictedClass(sentiments);
-
             if (predictedClass != 2) {
                 sum += predictedClass;
                 numberOfSentences++;
             }
         }
-        if (numberOfSentences == 0)
-            return 0;
-        return (sum / numberOfSentences - 2) / 2;
+        return numberOfSentences == 0 ? 0 : (sum / numberOfSentences - 2) / 2;
     }
 
-    public double getScore(List<CoreMap> sentences, double sentimentType) {
+    private double getScore(List<CoreMap> sentences, double sentimentType) {
         double sum0 = 0;
         double sum1 = 0;
         double sum3 = 0;
@@ -51,15 +55,12 @@ public class SentimentAnalyzer {
         for (CoreMap sentence : sentences) {
             Tree sentiments = sentence.get(SentimentCoreAnnotations.SentimentAnnotatedTree.class);
             int predictedClass = RNNCoreAnnotations.getPredictedClass(sentiments);
-
             SimpleMatrix matrix = RNNCoreAnnotations.getPredictions(sentiments);
-
-
             if (predictedClass != 2) {
-                sum0 += matrix.get(0, 0);
-                sum1 += matrix.get(1, 0);
-                sum3 += matrix.get(3, 0);
-                sum4 += matrix.get(4, 0);
+                sum0 += matrix.get(0); // very negative
+                sum1 += matrix.get(1); // negative
+                sum3 += matrix.get(3); // positive
+                sum4 += matrix.get(4); // very positive
                 numberOfSentences++;
             }
         }
@@ -68,8 +69,7 @@ public class SentimentAnalyzer {
         double avg3 = sum3 / numberOfSentences;
         double avg4 = sum4 / numberOfSentences;
 
-
-        if (sentimentType < 0.5) {
+        if (sentimentType < -0.5) {
             return avg0;
         } else if (sentimentType < 0) {
             return avg1;
@@ -80,10 +80,10 @@ public class SentimentAnalyzer {
         }
     }
 
-    public List<CoreMap> getAnnotations(String text) {
-        Annotation annotation = new Annotation(text);
-        pipeline.annotate(annotation);
+    private List<CoreMap> getAnnotations(String text) {
+        Annotation annotation = pipeline.process(text);
         return annotation.get(CoreAnnotations.SentencesAnnotation.class);
     }
+
 
 }

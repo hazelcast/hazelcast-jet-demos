@@ -84,6 +84,9 @@ public class Util {
         running = false;
     }
 
+    public static boolean isMissing(String test) {
+        return test.isEmpty() || "REPLACE_THIS".equals(test);
+    }
 
     public static List<String> loadTerms() {
         List<String> terms = new ArrayList<>();

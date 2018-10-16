@@ -14,7 +14,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.common.CoinDefs;
-import com.hazelcast.jet.demo.common.StreamTwitterP;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.pipeline.SlidingWindowDef;
@@ -152,7 +151,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf30Sec.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex slidingWin1min = dag.newVertex("slidingWin1Min", aggregateToSlidingWindowP(
@@ -161,7 +160,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf1Min.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex slidingWin5min = dag.newVertex("slidingWin5Min", aggregateToSlidingWindowP(
@@ -170,7 +169,7 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
                 TimestampKind.EVENT,
                 slidingWindowOf5Min.toSlidingWindowPolicy(),
                 aggrOp,
-                (ignored, timestamp, key, value) -> new TimestampedEntry<>(ignored, timestamp, key, value)
+                TimestampedEntry::fromWindowResult
         ));
 
         Vertex map30Seconds = dag.newVertex(MAP_NAME_30_SECONDS, writeMapP(MAP_NAME_30_SECONDS));

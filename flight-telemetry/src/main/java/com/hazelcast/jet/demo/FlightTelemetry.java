@@ -4,6 +4,8 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
@@ -14,6 +16,13 @@ import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.map.listener.EntryAddedListener;
+import org.python.core.PyFloat;
+import org.python.core.PyInteger;
+import org.python.core.PyList;
+import org.python.core.PyString;
+import org.python.core.PyTuple;
+import org.python.modules.cPickle;
+
 import java.io.BufferedOutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -21,12 +30,6 @@ import java.time.Instant;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.function.Consumer;
-import org.python.core.PyFloat;
-import org.python.core.PyInteger;
-import org.python.core.PyList;
-import org.python.core.PyString;
-import org.python.core.PyTuple;
-import org.python.modules.cPickle;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
@@ -43,7 +46,7 @@ import static com.hazelcast.jet.demo.Constants.heavyWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCClimbingAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.mediumWTCDescendAltitudeToNoiseDb;
 import static com.hazelcast.jet.demo.Constants.typeToLTOCycyleC02Emission;
-import static com.hazelcast.jet.demo.FlightDataSource.streamAircraft;
+import static com.hazelcast.jet.demo.FlightDataSource.flightDataSource;
 import static com.hazelcast.jet.demo.types.WakeTurbulanceCategory.HEAVY;
 import static com.hazelcast.jet.demo.util.Util.inAtlanta;
 import static com.hazelcast.jet.demo.util.Util.inFrankfurt;
@@ -53,8 +56,7 @@ import static com.hazelcast.jet.demo.util.Util.inNYC;
 import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
 import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -62,23 +64,24 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Reads a ADB-S telemetry stream from [ADB-S Exchange](https://www.adsbexchange.com/)
  * on all commercial aircraft flying anywhere in the world.
  * The service provides real-time information about flights.
- *
+ * <p>
  * Flights in the low altitudes are filtered for determining whether
  * they are ascending or descending. This has been done with calculation of
  * linear trend of altitudes. After vertical direction determination, ascending
  * and descending flight are written to a Hazelcast Map.
- *
+ * <p>
  * For interested airports, the pipeline also calculates average C02 emission
  * and maximum noise level.
  * C02 emission and maximum noise level are calculated by enriching the data
  * stream with average landing/take-off emissions and noise levels at the
  * specific altitudes for airplanes models and categories which can be found
  * on {@link Constants}.
- *
+ * <p>
  * After all those calculations results are forwarded to a Graphite
  * metrics storage which feds the Grafana Dashboard.
- *
+ * <p>
  * The DAG used to model Flight Telemetry calculations can be seen below :
+ * <p>
  *
  *                                                  ┌──────────────────┐
  *                                                  │Flight Data Source│
@@ -93,11 +96,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *                                                  ┌───────────────────┐
  *                                                  │Assign Airport Info│
  *                                                  └─────────┬─────────┘
- *                                                            │
- *                                                            v
- *                                                   ┌─────────────────┐
- *                                                   │Insert Watermarks│
- *                                                   └────────┬────────┘
  *                                                            │
  *                                                            v
  *                                          ┌───────────────────────────────────┐
@@ -152,7 +150,7 @@ public class FlightTelemetry {
         addListener(jet.getMap(LANDING_MAP), a -> System.out.println("New aircraft landing " + a));
 
         try {
-            Job job = jet.newJob(pipeline);
+            Job job = jet.newJob(pipeline, new JobConfig().setName("FlightTelemetry").setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
             job.join();
         } finally {
             Jet.shutdownAll();
@@ -166,13 +164,12 @@ public class FlightTelemetry {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
-        // Filter aircrafts whose altitude less then 3000ft, calculate linear trend of their altitudes
-        // and assign vertical directions to the aircrafts.
+        // Filter aircraft whose altitude less then 3000ft, calculate linear trend of their altitudes
+        // and assign vertical directions to the aircraft.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
-                .drawFrom(streamAircraft(SOURCE_URL, 10000))
-                .addTimestamps(Aircraft::getPosTime, SECONDS.toMillis(15))
-                .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000)
-                .map(FlightTelemetry::assignAirport)
+                .drawFrom(flightDataSource(SOURCE_URL, 10000, SECONDS.toMillis(15)))
+                .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
+                .map(FlightTelemetry::assignAirport).setName("Assign airport")
                 .window(slidingWindow)
                 .groupingKey(Aircraft::getId)
                 .aggregate(
@@ -182,44 +179,51 @@ public class FlightTelemetry {
                                     aircraft.setVerticalDirection(getVerticalDirection(coefficient));
                                     return aircraft;
                                 })
-                ); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
+                ).setName("Calculate linear trend of aircraft"); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
         // Filter ascending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
-                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == ASCENDING)
+                .setName("Filter ascending aircraft");
         // Write ascending flights to an IMap
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
         //Filter descending flights
         StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
-                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING);
+                .filter(e -> e.getValue().getVerticalDirection() == DESCENDING)
+                .setName("Filter descending aircraft");
         // Write descending flights to an IMap
         landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
         // Enrich aircraft with the noise info and calculate max noise
         // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Integer>> maxNoise = flights
-                .map(e -> entry(e.getValue(), getNoise(e.getValue()))) // (aircraft, noise)
+                .map(e -> entry(e.getValue(), getNoise(e.getValue())))
+                .setName("Enrich with noise info")// (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(comparingInt(Entry::getValue)))
-                .map(e -> new TimestampedEntry<>(e.getTimestamp(), e.getKey(), e.getValue().getValue()));
+                .aggregate(maxBy(comparingInt(Entry::getValue)),
+                        (winStart, winEnd, key, e) -> new TimestampedEntry<>(winEnd, key, e.getValue()))
+                .setName("Calculate max noise level");
         // (airport, max_noise)
 
         // Enrich aircraft with the C02 emission info and calculate total noise
         // in 60secs windows sliding by 30secs.
         StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
-                .map(e -> entry(e.getValue(), getCO2Emission(e.getValue()))) // (aircraft, co2_emission)
+                .map(e -> entry(e.getValue(), getCO2Emission(e.getValue())))
+                .setName("Enrich with CO2 info") // (aircraft, co2_emission)
                 .window(slidingWindow)
                 .groupingKey(entry -> entry.getKey().getAirport() + "_C02_EMISSION")
-                .aggregate(summingDouble(Entry::getValue));
+                .aggregate(summingDouble(Entry::getValue))
+                .setName("Calculate avg CO2 level");
         // (airport, total_co2)
 
         // Build Graphite sink
         Sink<TimestampedEntry> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
 
         // Drain all results to the Graphite sink
-        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights);
+        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
+                .setName("graphiteSink");
         return p;
     }
 
@@ -231,10 +235,9 @@ public class FlightTelemetry {
      * @param port Graphite port
      */
     private static Sink<TimestampedEntry> buildGraphiteSink(String host, int port) {
-        return Sinks.<BufferedOutputStream, TimestampedEntry>builder(instance -> uncheckCall(()
-                -> new BufferedOutputStream(new Socket(host, port).getOutputStream())
-        ))
-                .onReceiveFn((bos, entry) -> uncheckRun(() -> {
+        return sinkBuilder("graphite", instance ->
+                new BufferedOutputStream(new Socket(host, port).getOutputStream()))
+                .<TimestampedEntry>receiveFn((bos, entry) -> {
                     GraphiteMetric metric = new GraphiteMetric();
                     metric.from(entry);
 
@@ -243,9 +246,9 @@ public class FlightTelemetry {
 
                     bos.write(header);
                     bos.write(payload.toBytes());
-                }))
-                .flushFn((bos) -> uncheckRun(bos::flush))
-                .destroyFn((bos) -> uncheckRun(bos::close))
+                })
+                .flushFn(BufferedOutputStream::flush)
+                .destroyFn(BufferedOutputStream::close)
                 .build();
     }
 
