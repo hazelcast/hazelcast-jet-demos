@@ -80,7 +80,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * After all those calculations results are forwarded to a Graphite
  * metrics storage which feds the Grafana Dashboard.
  * <p>
- * The DAG used to model Flight Telemetry calculations can be seen below :
+ * The DAG used to model Flight Telemetry calculations can be seen below:
+ * <pre>
  * <p>
  *
  *                                                  ┌──────────────────┐
@@ -130,7 +131,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *           ┌─────────────┐                               ┌──────────────────────┐     ┌────────────────────────┐
  *           │Graphite Sink│                               │IMap Sink (landingMap)│     │IMap Sink (takingOffMap)│
  *           └─────────────┘                               └──────────────────────┘     └────────────────────────┘
- *
+ * </pre>
  */
 public class FlightTelemetry {
 
@@ -164,8 +165,8 @@ public class FlightTelemetry {
         Pipeline p = Pipeline.create();
 
         SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
-        // Filter aircraft whose altitude less then 3000ft, calculate linear trend of their altitudes
-        // and assign vertical directions to the aircraft.
+        // Filter aircrafts whose altitude is less then 3000ft, calculate linear trend of their altitudes
+        // and assign vertical directions to the them.
         StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
                 .drawFrom(flightDataSource(SOURCE_URL, 10000, SECONDS.toMillis(15)))
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
@@ -253,7 +254,7 @@ public class FlightTelemetry {
     }
 
     /**
-     * Returns the average C02 emission on landing/take-offfor the aircraft
+     * Returns the average C02 emission on landing/take-off for the aircraft
      *
      * @param aircraft
      * @return avg C02 for the aircraft
