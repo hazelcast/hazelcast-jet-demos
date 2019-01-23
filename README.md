@@ -5,6 +5,7 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 ## Application Demos
 
+* [Bitcoin Death Cross](./bitcoin-death-cross) - Predicting 2018's downward trend for Bitcoin.
 * [Real-time Image Recognition](./realtime-image-recognition) - Recognizes images present in the webcam video input with a model trained with CIFAR-10 dataset.
 * [Twitter Cryptocurrency Sentiment Analysis](./cryptocurrency-sentiment-analysis) - Twitter content is analyzed in real time to 
 calculate cryptocurrency trend list with popularity index.                                                                   
