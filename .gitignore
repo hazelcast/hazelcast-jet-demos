@@ -17,6 +17,7 @@ target/
 build/
 .project
 .classpath
+.factorypath
 .settings/
 .idea/
 .patch
