@@ -8,13 +8,16 @@
 		<name>bitcoin</name>
 	</group>
 
+    <management-center enabled="true">http://localhost:8080/hazelcast-mancenter</management-center>
+
 	<network>
+		<!-- Don't use default (5701) so this demo can co-exist with other cluster on same machine -->
+		<port auto-increment="true">6701</port>
 		<join>
 			<multicast enabled="false" />
 			<tcp-ip enabled="true">
 				<member-list>
-					<member>127.0.0.1:5701</member>
-					<member>127.0.0.1:5702</member>
+					<member>127.0.0.1:6701</member>
 				</member-list>
 			</tcp-ip>
 		</join>

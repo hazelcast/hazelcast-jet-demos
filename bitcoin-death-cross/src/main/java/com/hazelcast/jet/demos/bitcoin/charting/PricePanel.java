@@ -63,6 +63,12 @@ public class PricePanel extends JPanel {
 
 	    // Configure Y-Axis on chart, the BTC/USD exchange rate, up to $20,000
 	    ValueAxis yAxis = jFreeChart.getXYPlot().getRangeAxis();
+
+	    /* Set the y-axis upper bound to a fixed $20,000 dollars.
+	     * If you'd prefer dynamic resizing, use autoRange
+	     * instead.
+	     */
+	    // yAxis.setAutoRange(true);
 	    yAxis.setRange(new Range(0d, 20_000d));
 	    
 	    // Allow scrolling
