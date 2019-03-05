@@ -21,6 +21,12 @@
 	</properties>
 	
 	<dependencies>
+		<dependency>
+			<groupId>com.hazelcast.jet</groupId>
+			<artifactId>hazelcast-jet</artifactId>
+			<version>3.0-SNAPSHOT</version>
+		</dependency>
+
 		<!-- For graph output -->
 		<dependency>
 			<groupId>org.jfree</groupId>
@@ -60,6 +66,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
 				<executions>
 					<execution>
 						<goals>
