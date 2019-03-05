@@ -3,8 +3,6 @@ package com.hazelcast.jet.demos.bitcoin;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-//FIXME Sort prices, from where ?
-
 /**
  * <p>Use <a href="http://spring.io/projects/spring-boot">Spring Boot</a>
  * to manage this application.
