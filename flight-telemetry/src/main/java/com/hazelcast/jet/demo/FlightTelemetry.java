@@ -18,6 +18,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.server.JetBootstrap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import org.python.core.PyFloat;
 import org.python.core.PyInteger;
@@ -138,15 +139,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class FlightTelemetry {
 
     private static final String SOURCE_URL = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json";
+    private static final int SINK_PORT = 2004;
     private static final String TAKE_OFF_MAP = "takeOffMap";
     private static final String LANDING_MAP = "landingMap";
+    private static String SINK_HOST;
 
     static {
         System.setProperty("hazelcast.logging.type", "log4j");
+        SINK_HOST = System.getProperty("SINK_HOST", "127.0.0.1");
     }
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = getJetInstance();
 
         Pipeline pipeline = buildPipeline();
         addListener(jet.getMap(TAKE_OFF_MAP), a -> System.out.println("New aircraft taking off: " + a));
@@ -158,6 +162,14 @@ public class FlightTelemetry {
         } finally {
             Jet.shutdownAll();
         }
+    }
+
+    private static JetInstance getJetInstance() {
+        String bootstrap = System.getProperty("bootstrap");
+        if (bootstrap != null && bootstrap.equals("true")) {
+            return JetBootstrap.getInstance();
+        }
+        return Jet.newJetInstance();
     }
 
     /**
@@ -222,11 +234,11 @@ public class FlightTelemetry {
         // (airport, total_co2)
 
         // Build Graphite sink
-        Sink<KeyedWindowResult> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
+        Sink<KeyedWindowResult> graphiteSink = buildGraphiteSink(SINK_HOST, SINK_PORT);
 
         // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
-                .setName("graphiteSink");
+         .setName("graphiteSink");
         return p;
     }
 
