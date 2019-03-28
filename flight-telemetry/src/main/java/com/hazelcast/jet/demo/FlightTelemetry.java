@@ -4,6 +4,8 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
@@ -204,8 +206,7 @@ public class FlightTelemetry {
                 .setName("Enrich with noise info")// (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(ComparatorEx.comparingInt(Entry::getValue)))
-                .map(res -> new KeyedWindowResult<>(res.start(), res.end(), res.key(), res.result().getValue()))
+                .aggregate(maxBy(ComparatorEx.comparingInt(Entry<Aircraft, Integer>::getValue)).andThen(Entry::getValue))
                 .setName("Calculate max noise level");
         // (airport, max_noise)
 
