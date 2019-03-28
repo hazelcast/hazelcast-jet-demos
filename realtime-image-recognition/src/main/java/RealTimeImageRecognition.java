@@ -23,8 +23,9 @@ import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.Planar;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.function.ComparatorEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -43,7 +44,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.DistributedComparator.comparingDouble;
+import static com.hazelcast.jet.function.ComparatorEx.comparingDouble;
 import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.Collections.singletonList;
@@ -90,6 +91,7 @@ public class RealTimeImageRecognition {
     private static Pipeline buildPipeline(String modelPath) {
         Pipeline pipeline = Pipeline.create();
         pipeline.drawFrom(WebcamSource.webcam(500))
+                .withoutTimestamps()
                 .mapUsingContext(classifierContext(modelPath),
                         (ctx, img) -> {
                             Entry<String, Double> classification = classifyWithModel(ctx, img);
@@ -127,17 +129,17 @@ public class RealTimeImageRecognition {
     /**
      * A GUI Sink which will show the frames with the maximum classification scores.
      */
-    private static Sink<TimestampedItem<Tuple3<BufferedImage, String, Double>>> buildGUISink() {
+    private static Sink<WindowResult<Tuple3<BufferedImage, String, Double>>> buildGUISink() {
         return sinkBuilder("GUI", (instance) -> createPanel())
-                .<TimestampedItem<Tuple3<BufferedImage, String, Double>>>receiveFn((panel, tsItem) -> {
-                    BufferedImage image = tsItem.item().f0();
+                .<WindowResult<Tuple3<BufferedImage, String, Double>>>receiveFn((panel, tsItem) -> {
+                    BufferedImage image = tsItem.result().f0();
                     Score score = new Score();
-                    score.set(tsItem.item().f2(), 0);
+                    score.set(tsItem.result().f2(), 0);
                     panel.addImage(
                             image,
-                            new Timestamp(tsItem.timestamp()).toString(),
+                            new Timestamp(tsItem.end()).toString(),
                             singletonList(score),
-                            singletonList(tsItem.item().f1())
+                            singletonList(tsItem.result().f1())
                     );
                     scrollToBottomAndRepaint(panel);
                 })

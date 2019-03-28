@@ -13,7 +13,8 @@ public class PreciousHistory {
         // Palladium and Platinum only
         p.drawFrom(Sources.<String, Object>mapJournal(
                 Constants.IMAP_NAME_PRECIOUS, JournalInitialPosition.START_FROM_OLDEST)
-        ).map(e -> e.getKey() + "==" + e.getValue())
+        ).withoutTimestamps()
+         .map(e -> e.getKey() + "==" + e.getValue())
          .filter(str -> str.toLowerCase().startsWith("p"))
          .drainTo(Sinks.logger())
         ;

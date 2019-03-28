@@ -9,7 +9,8 @@ import com.betleopard.simple.SimpleHorseFactory;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.Functions;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -40,7 +41,7 @@ public class AnalysisJet {
 
     public final static Function<Event, Horse> FIRST_PAST_THE_POST = e -> e.getRaces().get(0).getWinner().orElse(Horse.PALE);
 
-    public final static DistributedFunction<Entry<String, Event>, Horse> HORSE_FROM_EVENT = e -> FIRST_PAST_THE_POST.apply(e.getValue());
+    public final static FunctionEx<Entry<String, Event>, Horse> HORSE_FROM_EVENT = e -> FIRST_PAST_THE_POST.apply(e.getValue());
 
     private JetInstance jet;
 

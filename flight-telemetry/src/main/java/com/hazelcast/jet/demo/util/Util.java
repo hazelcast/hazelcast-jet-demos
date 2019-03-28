@@ -1,6 +1,7 @@
 package com.hazelcast.jet.demo.util;
 
-import com.hazelcast.com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.json.JsonValue;
+
 import java.util.List;
 import java.util.stream.Collectors;
 

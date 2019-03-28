@@ -43,7 +43,7 @@ import static com.hazelcast.jet.demo.util.Util.isMissing;
 import static com.hazelcast.jet.demo.util.Util.loadProperties;
 import static com.hazelcast.jet.demo.util.Util.loadTerms;
 import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 
@@ -124,6 +124,7 @@ public class CryptocurrencySentimentAnalysis {
 
         StreamStageWithKey<Entry<String, Double>, String> tweetsWithSentiment = pipeline
                 .drawFrom(twitterSource(properties, terms))
+                .withNativeTimestamps(0)
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
                 .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e) ->
                         entry(e.getKey(), analyzer.getSentimentScore(e.getValue())))
@@ -152,7 +153,7 @@ public class CryptocurrencySentimentAnalysis {
     private static ContextFactory<SentimentAnalyzer> sentimentAnalyzerContext() {
         return ContextFactory
                         .withCreateFn(jet -> new SentimentAnalyzer())
-                        .shareLocally();
+                        .withLocalSharing();
     }
 
     /**

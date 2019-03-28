@@ -22,6 +22,7 @@ public class ReadKafkaIntoHazelcast {
 
         pipeline
                 .drawFrom(KafkaSources.kafka(properties, Constants.TOPIC_NAME_PRECIOUS))
+                .withoutTimestamps()
                 .drainTo(Sinks.map(Constants.IMAP_NAME_PRECIOUS));
 
         return pipeline;
