@@ -1,9 +1,9 @@
 package com.hazelcast.jet.demo;
 
-import com.hazelcast.com.eclipsesource.json.Json;
-import com.hazelcast.com.eclipsesource.json.JsonArray;
-import com.hazelcast.com.eclipsesource.json.JsonObject;
-import com.hazelcast.com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -104,11 +104,10 @@ public class FlightDataSource {
         return aircraft;
     }
 
-    public static StreamSource<Aircraft> flightDataSource(String url, long pollIntervalMillis, long allowedLateness) {
+    public static StreamSource<Aircraft> flightDataSource(String url, long pollIntervalMillis) {
         return SourceBuilder.timestampedStream("Flight Data Source",
                 ctx -> new FlightDataSource(ctx.logger(), url, pollIntervalMillis))
                 .fillBufferFn(FlightDataSource::fillBuffer)
-                .allowedLateness(allowedLateness)
                 .build();
 
     }

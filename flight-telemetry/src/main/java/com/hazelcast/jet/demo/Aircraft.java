@@ -1,6 +1,6 @@
 package com.hazelcast.jet.demo;
 
-import com.hazelcast.com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.jet.demo.types.EngineMount;
 import com.hazelcast.jet.demo.types.EngineTypes;

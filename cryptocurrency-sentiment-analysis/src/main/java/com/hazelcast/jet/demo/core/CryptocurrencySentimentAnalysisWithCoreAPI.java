@@ -7,16 +7,18 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.demo.common.CoinDefs;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
+
 import java.util.List;
 import java.util.Properties;
 
@@ -24,14 +26,15 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
+import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.demo.util.Util.MAP_NAME_1_MINUTE;
 import static com.hazelcast.jet.demo.util.Util.MAP_NAME_30_SECONDS;
 import static com.hazelcast.jet.demo.util.Util.MAP_NAME_5_MINUTE;
@@ -39,8 +42,7 @@ import static com.hazelcast.jet.demo.util.Util.loadProperties;
 import static com.hazelcast.jet.demo.util.Util.loadTerms;
 import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
 import static com.hazelcast.jet.demo.util.Util.stopConsolePrinterThread;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Collections.singletonList;
 /**
  * Twitter content is analyzed in real time to calculate cryptocurrency
@@ -123,53 +125,58 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
         Properties properties = loadProperties();
         List<String> terms = loadTerms();
         Vertex twitterSource = dag.newVertex("twitter", StreamTwitterP.streamTwitterP(properties, terms));
-        Vertex addTimestamps = dag.newVertex("addTimestamps", mapP(string -> new TimestampedEntry<>(System.currentTimeMillis(), null, string)));
-        Vertex relevance = dag.newVertex("relevance", Processors.<TimestampedEntry<Object, String>,
-                TimestampedEntry<String, String>>flatMapP(CryptocurrencySentimentAnalysisWithCoreAPI::flatMapToRelevant));
+        Vertex addTimestamps = dag.newVertex("addTimestamps", mapP(string -> tuple3(System.currentTimeMillis(), null, string)));
+        Vertex relevance = dag.newVertex("relevance", Processors.<Tuple3<Long, Object, String>,
+                Tuple3<Long, String, String>>flatMapP(CryptocurrencySentimentAnalysisWithCoreAPI::flatMapToRelevant));
         Vertex sentiment = dag.newVertex("sentiment", of(SentimentProcessor::new));
 
-        SlidingWindowDef slidingWindowOf30Sec = sliding(30_000, 10_000);
-        SlidingWindowDef slidingWindowOf1Min = sliding(60_000, 10_000);
-        SlidingWindowDef slidingWindowOf5Min = sliding(300_000, 10_000);
+        SlidingWindowPolicy slidingWindowOf30Sec = slidingWinPolicy(30_000, 10_000);
+        SlidingWindowPolicy slidingWindowOf1Min = slidingWinPolicy(60_000, 10_000);
+        SlidingWindowPolicy slidingWindowOf5Min = slidingWinPolicy(300_000, 10_000);
 
-        WatermarkGenerationParams<TimestampedEntry<String, Double>> params = wmGenParams(
-                TimestampedEntry::getTimestamp,
+        EventTimePolicy<Tuple3<Long, String, String>> eventTimePolicy = eventTimePolicy(
+                Tuple3<Long, String, String>::f0,
                 limitingLag(5000),
-                emitByFrame(slidingWindowOf30Sec.toSlidingWindowPolicy()), 60000
+                slidingWindowOf30Sec.frameSize(),
+                slidingWindowOf30Sec.frameOffset(),
+                60000
         );
-        Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(params)).localParallelism(1);
+        Vertex insertWm = dag.newVertex("insertWm", insertWatermarksP(eventTimePolicy)).localParallelism(1);
 
-        AggregateOperation1<TimestampedEntry<String, Double>, ?, Tuple2<Double, Long>> aggrOp =
-                AggregateOperations.allOf(averagingDouble(TimestampedEntry::getValue), counting());
+        AggregateOperation1<Tuple3<Long, String, Double>, ?, Tuple2<Double, Long>> aggrOp =
+                AggregateOperations.allOf(averagingDouble(Tuple3::f2), counting());
 
 
-        DistributedFunction<TimestampedEntry, Object> getKeyFn = TimestampedEntry::getKey;
-        DistributedToLongFunction<TimestampedEntry> getTimeStampFn = TimestampedEntry::getTimestamp;
+        FunctionEx<Tuple3, Object> getKeyFn = Tuple3<Long, String, String>::f1;
+        ToLongFunctionEx<Tuple3> getTimeStampFn = Tuple3<Long, String, String>::f0;
         Vertex slidingWin30sec = dag.newVertex("slidingWin30Sec", aggregateToSlidingWindowP(
                 singletonList(getKeyFn),
                 singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf30Sec.toSlidingWindowPolicy(),
+                slidingWindowOf30Sec,
+                0,
                 aggrOp,
-                TimestampedEntry::fromWindowResult
+                KeyedWindowResult::new
         ));
 
         Vertex slidingWin1min = dag.newVertex("slidingWin1Min", aggregateToSlidingWindowP(
                 singletonList(getKeyFn),
                 singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf1Min.toSlidingWindowPolicy(),
+                slidingWindowOf1Min,
+                0,
                 aggrOp,
-                TimestampedEntry::fromWindowResult
+                KeyedWindowResult::new
         ));
 
         Vertex slidingWin5min = dag.newVertex("slidingWin5Min", aggregateToSlidingWindowP(
                 singletonList(getKeyFn),
                 singletonList(getTimeStampFn),
                 TimestampKind.EVENT,
-                slidingWindowOf5Min.toSlidingWindowPolicy(),
+                slidingWindowOf5Min,
+                0,
                 aggrOp,
-                TimestampedEntry::fromWindowResult
+                KeyedWindowResult::new
         ));
 
         Vertex map30Seconds = dag.newVertex(MAP_NAME_30_SECONDS, writeMapP(MAP_NAME_30_SECONDS));
@@ -189,13 +196,13 @@ public class CryptocurrencySentimentAnalysisWithCoreAPI {
     }
 
     // returns a traverser which flat maps each tweet to (coin, tweet) pairs by finding coins relevant to this tweet
-    private static Traverser<? extends TimestampedEntry<String, String>> flatMapToRelevant(TimestampedEntry<Object, String> e) {
-        AppendableTraverser<TimestampedEntry<String, String>> traverser = new AppendableTraverser<>(4);
-        String text = e.getValue();
+    private static Traverser<? extends Tuple3<Long, String, String>> flatMapToRelevant(Tuple3<Long, Object, String> e) {
+        AppendableTraverser<Tuple3<Long, String, String>> traverser = new AppendableTraverser<>(4);
+        String text = e.f2();
         for (String coin : CoinDefs.COIN_MAP.keySet()) {
             for (String keyword : CoinDefs.COIN_MAP.get(coin)) {
                 if (text.contains(keyword)) {
-                    traverser.append(new TimestampedEntry<>(e.getTimestamp(), coin, e.getValue()));
+                    traverser.append(tuple3(e.f0(), coin, e.f2()));
                 }
             }
         }

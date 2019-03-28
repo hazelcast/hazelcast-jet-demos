@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.jet.impl.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +46,8 @@ public class MyCLI implements CommandMarker {
     public void listIMaps() {
         Set<String> iMapNames = this.hazelcastInstance.getDistributedObjects().stream()
                                                       .filter(distributedObject -> distributedObject instanceof IMap)
-                                                      .filter(distributedObject -> !distributedObject.getName().startsWith(Jet.INTERNAL_JET_OBJECTS_PREFIX))
-                                                      .map(distributedObject -> distributedObject.getName()).collect(Collectors.toCollection(TreeSet::new));
+                                                      .filter(distributedObject -> !distributedObject.getName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                                                      .map(DistributedObject::getName).collect(Collectors.toCollection(TreeSet::new));
 
         iMapNames.stream().forEach(name -> {
             IMap<?, ?> iMap = this.hazelcastInstance.getMap(name);
