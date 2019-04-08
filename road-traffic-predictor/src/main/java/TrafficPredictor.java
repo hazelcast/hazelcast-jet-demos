@@ -16,7 +16,7 @@
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.pipeline.ContextFactories;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -149,8 +149,8 @@ public class TrafficPredictor {
                 .groupingKey(CarCount::getLocation)
                 .window(sliding(MINUTES.toMillis(120), MINUTES.toMillis(15)))
                 .aggregate(linearTrend(CarCount::getTime, CarCount::getCount))
-                .map((TimestampedEntry<String, Double> e) ->
-                        entry(new TrendKey(e.getKey(), e.getTimestamp()), e.getValue()))
+                .map((KeyedWindowResult<String, Double> e) ->
+                        entry(new TrendKey(e.getKey(), e.end()), e.getValue()))
                 .drainTo(Sinks.map("trends"));
 
         // Makes predictions using the trends calculated above from an IMap and writes them to a file

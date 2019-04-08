@@ -4,17 +4,21 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
+import com.hazelcast.jet.function.ComparatorEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.server.JetBootstrap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import org.python.core.PyFloat;
 import org.python.core.PyInteger;
@@ -55,7 +59,6 @@ import static com.hazelcast.jet.demo.util.Util.inLondon;
 import static com.hazelcast.jet.demo.util.Util.inNYC;
 import static com.hazelcast.jet.demo.util.Util.inParis;
 import static com.hazelcast.jet.demo.util.Util.inTokyo;
-import static com.hazelcast.jet.function.DistributedComparator.comparingInt;
 import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -136,15 +139,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class FlightTelemetry {
 
     private static final String SOURCE_URL = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json";
+    private static final int SINK_PORT = 2004;
     private static final String TAKE_OFF_MAP = "takeOffMap";
     private static final String LANDING_MAP = "landingMap";
+    private static String SINK_HOST;
 
     static {
         System.setProperty("hazelcast.logging.type", "log4j");
+        SINK_HOST = System.getProperty("SINK_HOST", "127.0.0.1");
     }
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = getJetInstance();
 
         Pipeline pipeline = buildPipeline();
         addListener(jet.getMap(TAKE_OFF_MAP), a -> System.out.println("New aircraft taking off: " + a));
@@ -158,17 +164,26 @@ public class FlightTelemetry {
         }
     }
 
+    private static JetInstance getJetInstance() {
+        String bootstrap = System.getProperty("bootstrap");
+        if (bootstrap != null && bootstrap.equals("true")) {
+            return JetBootstrap.getInstance();
+        }
+        return Jet.newJetInstance();
+    }
+
     /**
      * Builds and returns the Pipeline which represents the actual computation.
      */
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        SlidingWindowDef slidingWindow = WindowDefinition.sliding(60_000, 30_000);
+        SlidingWindowDefinition slidingWindow = WindowDefinition.sliding(60_000, 30_000);
         // Filter aircraft whose altitude is less then 3000ft, calculate linear trend of their altitudes
         // and assign vertical directions to the them.
-        StreamStage<TimestampedEntry<Long, Aircraft>> flights = p
-                .drawFrom(flightDataSource(SOURCE_URL, 10000, SECONDS.toMillis(15)))
+        StreamStage<KeyedWindowResult<Long, Aircraft>> flights = p
+                .drawFrom(flightDataSource(SOURCE_URL, 10000))
+                .withNativeTimestamps(SECONDS.toMillis(15))
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
                 .map(FlightTelemetry::assignAirport).setName("Assign airport")
                 .window(slidingWindow)
@@ -183,14 +198,14 @@ public class FlightTelemetry {
                 ).setName("Calculate linear trend of aircraft"); // (timestamp, aircraft_id, aircraft_with_assigned_trend)
 
         // Filter ascending flights
-        StreamStage<TimestampedEntry<Long, Aircraft>> takingOffFlights = flights
+        StreamStage<KeyedWindowResult<Long, Aircraft>> takingOffFlights = flights
                 .filter(e -> e.getValue().getVerticalDirection() == ASCENDING)
                 .setName("Filter ascending aircraft");
         // Write ascending flights to an IMap
         takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
         //Filter descending flights
-        StreamStage<TimestampedEntry<Long, Aircraft>> landingFlights = flights
+        StreamStage<KeyedWindowResult<Long, Aircraft>> landingFlights = flights
                 .filter(e -> e.getValue().getVerticalDirection() == DESCENDING)
                 .setName("Filter descending aircraft");
         // Write descending flights to an IMap
@@ -198,19 +213,18 @@ public class FlightTelemetry {
 
         // Enrich aircraft with the noise info and calculate max noise
         // in 60secs windows sliding by 30secs.
-        StreamStage<TimestampedEntry<String, Integer>> maxNoise = flights
+        StreamStage<KeyedWindowResult<String, Integer>> maxNoise = flights
                 .map(e -> entry(e.getValue(), getNoise(e.getValue())))
                 .setName("Enrich with noise info")// (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(comparingInt(Entry::getValue)),
-                        (winStart, winEnd, key, e) -> new TimestampedEntry<>(winEnd, key, e.getValue()))
+                .aggregate(maxBy(ComparatorEx.comparingInt(Entry<Aircraft, Integer>::getValue)).andThen(Entry::getValue))
                 .setName("Calculate max noise level");
         // (airport, max_noise)
 
         // Enrich aircraft with the C02 emission info and calculate total noise
         // in 60secs windows sliding by 30secs.
-        StreamStage<TimestampedEntry<String, Double>> co2Emission = flights
+        StreamStage<KeyedWindowResult<String, Double>> co2Emission = flights
                 .map(e -> entry(e.getValue(), getCO2Emission(e.getValue())))
                 .setName("Enrich with CO2 info") // (aircraft, co2_emission)
                 .window(slidingWindow)
@@ -220,11 +234,11 @@ public class FlightTelemetry {
         // (airport, total_co2)
 
         // Build Graphite sink
-        Sink<TimestampedEntry> graphiteSink = buildGraphiteSink("127.0.0.1", 2004);
+        Sink<KeyedWindowResult> graphiteSink = buildGraphiteSink(SINK_HOST, SINK_PORT);
 
         // Drain all results to the Graphite sink
         p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
-                .setName("graphiteSink");
+         .setName("graphiteSink");
         return p;
     }
 
@@ -235,10 +249,10 @@ public class FlightTelemetry {
      * @param host Graphite host
      * @param port Graphite port
      */
-    private static Sink<TimestampedEntry> buildGraphiteSink(String host, int port) {
+    private static Sink<KeyedWindowResult> buildGraphiteSink(String host, int port) {
         return sinkBuilder("graphite", instance ->
                 new BufferedOutputStream(new Socket(host, port).getOutputStream()))
-                .<TimestampedEntry>receiveFn((bos, entry) -> {
+                .<KeyedWindowResult>receiveFn((bos, entry) -> {
                     GraphiteMetric metric = new GraphiteMetric();
                     metric.from(entry);
 
@@ -387,28 +401,28 @@ public class FlightTelemetry {
         private GraphiteMetric() {
         }
 
-        private void fromAirCraftEntry(TimestampedEntry<Long, Aircraft> aircraftEntry) {
+        private void fromAirCraftEntry(KeyedWindowResult<Long, Aircraft> aircraftEntry) {
             Aircraft aircraft = aircraftEntry.getValue();
             metricName = new PyString(replaceWhiteSpace(aircraft.getAirport()) + "." + aircraft.getVerticalDirection());
             timestamp = new PyInteger(getEpochSecond(aircraft.getPosTime()));
             metricValue = new PyFloat(1);
         }
 
-        private void fromMaxNoiseEntry(TimestampedEntry<String, Integer> entry) {
+        private void fromMaxNoiseEntry(KeyedWindowResult<String, Integer> entry) {
             metricName = new PyString(replaceWhiteSpace(entry.getKey()));
-            timestamp = new PyInteger(getEpochSecond(entry.getTimestamp()));
+            timestamp = new PyInteger(getEpochSecond(entry.end()));
             metricValue = new PyFloat(entry.getValue());
         }
 
-        private void fromTotalC02Entry(TimestampedEntry<String, Double> entry) {
+        private void fromTotalC02Entry(KeyedWindowResult<String, Double> entry) {
             metricName = new PyString(replaceWhiteSpace(entry.getKey()));
-            timestamp = new PyInteger(getEpochSecond(entry.getTimestamp()));
+            timestamp = new PyInteger(getEpochSecond(entry.end()));
             metricValue = new PyFloat(entry.getValue());
         }
 
-        void from(TimestampedEntry entry) {
+        void from(KeyedWindowResult entry) {
             if (entry.getKey() instanceof Long) {
-                TimestampedEntry<Long, Aircraft> aircraftEntry = entry;
+                KeyedWindowResult<Long, Aircraft> aircraftEntry = entry;
                 fromAirCraftEntry(aircraftEntry);
             } else {
                 if (entry.getValue() instanceof Double) {
