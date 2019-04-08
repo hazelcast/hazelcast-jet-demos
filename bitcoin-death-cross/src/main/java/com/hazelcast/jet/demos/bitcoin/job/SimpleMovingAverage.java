@@ -25,6 +25,15 @@ import com.hazelcast.jet.demos.bitcoin.domain.Price;
  * the sum of "{@code 1,2,3,4,4,5,5}" divided by 
  * 7 giving "{@code 3.43}".
  * </p>
+ * <p><b>NOTE:</b> This implementation is based on
+ * the assumption that the input stream is strictly
+ * consecutive. Item 1 arrives, then item 2, then
+ * item 3, etc. There can be no gaps or out of sequence
+ * items, or the wrong output will occur. If that is
+ * possible, it needs better logic. This is just an
+ * example after all, we can make this assumption
+ * as the data used is pre-set and sorted.
+ * </p>
  */
 public class SimpleMovingAverage
 	extends AbstractProcessor {

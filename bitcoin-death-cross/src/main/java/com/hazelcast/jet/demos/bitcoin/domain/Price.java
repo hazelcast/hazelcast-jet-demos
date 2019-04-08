@@ -3,7 +3,7 @@ package com.hazelcast.jet.demos.bitcoin.domain;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.ZoneOffset;
 
 import lombok.Data;
 
@@ -31,14 +31,12 @@ public class Price implements Comparable<Price>, Serializable {
 	}
 
 	/**
-	 * <p>Turn the date into a number of days, relative to
-	 * some point in time. We use {@code LocalDate.now()} which
-	 * is good enough if we don't run this demo over midnight.
+	 * <p>Turn the date into a standard timestamp.
 	 * </p>
 	 * @return A non-zero positive number, all prices are historical
 	 */
-    public long getDayCounter() {
-        return ChronoUnit.DAYS.between(this.localDate, LocalDate.now());
-    }
+        public long getTimestamp() {
+            return this.localDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        }
 
 }
