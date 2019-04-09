@@ -11,7 +11,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JetEvent;
 
 /**
- * <p>Compare one pair of prices with the immediately preceeding
+ * <p>Compare one pair of prices with the immediately preceding
  * pair of prices.
  * </p>
  * <p>The "{@code left}" field is the 50-point moving average and
@@ -79,9 +79,12 @@ public class CrossEmitter
 			Tuple2<BigDecimal, BigDecimal> resultValue
 				= Tuple2.tuple2(today50point, today200point);
 
-			Entry<Tuple2<LocalDate, String>,Tuple2<BigDecimal, BigDecimal>> result
+			Entry<Tuple2<LocalDate, String>, Tuple2<BigDecimal, BigDecimal>> resultEntry
 				= new SimpleImmutableEntry<>(resultKey, resultValue);
 
+			JetEvent<Entry<Tuple2<LocalDate, String>, Tuple2<BigDecimal, BigDecimal>>> result = 
+					JetEvent.jetEvent(((JetEvent<?>) item).timestamp(), resultEntry);
+		
 			boolean emit = super.tryEmit(result);
 			if (emit) {
 				this.previous = current;

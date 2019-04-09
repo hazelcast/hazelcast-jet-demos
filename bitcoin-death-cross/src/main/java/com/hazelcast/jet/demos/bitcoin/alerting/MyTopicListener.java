@@ -20,11 +20,11 @@ public class MyTopicListener implements MessageListener<Object> {
 	public void onMessage(Message<Object> message) {
 		log.warn("ITopic alert"
 				 + NEWLINE
-				 + "***********************************"
+				 + "*********************************************************"
 				 + NEWLINE
 				 + "Topic '{}' : {}"
 				 + NEWLINE
-				 + "***********************************",
+				 + "*********************************************************",
 				 message.getSource(),
 				 message.getMessageObject()
 				);
