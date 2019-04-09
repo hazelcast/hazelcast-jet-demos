@@ -21,14 +21,18 @@ import lombok.extern.slf4j.Slf4j;
 public class MyTopicListener extends JTextArea implements MessageListener<Object> {
 
 	private static final String NEWLINE = System.getProperty("line.separator");
+	private static final String FOUR_SPACES = "    ";
 	
 	@Override
 	public void onMessage(Message<Object> message) {		
 		String[] output = new String[] {
 				NEWLINE,
-				"***************************************************************",
-				String.format("Topic '%s' : %s", message.getSource(), message.getMessageObject()),
-				"***************************************************************",
+				FOUR_SPACES + "***************************************************************"
+					+ FOUR_SPACES,
+				FOUR_SPACES + String.format("Topic '%s' : %s", message.getSource(), message.getMessageObject())
+					+ FOUR_SPACES,
+				FOUR_SPACES + "***************************************************************"
+					+ FOUR_SPACES,
 		};
 		
 		StringBuilder sb = new StringBuilder();
