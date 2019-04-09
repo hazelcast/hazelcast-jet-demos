@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.demos.bitcoin.alerting.MyTopicListener;
 import com.hazelcast.jet.demos.bitcoin.charting.PricePanelListener;
 import com.hazelcast.jet.demos.bitcoin.domain.Price;
 
@@ -33,6 +34,8 @@ public class Task2 implements CommandLineRunner {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
+    @Autowired
+    private MyTopicListener myTopicListener;
     
     /**
      * <p>Create a chart on screen that plots points
@@ -58,6 +61,6 @@ public class Task2 implements CommandLineRunner {
                 .getMap(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD);
 
         pricesOutMap
-            .addEntryListener(new PricePanelListener(), true);
+            .addEntryListener(new PricePanelListener(this.myTopicListener), true);
     }
 }

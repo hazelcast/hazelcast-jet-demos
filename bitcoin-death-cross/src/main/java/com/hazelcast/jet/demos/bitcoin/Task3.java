@@ -33,6 +33,8 @@ public class Task3 implements CommandLineRunner {
 
 	@Autowired
 	private HazelcastInstance hazelcastInstance;
+	@Autowired
+	private MyTopicListener myTopicListener;
 	
 	@Override
 	public void run(String... args) throws Exception {
@@ -42,6 +44,6 @@ public class Task3 implements CommandLineRunner {
 				this.hazelcastInstance
 				.getTopic(MyConstants.ITOPIC_NAME_ALERT);
 		
-		iTopic.addMessageListener(new MyTopicListener());
+		iTopic.addMessageListener(myTopicListener);
 	}
 }

@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.jet.demos.bitcoin.MyConstants;
+import com.hazelcast.jet.demos.bitcoin.alerting.MyTopicListener;
 import com.hazelcast.jet.demos.bitcoin.domain.Price;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -29,6 +30,11 @@ public class PricePanelListener implements
 	EntryUpdatedListener<String, Price> {
 
 	private static PricePanel pricePanel = null;
+	private MyTopicListener myTopicListener;
+	
+	public PricePanelListener(MyTopicListener arg0) {
+		this.myTopicListener = arg0;
+	}
 
 	/**
 	 * <p>Create the graph plot on screen. This is
@@ -38,7 +44,7 @@ public class PricePanelListener implements
 	 * </p>
 	 */
 	public void activateDisplay() {
-		pricePanel = new PricePanel();
+		pricePanel = new PricePanel(this.myTopicListener);
 
 		JFrame frame = new JFrame(MyConstants.PANEL_TITLE);
 

@@ -1,5 +1,9 @@
 package com.hazelcast.jet.demos.bitcoin.alerting;
 
+import javax.swing.JTextArea;
+
+import org.springframework.stereotype.Component;
+
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
@@ -11,23 +15,33 @@ import lombok.extern.slf4j.Slf4j;
  * Here we just display the content.
  * </p>
  */
+@SuppressWarnings("serial")
+@Component
 @Slf4j
-public class MyTopicListener implements MessageListener<Object> {
+public class MyTopicListener extends JTextArea implements MessageListener<Object> {
 
 	private static final String NEWLINE = System.getProperty("line.separator");
 	
 	@Override
-	public void onMessage(Message<Object> message) {
-		log.warn("ITopic alert"
-				 + NEWLINE
-				 + "*********************************************************"
-				 + NEWLINE
-				 + "Topic '{}' : {}"
-				 + NEWLINE
-				 + "*********************************************************",
-				 message.getSource(),
-				 message.getMessageObject()
-				);
+	public void onMessage(Message<Object> message) {		
+		String[] output = new String[] {
+				NEWLINE,
+				"***************************************************************",
+				String.format("Topic '%s' : %s", message.getSource(), message.getMessageObject()),
+				"***************************************************************",
+		};
+		
+		StringBuilder sb = new StringBuilder();
+		for (String line : output) {
+			sb.append(line).append(NEWLINE);
+		}
+		log.warn(NEWLINE + sb.toString() + NEWLINE);
+		
+		/* MyTopicListener is a JTextArea.
+		 */
+	    this.setVisible(true);
+	    this.setText(sb.toString());
+
 	}
 
 }

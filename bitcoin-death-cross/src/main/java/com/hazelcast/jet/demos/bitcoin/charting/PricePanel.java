@@ -1,10 +1,11 @@
 package com.hazelcast.jet.demos.bitcoin.charting;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.time.LocalDate;
 
+import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -17,8 +18,10 @@ import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.TimeSeriesDataItem;
+import org.springframework.stereotype.Component;
 
 import com.hazelcast.jet.demos.bitcoin.MyConstants;
+import com.hazelcast.jet.demos.bitcoin.alerting.MyTopicListener;
 
 /**
  * <p>This class is a time-series panel to
@@ -35,6 +38,7 @@ import com.hazelcast.jet.demos.bitcoin.MyConstants;
  * </p>
  */
 @SuppressWarnings("serial")
+@Component
 public class PricePanel extends JPanel {
 
     private final TimeSeries[] timeSeries;
@@ -44,7 +48,18 @@ public class PricePanel extends JPanel {
 	 * the date and the Y-Axis for the price of Bitcoin
 	 * </p>
 	 */
-	public PricePanel() {
+	public PricePanel(MyTopicListener myTopicListener) {
+		// One item above another
+	    this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+	    JTextArea jTextArea = myTopicListener;
+	    jTextArea.setForeground(Color.red);
+	    jTextArea.setEditable(false);
+	    jTextArea.setLineWrap(false);
+	    jTextArea.setVisible(false);
+
+	    this.add(jTextArea);
+	    
 	    TimeSeriesCollection timeSeriesCollection = new TimeSeriesCollection();
 
 		// Initialise all three cached prices to zero
@@ -83,7 +98,6 @@ public class PricePanel extends JPanel {
 	    xYItemRenderer.setSeriesPaint(2, Color.MAGENTA);
 
 	    // Add the chart to the panel
-	    this.setLayout(new BorderLayout());
 	    this.add(new ChartPanel(jFreeChart));
 	}
 	
