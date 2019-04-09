@@ -28,7 +28,6 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 /**
  * TODO Javadoc
  * TODO Confirm names on pipeline stages
- * TODO Add alert panel to graph
  */
 public class MovingAverage {
 
