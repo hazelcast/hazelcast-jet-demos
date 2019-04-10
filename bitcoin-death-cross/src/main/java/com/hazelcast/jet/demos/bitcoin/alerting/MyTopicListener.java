@@ -24,13 +24,15 @@ public class MyTopicListener extends JTextArea implements MessageListener<Object
 	private static final String FOUR_SPACES = "    ";
 	
 	@Override
-	public void onMessage(Message<Object> message) {		
+	public void onMessage(Message<Object> message) {
+		String outputMessage = 
+				String.format("Topic '%s' : %s", message.getSource(), message.getMessageObject());
+		
 		String[] output = new String[] {
 				NEWLINE,
 				FOUR_SPACES + "***************************************************************"
 					+ FOUR_SPACES,
-				FOUR_SPACES + String.format("Topic '%s' : %s", message.getSource(), message.getMessageObject())
-					+ FOUR_SPACES,
+				FOUR_SPACES + outputMessage + FOUR_SPACES,
 				FOUR_SPACES + "***************************************************************"
 					+ FOUR_SPACES,
 		};

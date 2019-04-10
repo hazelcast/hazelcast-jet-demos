@@ -98,6 +98,8 @@ public class MovingAverage {
 			.drainTo(Sinks.logger())
 			.setName("logSink");
 
+		
+		//TODO Javadoc
 		averageOf1
 			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_CURRENT);
@@ -108,6 +110,7 @@ public class MovingAverage {
 			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_200_POINT);
 
+		
 		//TODO Javadoc - key is "50-point"
 		StageWithKeyAndWindow<Entry<String, Price>, String> windowOf50 =
 				averageOf50
@@ -116,6 +119,7 @@ public class MovingAverage {
 				.groupingKey(MovingAverage.whence())
 				;
 
+		
 		//TODO Javadoc - key is "200-point"
 		StreamStageWithKey<Entry<String, Price>, String> windowOf200 =
 				averageOf200
@@ -123,6 +127,7 @@ public class MovingAverage {
 				.groupingKey(MovingAverage.whence())
 				;
 
+		
 		//TODO Javadoc - left, right, accumulator, result
 		AggregateOperation2
 			<Entry<String, Price>, Entry<String, Price>, 
@@ -140,6 +145,7 @@ public class MovingAverage {
 			    		 )
 			     .andExportFinish(MyPriceAccumulator::result);
 
+		
 		//TODO Javadoc
 		StreamStageWithKey<SimpleImmutableEntry<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>, String> 
 			joined50point200point
@@ -152,12 +158,27 @@ public class MovingAverage {
 						(MyConstants.BTCUSD, entry.getValue()))
 				.groupingKey(Functions.entryKey());
 
-		//TODO Javadoc - optional save to IMap as Entry
+		
+		/**
+		 * <p>Pass the stream of 50-point/200-point pairs into
+		 * the {@link CrossEmitter}. It will produce output only
+		 * if a cross is detected.
+		 * </p>
+		 * <p>What comes out is a map entry, so we could save
+		 * it to an {@link com.hazelcast.core.IMap IMap} if
+		 * we wanted to as an optional extension,
+		 * </p>
+		 */
 		StreamStage<Entry<?,?>> alerts =
 				joined50point200point
 				.customTransform("crossEmitter", CrossEmitter::new);
 
-		//TODO Javadoc
+		
+		/**
+		 * <p>Create a bespoke sink that publishes whatever it gets
+		 * as input to a IMDG {@link com.hazelcast.core.ITopic ITopic}
+		 * </p>
+		 */
 		Sink<? super Entry<?, ?>> alertSink = 
 				SinkBuilder.sinkBuilder(
 						"topicSink-" + MyConstants.ITOPIC_NAME_ALERT, 
