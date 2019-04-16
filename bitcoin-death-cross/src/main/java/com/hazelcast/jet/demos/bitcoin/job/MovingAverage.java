@@ -174,22 +174,26 @@ public class MovingAverage {
 				.customTransform("crossEmitter", CrossEmitter::new);
 
 		
-		/**
-		 * <p>Create a bespoke sink that publishes whatever it gets
-		 * as input to a IMDG {@link com.hazelcast.core.ITopic ITopic}
-		 * </p>
-		 */
-		Sink<? super Entry<?, ?>> alertSink = 
-				SinkBuilder.sinkBuilder(
-						"topicSink-" + MyConstants.ITOPIC_NAME_ALERT, 
-						context -> context.jetInstance().getHazelcastInstance().getTopic(MyConstants.ITOPIC_NAME_ALERT)
-						)
-				.receiveFn((iTopic, item) -> iTopic.publish(item))
-				.build();
-		alerts
-			.drainTo(alertSink);
+		//TODO Javadoc
+		alerts.drainTo(MovingAverage.buildAlertSink());
 		
 		return pipeline;
 	}    
 
+	/**
+	 * <p>Create a bespoke sink that publishes whatever it gets
+	 * as input to a IMDG {@link com.hazelcast.core.ITopic ITopic}
+	 * </p>
+	 *
+	 * @return A sink to publish out data to a topic
+	 */
+	protected static Sink<? super Entry<?, ?>> buildAlertSink() {
+		return SinkBuilder.sinkBuilder(
+				"topicSink-" + MyConstants.ITOPIC_NAME_ALERT, 
+				context -> context.jetInstance().getHazelcastInstance().getTopic(MyConstants.ITOPIC_NAME_ALERT)
+				)
+				.receiveFn((iTopic, item) -> iTopic.publish(item))
+				.build();
+	}
+	
 }
