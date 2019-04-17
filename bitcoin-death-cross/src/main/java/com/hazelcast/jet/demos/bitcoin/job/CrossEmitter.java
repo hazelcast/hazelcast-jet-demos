@@ -43,7 +43,8 @@ public class CrossEmitter
 		Tuple3<LocalDate, BigDecimal, BigDecimal> current = entry.getValue();
 
 		// Ignore incomplete pairs, 50-point (f1) begins before 200-point (f2)
-		if (current.f2()==null) {
+		if (current.f1() == null || current.f2() == null) {
+			this.previous = null;
 			return true;
 		}
 		
