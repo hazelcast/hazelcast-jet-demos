@@ -73,7 +73,8 @@ public class Task4 implements CommandLineRunner {
 	 */
 	@Override
 	public void run(String... args) throws Exception {
-		log.info("{} - Turn on price feed", this.getClass().getSimpleName());
+		String prefix = this.getClass().getSimpleName() + " -";
+
 
 		IMap<String, Price> pricesInMap =
 				this.hazelcastInstance.getMap(MyConstants.IMAP_NAME_PRICES_IN);
@@ -81,9 +82,11 @@ public class Task4 implements CommandLineRunner {
 		String key = MyConstants.BTCUSD;
 		
 		if (pricesInMap.containsKey(key)) {
-            log.info("Data '{}' exists in map '{}'.",
-            		key, pricesInMap.getName());
+            log.info("{} Data '{}' exists in map '{}'.",
+            		prefix, key, pricesInMap.getName());
 		} else {
+			log.info("{} Turn on price feed", prefix);
+
 			List<Price> prices = this.loadPrices(key);
 
 			for (int i = 0 ; i < prices.size() ; i++) {

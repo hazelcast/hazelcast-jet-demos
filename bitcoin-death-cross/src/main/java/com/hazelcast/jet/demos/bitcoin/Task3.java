@@ -38,7 +38,9 @@ public class Task3 implements CommandLineRunner {
 	
 	@Override
 	public void run(String... args) throws Exception {
-		log.info("{} - Start topic listener", this.getClass().getSimpleName());
+		String prefix = this.getClass().getSimpleName() + " -";
+
+		log.info("{} Start topic listener", prefix);
 
 		ITopic<Object> iTopic =
 				this.hazelcastInstance

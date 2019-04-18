@@ -11,6 +11,7 @@ import com.hazelcast.jet.demos.bitcoin.job.MovingAverage;
 public class MyConstants {
 
 	// For ordering execution of tasks
+	public static final int PRIORITY_ZERO = 0;
 	public static final int PRIORITY_ONE = 1;
 	public static final int PRIORITY_TWO = 2;
 	public static final int PRIORITY_THREE = 3;
@@ -45,4 +46,7 @@ public class MyConstants {
     public static final String[] CHART_LINES = { 
                     KEY_CURRENT, KEY_50_POINT, KEY_200_POINT
                     };
+    
+    // For cluster formation delay
+    public static final int STARTUP_DELAY_SECONDS = 10;
 }

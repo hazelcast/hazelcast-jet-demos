@@ -155,16 +155,39 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * use the end date of the average range as the timestamp.
  * </p>
  * </li>
- * <li><p><b>joined</b> : XXX
+ * <li><p><b>joined</b> : The join logic is easy! One input is
+ * the 50-point average and the other is the 200-point average.
+ * Each input has a timestamp and Jet arranges to provide us the
+ * values one at a time.
+ * </p>
+ * <p>So the join boils down to creating a trio of values.
+ * One of the trio is the price from the 50-point average input.
+ * Another of the trio is the price from 200-point average input.
+ * The last of the trio is the date, which is the same on both
+ * 50-point and 200-point, but we take the 50-point one.
  * </p>
  * </li>
- * <li><p><b>reformat</b> : XXX
+ * <li><p><b>reformat</b> : Convert the output of the "{@code joined}"
+ * stage into a {@code Map.Entry}.
  * </p>
  * </li>
- * <li><p><b>crossEmitter</b> : XXX
+ * <li><p><b>crossEmitter</b> : Look for a cross on the 50-point
+ * and 200-point averages.
+ * </p>
+ * <p>The cross definition is easy. From one day to the next the
+ * 50-point has to move from a higher value than the 200-point
+ * to being a lower value. <u>Or</u> from one day to the next the
+ * 50-point has move from being a lower value than the 200-point
+ * to being a higher value.
+ * </p>
+ * <p>The detail is that this stage keeps a copy of yesterday's
+ * pair of 50-point and 200-point to compare against today's. 
  * </p>
  * </li>
- * <li><p><b>topicSink-alert</b> : XXX
+ * <li><p><b>topicSink-alert</b> : The "{@code crossEmitter}" stage
+ * only produces output if a cross is detected. If anything gets to
+ * this stage, send it to a {@link com.hazelcast.core.ITopic ITopic}
+ * so that {@link Task3} which is subscribed to the topic is aware.
  * </p>
  * </li>
  * </ol>
@@ -226,10 +249,11 @@ public class MovingAverage {
 
 		/** <p><i>Optional: </i>Log the current price to the
 		 * screen, to help understanding.</p>
-		 */
+		 *XXX
 		averageOf1
 			.drainTo(Sinks.logger())
 			.setName("logSink");
+		*/
 		
 		/** <p>Save the latest for each average to an
 		 * {@link com.hazelcast.core.IMap IMap} for {@link Task2}.</p>
@@ -274,7 +298,8 @@ public class MovingAverage {
 		 * </p>
 		 */
 		StreamStage<Entry<?,?>> alerts =
-			joined50point200point.customTransform("crossEmitter", CrossEmitter::new);
+			joined50point200point
+			.customTransform("crossEmitter", CrossEmitter::new);
 
 		/** <p>If there is anything produced by the {@link CrossEmitter}
 		 * dump it to a {@link com.hazelcast.core.ITopic ITopic} for
@@ -311,6 +336,7 @@ public class MovingAverage {
 	 */
 	protected static StreamStageWithKey<Entry<String, Price>, String> 
 		buildPriceFeed(Pipeline pipeline) {
+
 		return pipeline.drawFrom(
 				Sources.<String,Price>mapJournal(
 					MyConstants.IMAP_NAME_PRICES_IN,
@@ -343,13 +369,13 @@ public class MovingAverage {
 	protected static StreamStage<Entry<String,Price>>
 		buildAverageOfCount(int count, StreamStageWithKey<Entry<String, Price>, String> priceFeed) {
 		
-			String stageName = ( count == 1 ? 
-								"averageOf1-noop" :
-								"averageOf" + count );
+		String stageName = ( count == 1 ? 
+							"averageOf1-noop" :
+							"averageOf" + count );
 			
-			return priceFeed.customTransform(stageName, 
-					() -> new SimpleMovingAverage(count)
-			);
+		return priceFeed.customTransform(stageName, 
+				() -> new SimpleMovingAverage(count)
+		);
 	}
 
 	
@@ -365,6 +391,7 @@ public class MovingAverage {
 	 */
 	private static StreamStageWithKey<Entry<String, Price>, String> 
 		buildKeyedTimestamped(StreamStage<Entry<String, Price>> averageOfSomething, int count) {
+
 		return averageOfSomething
 				.addTimestamps(e -> e.getValue().getTimestamp(), ZERO_LAG)
 				.setName("streamOf" + count)
@@ -410,6 +437,7 @@ public class MovingAverage {
 				MyPriceAccumulator, 
 				Tuple3<LocalDate, BigDecimal, BigDecimal>> 
 		buildAggregateOperation() {
+
 		return AggregateOperation
 				.withCreate(MyPriceAccumulator::new)
 			     .<Entry<String, Price>>andAccumulate0(
@@ -484,6 +512,7 @@ public class MovingAverage {
 	 * @return A sink to publish out data to a topic
 	 */
 	protected static Sink<? super Entry<?, ?>> buildAlertSink() {
+
 		return SinkBuilder.sinkBuilder(
 				"topicSink-" + MyConstants.ITOPIC_NAME_ALERT, 
 				context -> context.jetInstance().getHazelcastInstance().getTopic(MyConstants.ITOPIC_NAME_ALERT)

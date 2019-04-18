@@ -43,24 +43,18 @@ public class Task2 implements CommandLineRunner {
      * is throttled so they don't come out too fast,
      * makes the plot look better.
      * </p>
-     * <p>Since the Hazelcast cluster might have
-     * multiple members, and we only really want the
-     * chart once, use a counter to ensure the
-     * chart is only produced by one member. If
-     * the new (3.12) CP sub-system is available,
-     * use that in preference to the deprecated
-     * "{@code hazelcastInstance.getAtomicLong(String s)}"
-     * </p>
      */
     @Override
     public void run(String... args) throws Exception {
-        log.info("{} - Start graph plot", this.getClass().getSimpleName());
+		String prefix = this.getClass().getSimpleName() + " -";
 
-        IMap<String, Price> pricesOutMap =
-            this.hazelcastInstance
-                .getMap(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD);
+    	log.info("{} Adding chart.", prefix);
+ 
+    	IMap<String, Price> pricesOutMap =
+    		this.hazelcastInstance
+    			.getMap(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD);
 
         pricesOutMap
-            .addEntryListener(new PricePanelListener(this.myTopicListener), true);
+        	.addEntryListener(new PricePanelListener(this.myTopicListener), true);
     }
 }

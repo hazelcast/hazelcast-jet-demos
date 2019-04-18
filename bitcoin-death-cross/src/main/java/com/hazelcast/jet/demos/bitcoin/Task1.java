@@ -43,21 +43,20 @@ public class Task1 implements CommandLineRunner {
 	 */
 	@Override
 	public void run(String... args) throws Exception {
-		log.info("{} - Start Jet job", this.getClass().getSimpleName());
-
-    	Pipeline pipeline = MovingAverage.build();
+		String prefix = this.getClass().getSimpleName() + " -";
+		
+		Pipeline pipeline = MovingAverage.build();
     	JobConfig jobConfig = new JobConfig();
     	jobConfig.setName(MyConstants.JOB_NAME);
 
     	// Run job if not already present
 		Job job = this.jetInstance.getJob(jobConfig.getName());
-    	if (job!=null) {
-            log.info("Job '{}' exists, status '{}'.",
-            		job.getName(), job.getStatus());
-    	} else {
-        	job = this.jetInstance.newJob(pipeline, jobConfig);
-            log.info("Started job '{}'.", job.getName());
+    	if (job == null) {
+        	job = this.jetInstance.newJobIfAbsent(pipeline, jobConfig);
     	}
+
+    	log.info("{} Job '{}', status '{}'.",
+            		prefix, job.getName(), job.getStatus());
 	}
 
 }
