@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * Each new price overwrites the previous one, as all we
  * are concerned with is storing the current price. Jet
  * has access to the
- * <a href="https://docs.hazelcast.org/docs/3.11.1/javadoc/com/hazelcast/map/impl/journal/MapEventJournal.html">MapEventJournal</a>
+ * <a href="https://docs.hazelcast.org/docs/3.12/javadoc/com/hazelcast/map/impl/journal/MapEventJournal.html">MapEventJournal</a>
  * so has the history of change to the price.
  * </p>
  * <p><b>Note:</b> {@code Task1}, {@code Task2} and {@code Task3}
