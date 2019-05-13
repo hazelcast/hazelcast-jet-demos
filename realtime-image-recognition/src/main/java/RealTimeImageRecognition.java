@@ -91,7 +91,7 @@ public class RealTimeImageRecognition {
     private static Pipeline buildPipeline(String modelPath) {
         Pipeline pipeline = Pipeline.create();
         pipeline.drawFrom(WebcamSource.webcam(500))
-                .withoutTimestamps()
+				.withIngestionTimestamps()
                 .mapUsingContext(classifierContext(modelPath),
                         (ctx, img) -> {
                             Entry<String, Double> classification = classifyWithModel(ctx, img);
