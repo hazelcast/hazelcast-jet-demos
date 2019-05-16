@@ -75,5 +75,5 @@ Note: The ADB-S data stream publishes ~3 MB of data per update. We are polling i
 
 # Supporting ADB-S Exchange
 
-This demo uses data provided by ADB-S Exchange. Please consider supporting ADB-S Exchange by a [donation](https://www.adsbexchange.com/donate/) or by hosting a [feeder](https://www.adsbexchange.com/how-to-feed/).
+This demo uses data provided by [ADB-S Exchange](https://www.adsbexchange.com/). Please consider supporting ADB-S Exchange by a [donation](https://www.adsbexchange.com/donate/) or by hosting a [feeder](https://www.adsbexchange.com/how-to-feed/).
 
