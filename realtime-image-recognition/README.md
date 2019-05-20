@@ -19,9 +19,10 @@ The main class (`RealTimeImageRecognition`) with the main method, webcam data so
 - Java Development Kit 8+: [Installation Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 - Apache Maven: [Installation Guide](https://maven.apache.org/install.html)
 
-- To make sure you've installed Git Large File Storage and checked out the repository correctly run the following command: 
+- To make sure you've installed Git Large File Storage and checked out the repository correctly run the following commands: 
 
 ```bash
+$ git lfs pull
 $ git lfs ls-files
 038574163b - realtime-image-recognition/likevgg_cifar10/model.net
 ```

@@ -73,3 +73,7 @@ that are emitted from the Flight Telemetry application.
 
 Note: The ADB-S data stream publishes ~3 MB of data per update. We are polling it every 10 seconds by default, so you might need a decent internet connection for demo to work properly. Otherwise you might see some delay on the charts/output.
 
+# Supporting ADB-S Exchange
+
+This demo uses data provided by [ADB-S Exchange](https://www.adsbexchange.com/). Please consider supporting ADB-S Exchange by a [donation](https://www.adsbexchange.com/donate/) or by hosting a [feeder](https://www.adsbexchange.com/how-to-feed/).
+
