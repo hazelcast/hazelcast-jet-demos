@@ -1,0 +1,26 @@
+hazelcast:
+  group:
+    name: 'bitcoin'
+  management-center:
+    enabled: true
+    scripting-enabled: true
+    url: http://localhost:8080/hazelcast-mancenter
+  network:
+    # Don't use default (5701) so this demo can co-exist with other clusters on same machine
+    port:
+      port: 6701
+    join:
+      multicast:
+        enabled: false
+      tcp-ip:
+        enabled: true
+        member-list:
+          - 127.0.0.1:6701
+  # Keep history of changes to the named Map available to Jet -->
+  event-journal:
+    map:
+      prices-in:
+        enabled: true
+        # Keep 10000 per partition
+        capacity: 2710000
+        time-to-live-seconds: 0

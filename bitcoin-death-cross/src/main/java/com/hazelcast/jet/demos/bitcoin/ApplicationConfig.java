@@ -3,7 +3,7 @@ package com.hazelcast.jet.demos.bitcoin;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.hazelcast.config.ClasspathXmlConfig;
+import com.hazelcast.config.ClasspathYamlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Jet;
@@ -26,7 +26,7 @@ public class ApplicationConfig {
 
 	@Bean
 	public Config config() {
-		return new ClasspathXmlConfig("hazelcast.xml");
+		return new ClasspathYamlConfig("hazelcast.yaml");
 	}
 	
 	@Bean
