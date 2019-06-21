@@ -31,6 +31,12 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
  */
 public class FlightDataSource {
 
+    /**
+     * See <a href="https://www.adsbexchange.com/data/">ADS-B Exchange</a> for how to
+     * obtain an API key.
+     */
+    private static final String API_AUTHENTICATION_KEY = "YOUR_API_KEY_HERE";
+
     private final URL url;
     private final long pollIntervalMillis;
 
@@ -78,6 +84,7 @@ public class FlightDataSource {
         try {
             con.setRequestMethod("GET");
             con.addRequestProperty("User-Agent", "Mozilla / 5.0 (Windows NT 6.1; WOW64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 40.0.2214.91 Safari / 537.36");
+            con.addRequestProperty("api-auth", API_AUTHENTICATION_KEY);
             int responseCode = con.getResponseCode();
             try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
                 String inputLine;

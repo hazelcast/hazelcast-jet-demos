@@ -4,8 +4,6 @@ import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
