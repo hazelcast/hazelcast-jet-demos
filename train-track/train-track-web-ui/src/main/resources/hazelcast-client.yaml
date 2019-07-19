@@ -1,0 +1,10 @@
+# Hazelcast client configuration
+hazelcast-client:
+  group:
+    name: 'frecciarossa'
+  instance-name: '@project.artifactId@'
+  properties:
+    hazelcast.client.statistics.enabled: true
+  network:
+    cluster-members:
+      - 127.0.0.1:8701
