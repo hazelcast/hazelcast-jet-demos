@@ -19,6 +19,7 @@
         <module>markov-chain-generator</module>
         <module>realtime-image-recognition</module>
         <module>road-traffic-predictor</module>
+        <module>train-track</module>
     </modules>
 
     <repositories>

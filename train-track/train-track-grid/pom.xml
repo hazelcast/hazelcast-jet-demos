@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast.jet.demos.train-track</groupId>
+        <artifactId>train-track</artifactId>
+        <version>3.0</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <artifactId>train-track-grid</artifactId>
+    <name>${label}: Execution Grid</name>
+    <description>Hazelcast Jet cluster that is the Beam runner</description>
+
+	<dependencies>
+		<!-- Jet specific Beam runner -->
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+          	<artifactId>beam-runners-jet-experimental</artifactId>
+    	</dependency>
+	</dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals><goal>repackage</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

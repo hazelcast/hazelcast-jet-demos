@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast.jet.demos.train-track</groupId>
+        <artifactId>train-track</artifactId>
+        <version>3.0</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <artifactId>train-track-beam-job</artifactId>
+    <name>${label}: Beam Job</name>
+    <description>Define file processing as a Beam job</description>
+
+	<dependencies>
+		<!-- Beam SDK, Jet is not required to define the job -->
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+          	<artifactId>beam-sdks-java-core</artifactId>
+          	<scope>provided</scope>
+    	</dependency>
+	</dependencies>
+	
+</project>
