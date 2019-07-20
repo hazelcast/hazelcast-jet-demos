@@ -4,7 +4,9 @@ XXX TODO - Add test of Beam Pipeline
 
 XXX TODO - Change Beam from 2.14.0-SNAPSHOT to 2.14.0 
 
-XXX TODO - Add speed to GPS stream
+XXX TODO - Add speed to GPS stream -- with BEAM!
+
+XXX TODO - Beam continuous write/read
 
 XXX Instructions
 
