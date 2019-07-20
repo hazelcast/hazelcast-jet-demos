@@ -11,16 +11,8 @@
 
     <artifactId>train-track-grid</artifactId>
     <name>${label}: Execution Grid</name>
-    <description>Hazelcast Jet cluster that is the Beam runner</description>
+    <description>Hazelcast Jet cluster to use as the Beam runner</description>
 
-	<dependencies>
-		<!-- Jet specific Beam runner -->
-		<dependency>
-			<groupId>org.apache.beam</groupId>
-          	<artifactId>beam-runners-jet-experimental</artifactId>
-    	</dependency>
-	</dependencies>
-    
     <build>
         <plugins>
             <plugin>

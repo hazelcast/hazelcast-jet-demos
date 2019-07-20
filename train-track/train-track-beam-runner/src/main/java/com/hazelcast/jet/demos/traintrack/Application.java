@@ -17,6 +17,9 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
  * <li><b>CodeJarPathName</b>
  * <p>The path to the Jar file that contains the pipeline code,
  * so we can stream this Jar file to Jet to run.</p>
+ * <p>Note this is a "shaded" jar, including the pipeline and the
+ * Beam Runner code.
+ * </p>
  * </li>
  * <li><b>JetDefaultParallelism</b>
  * <p>Jet is usually highly parallel, which in this case would normally
@@ -48,7 +51,7 @@ public class Application {
 		JetPipelineOptions jetPipelineOptions
 			= PipelineOptionsFactory.create().as(JetPipelineOptions.class);
 		
-	    jetPipelineOptions.setCodeJarPathname("train-track-beam-job/target/train-track-beam-job.jar");
+	    jetPipelineOptions.setCodeJarPathname("train-track-beam-runner/target/train-track-beam-runner-shaded.jar");
 	    jetPipelineOptions.setJetDefaultParallelism(1);
 		jetPipelineOptions.setJetGroupName("frecciarossa");
 		jetPipelineOptions.setJetServers("127.0.0.1:8701");
