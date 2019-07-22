@@ -4,10 +4,10 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
-
-import lombok.extern.slf4j.Slf4j;
+import com.hazelcast.jet.pipeline.StreamStage;
 
 /**
  * <p>The Beam job writes to the filesystem rather than Jet, as the Beam job
@@ -18,20 +18,16 @@ import lombok.extern.slf4j.Slf4j;
  * topic gets the current location sent to it.
  * </p>
  */
-@Slf4j
 public class FileWatcher {
 
 	static Pipeline build() {
 		Pipeline pipeline = Pipeline.create();
 		
-		pipeline
-		.drawFrom(FileWatcher.buildFileWatcherSource()).withoutTimestamps().setName("fileSource")
-		.map(s -> {
-			// Not really a mapper; sneak in diagnostic logging to confirm input being processed.
-			log.debug(s);
-			return s;
-		})
-        .drainTo(FileWatcher.buildTopicSink());
+		StreamStage<String> source = pipeline
+				.drawFrom(FileWatcher.buildFileWatcherSource()).withoutTimestamps().setName("fileSource");
+
+		source.drainTo(FileWatcher.buildTopicSink());
+		source.drainTo(Sinks.logger()).setName("loggerSink");
 		
 		return pipeline;
 	}
