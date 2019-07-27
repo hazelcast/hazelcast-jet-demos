@@ -35,7 +35,7 @@ public class FlightDataSource {
      * See <a href="https://www.adsbexchange.com/data/">ADS-B Exchange</a> for how to
      * obtain an API key.
      */
-    private static final String API_AUTHENTICATION_KEY = "YOUR_API_KEY_HERE";
+    protected static final String API_AUTHENTICATION_KEY = "YOUR_API_KEY_HERE";
 
     private final URL url;
     private final long pollIntervalMillis;
