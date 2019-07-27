@@ -148,6 +148,11 @@ public class FlightTelemetry {
     }
 
     public static void main(String[] args) {
+        if (FlightDataSource.API_AUTHENTICATION_KEY.equals("YOUR_API_KEY_HERE")) {
+             System.err.println("API_AUTHENTICATION_KEY not set in FlightDataSource.java");
+             System.exit(1);
+        }
+
         JetInstance jet = getJetInstance();
 
         Pipeline pipeline = buildPipeline();
