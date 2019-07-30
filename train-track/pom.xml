@@ -21,7 +21,7 @@
     <properties>
         <label>Train Track (BEAM)</label>
 
-        <beam.version>2.14.0-SNAPSHOT</beam.version>
+        <beam.version>2.15.0-SNAPSHOT</beam.version>
 
         <!-- These 4 for web UI -->
         <jquery.version>3.4.1</jquery.version>
