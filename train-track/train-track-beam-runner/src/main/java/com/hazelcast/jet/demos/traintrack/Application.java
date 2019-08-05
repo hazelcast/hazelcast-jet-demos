@@ -59,7 +59,16 @@ public class Application {
 	    jetPipelineOptions.setRunner(JetRunner.class);
 
 	    Pipeline pipeline = MyBeamJob.build(jetPipelineOptions);
-	    
-	    pipeline.run();
+
+	    try {
+		    pipeline.run();
+	    } catch (Exception e) {
+		// If submit twice, can get JobAlreadyExistsException if first still running
+		e.printStackTrace();
+	    } finally {
+		    // Don't wait for Pipeline, unbounded source!
+		    System.exit(0);
+	    }
+
 	}
 }
