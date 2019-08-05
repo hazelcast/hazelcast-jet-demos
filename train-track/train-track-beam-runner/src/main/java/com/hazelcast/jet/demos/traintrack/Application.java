@@ -55,7 +55,7 @@ public class Application {
 	    jetPipelineOptions.setJetDefaultParallelism(1);
 		jetPipelineOptions.setJetGroupName("frecciarossa");
 		jetPipelineOptions.setJetServers("127.0.0.1:8701");
-	    jetPipelineOptions.setJobName(MyBeamJob.class.getSimpleName());
+	    jetPipelineOptions.setJobName(MyBeamJob.class.getSimpleName()); // Needs Beam 2.15
 	    jetPipelineOptions.setRunner(JetRunner.class);
 
 	    Pipeline pipeline = MyBeamJob.build(jetPipelineOptions);

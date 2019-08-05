@@ -21,7 +21,7 @@
     <properties>
         <label>Train Track (BEAM)</label>
 
-        <beam.version>2.15.0-SNAPSHOT</beam.version>
+        <beam.version>2.14.0</beam.version>
 
         <!-- These 4 for web UI -->
         <jquery.version>3.4.1</jquery.version>
@@ -115,18 +115,4 @@
         <finalName>${project.artifactId}</finalName>
     </build>
 
-	<!-- Temporary until Beam 2.14.0 released -->
-    <repositories>
-        <repository>
-            <id>apache.snapshots</id>
-            <name>Apache Development Snapshot Repository</name>
-            <url>https://repository.apache.org/content/repositories/snapshots/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
