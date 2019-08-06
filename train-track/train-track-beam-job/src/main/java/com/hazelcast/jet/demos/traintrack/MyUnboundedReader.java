@@ -98,7 +98,7 @@ public class MyUnboundedReader extends UnboundedReader<String> implements Serial
 								this.queue.add(line);
 								i++;
 							}
-							log.info("Read {} from {}", i, path);
+							log.info("Read {} lines from '{}'", i, path);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -157,7 +157,7 @@ public class MyUnboundedReader extends UnboundedReader<String> implements Serial
 	 */
 	@Override
 	public boolean start() throws IOException {
-		log.info("Started to watch directory: {}", BASE_DIR);
+		log.info("Started to watch directory: '{}'", BASE_DIR);
 		Paths.get(BASE_DIR).register(this.watchService, StandardWatchEventKinds.ENTRY_MODIFY);
 
 		this.watermark=new Instant(0);
