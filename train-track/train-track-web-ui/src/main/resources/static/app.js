@@ -4,7 +4,7 @@
  */
 
 // Create a map in the "map" div on the page, initial top-left near Milan latitude-longitude
-var map = L.map('map').setView([45.4, 9.2], 11);
+var map = L.map('map').setView([45.4, 9.35], 10);
 
 // Use of Open Street Map requires this text
 var openStreetMap = '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors,'
@@ -22,11 +22,11 @@ function onMessage(message) {
 	var json = JSON.parse(message);
 	var latitude = json.latitude;
 	var longitude = json.longitude;
-	var timestamp = json.timestamp;
+	var timeprint = json.timeprint;
 	
 	// Create a point and add to the map. Add pop-up text if clicked
 	var myMarker = L.marker([latitude, longitude]);
-	myMarker.bindPopup('<p>' + timestamp + '</p>');
+	myMarker.bindPopup('<p>' + timeprint + '</p>');
 	myMarker.addTo(map);
 	
 	// Open force closes the previous
