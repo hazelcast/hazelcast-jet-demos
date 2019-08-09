@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 public class MyUnboundedReader extends UnboundedReader<String> implements Serializable {
 
 	private static final String BASE_DIR = ".";
-	private static final long TENTH_OF_A_SECOND_MS = 100L;
 
 	private final UnboundedSource<String, UnboundedSource.CheckpointMark> unboundedSource;
 
@@ -114,12 +113,12 @@ public class MyUnboundedReader extends UnboundedReader<String> implements Serial
 		this.lineRead = this.queue.poll();
 		if (this.lineRead != null) {
 			try {
-				Thread.sleep(TENTH_OF_A_SECOND_MS);
+				Thread.sleep(MyBeamJob.QUARTER_OF_A_SECOND_MS);
 			} catch (InterruptedException e) {
 				throw new IOException(e);
 			}
 			count++;
-			this.watermark = new Instant(count * TENTH_OF_A_SECOND_MS);
+			this.watermark = new Instant(count * MyBeamJob.QUARTER_OF_A_SECOND_MS);
 			return true;
 		} else {
 			return false;
