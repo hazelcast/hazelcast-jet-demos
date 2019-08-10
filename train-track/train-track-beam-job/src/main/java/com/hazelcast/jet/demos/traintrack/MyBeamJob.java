@@ -44,7 +44,7 @@ public class MyBeamJob {
 	    .apply("sink",
 	    		FileIO.<String>write()
 	    		.via(TextIO.sink())
-	            .to("beam-output")
+	            .to(".")
 	            .withPrefix("beam-output")
 	            .withNumShards(1)
 	    		)

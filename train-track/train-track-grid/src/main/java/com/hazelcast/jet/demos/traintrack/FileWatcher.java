@@ -43,7 +43,7 @@ public class FileWatcher {
 	 * @return
 	 */
 	protected static StreamSource<String> buildFileWatcherSource() {
-		return Sources.filesBuilder("beam-output").buildWatcher();
+		return Sources.filesBuilder(".").glob("beam-output-*").buildWatcher();
 	}
 	
 	/**
