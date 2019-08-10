@@ -1,9 +1,15 @@
 package com.hazelcast.jet.demos.traintrack;
 
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.io.FileIO;
+import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.windowing.AfterProcessingTime;
+import org.apache.beam.sdk.transforms.windowing.FixedWindows;
+import org.apache.beam.sdk.transforms.windowing.Window;
+import org.joda.time.Duration;
 
 /**
  * <p>Define a Beam pipeline that reads a CSV file, reformats it
@@ -17,16 +23,32 @@ import org.apache.beam.sdk.transforms.ParDo;
  */
 public class MyBeamJob {
 
+	static final long QUARTER_OF_A_SECOND_MS = 250L;
+	static final Duration ONE_SECOND = Duration.standardSeconds(1);
+	
 	public static Pipeline build(PipelineOptions pipelineOptions) {
-		
-		long start = System.currentTimeMillis();
 		
 	    Pipeline pipeline = Pipeline.create(pipelineOptions);
 
-	    pipeline
-	    .apply("source", TextIO.read().from("beam-input"))
-	    .apply("reformat", ParDo.of(new MyEnrichAndReformatFn(start)))
-        .apply("sink", TextIO.write().to("beam-output"));
+		pipeline
+		.apply("unbounded-source", 
+				Read.from(new MyUnboundedSource("beam-input")))
+	    .apply("reformat-and-timestamp", 
+	    		ParDo.of(new MyEnrichAndReformatFn()))
+		.apply("window",
+				 Window.<String>into(FixedWindows.of(ONE_SECOND))
+				 .triggering(AfterProcessingTime.pastFirstElementInPane())
+				 .discardingFiredPanes()
+				 .withAllowedLateness(ONE_SECOND)
+				)
+	    .apply("sink",
+	    		FileIO.<String>write()
+	    		.via(TextIO.sink())
+	            .to("beam-output")
+	            .withPrefix("beam-output")
+	            .withNumShards(1)
+	    		)
+		;
 
 	    return pipeline;
 	}

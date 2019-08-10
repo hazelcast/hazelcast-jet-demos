@@ -35,8 +35,7 @@ public class FileWatcher {
 	
 	/**
 	 * <p>A custom source, a filewatcher that produces a continuous stream
-	 * of lines in files matching the name "{@code beam-output-*}" in the
-	 * current directory.
+	 * of lines in files in the "{@code beam-output}" directory.
 	 * </p>
 	 * <p>As the Beam job writes the lines, this job reads the lines.
 	 * </p>
@@ -44,7 +43,7 @@ public class FileWatcher {
 	 * @return
 	 */
 	protected static StreamSource<String> buildFileWatcherSource() {
-		return Sources.filesBuilder(".").glob("beam-output-*").buildWatcher();
+		return Sources.filesBuilder("beam-output").buildWatcher();
 	}
 	
 	/**
