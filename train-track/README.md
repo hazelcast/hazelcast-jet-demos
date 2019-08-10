@@ -1,24 +1,17 @@
 # Train Track
 
-XXX TODO - Retest all on 3.1, IMDG 3.12.1
+## TODO
 
-XXX TODO - Add test of Beam Pipeline
+Beam job name is visible on Management Center on Beam 2.15 onwards. Upgrade `pom.xml` once 2.15 released.
 
-XXX TODO - Change Beam from 2.14.0-SNAPSHOT to 2.14.0 
 
-XXX TODO - Check beam job name in MC
-
-XXX TODO - Add speed to GPS stream -- with BEAM!
-
-XXX TODO - Beam continuous write/read
-
-XXX Instructions
+## Instructions
 
 ```
 mvn clean install
 ```
 
-Then from same directory
+Then from *same* directory
 
 ```
 java -jar train-track-grid/target/train-track-grid.jar
