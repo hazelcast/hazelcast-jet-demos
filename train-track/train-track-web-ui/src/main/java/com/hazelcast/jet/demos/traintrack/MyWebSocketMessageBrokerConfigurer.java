@@ -37,6 +37,7 @@ public class MyWebSocketMessageBrokerConfigurer implements WebSocketMessageBroke
     public void registerStompEndpoints(StompEndpointRegistry stompEndpointRegistry) {
         stompEndpointRegistry
         .addEndpoint("/" + ApplicationConstants.WEBSOCKET_ENDPOINT)
+        .setAllowedOrigins("*")
         .withSockJS();
     }
 
