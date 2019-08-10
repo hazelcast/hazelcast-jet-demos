@@ -6,6 +6,8 @@ Beam job name is visible on Management Center on Beam 2.15 onwards. Upgrade `pom
 
 Check browser compatibility. Works on Firefox. Fails on Safari. Works on Chrome. Internet Explorer unknown.
 
+Filewatch from subdirectory that may not exist ?
+
 
 ## Instructions
 
