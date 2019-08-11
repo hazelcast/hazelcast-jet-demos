@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
         <artifactId>hazelcast-jet-demos</artifactId>
-        <version>3.0</version>
+        <version>3.1</version>
     </parent>
 
     <name>Bitcoin Death Cross</name>
@@ -16,6 +16,7 @@
     <description>Predicting a downward trend in Bitcoin price</description>
 
 	<properties>
+		<hazelcast-jet.version>3.2-SNAPSHOT</hazelcast-jet.version>
 		<jfreechart.version>1.5.0</jfreechart.version>
 		<spring-boot.version>2.1.3.RELEASE</spring-boot.version>
 	</properties>
