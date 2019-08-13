@@ -1,13 +1,13 @@
 # Train Track
 
+[Screenshot1]: src/site/markdown/images/Screenshot1.png "Image screenshot1.png"
+[Screenshot2]: src/site/markdown/images/Screenshot2.png "Image screenshot2.png"
+
 ## TODO
 
 Beam job name is visible on Management Center on Beam 2.15 onwards. Upgrade `pom.xml` once 2.15 released.
 
-Check browser compatibility. Works on Firefox. Fails on Safari. Works on Chrome. Internet Explorer unknown.
-
-Filewatch from subdirectory that may not exist ?
-
+![Image of points plotted on a map of Milan, Italy][Screenshot1] 
 
 ## Instructions
 
@@ -29,3 +29,5 @@ Then
 ```
 http://localhost:8085/
 ```
+
+![Image of points plotted on a map west of Milan, Italy][Screenshot2] 
