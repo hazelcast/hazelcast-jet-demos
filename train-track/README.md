@@ -3,9 +3,9 @@
 [Screenshot1]: src/site/markdown/images/Screenshot1.png "Image screenshot1.png"
 [Screenshot2]: src/site/markdown/images/Screenshot2.png "Image screenshot2.png"
 
-## TODO
+In June 2019, we <a href="https://hazelcast.com/blog/hazelcast-jet-and-apache-beam/">announced</a> the inclusion of Hazelcast Jet as a runner for <a href="https://beam.apache.org/">Apache Beam</a>.
 
-Beam job name is visible on Management Center on Beam 2.15 onwards. Upgrade `pom.xml` once 2.15 released.
+Now it's time for an example showing how it's done. As a bonus, it's not "<em>Word Count."</em>
 
 ![Image of points plotted on a map of Milan, Italy][Screenshot1] 
 
