@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<link rel="stylesheet" type="text/css" th:href="@{/webjars/leaflet/leaflet.css}" />
+</head>
+
+<body>
+
+    <!--/* The map itself. Javascript references it so this goes first */-->        
+    <div id="map" style="height: 768px; position: relative; padding: 0px; margin: 0 auto 0 auto;"/>
+
+    <!--/* Load javascript files */-->
+    <noscript>You need Javascript enabled for this demo to work!</noscript>
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/webjars/leaflet/leaflet.js"></script>
+    <script src="/webjars/sockjs-client/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/stomp.min.js"></script>
+    <script src="/app.js"></script>
+
+</body>
+
+</html>

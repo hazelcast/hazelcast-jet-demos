@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.hazelcast.jet.demos</groupId>
+        <artifactId>hazelcast-jet-demos</artifactId>
+        <version>3.1</version>
+    </parent>
+
+    <groupId>com.hazelcast.jet.demos.train-track</groupId>
+    <artifactId>train-track</artifactId>
+    <name>${label}</name>
+
+    <packaging>pom</packaging>
+
+    <description>Tracking a train travelling through Italy</description>
+
+    <properties>
+        <label>Train Track (BEAM)</label>
+
+        <beam.version>2.14.0</beam.version>
+
+        <!-- These 4 for web UI -->
+        <jquery.version>3.4.1</jquery.version>
+        <leaflet.version>1.5.1</leaflet.version>
+        <sockjs-client.version>1.1.2</sockjs-client.version>
+        <stomp-websocket.version>2.3.3-1</stomp-websocket.version>
+
+        <spring-boot.version>2.1.7.RELEASE</spring-boot.version>
+    </properties>
+    
+    <modules>
+        <module>train-track-beam-job</module>
+        <module>train-track-beam-runner</module>
+        <module>train-track-data-feed</module>
+        <module>train-track-grid</module>
+        <module>train-track-web-ui</module>
+    </modules>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+    	
+    	<!-- spring-boot-configuration-processor for JSON testing -->
+    	<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-configuration-processor</artifactId>
+    		<scope>test</scope>
+    	</dependency>
+    	<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-test</artifactId>
+    		<scope>test</scope>
+    	</dependency>
+    </dependencies>
+    
+    <dependencyManagement>
+        <dependencies>
+        	<!-- For Jet as Beam Runner -->
+        	<dependency>
+				<groupId>org.apache.beam</groupId>
+          		<artifactId>beam-runners-jet-experimental</artifactId>
+          		<version>${beam.version}</version>
+        	</dependency>
+        	<!-- For Beam without Jet -->
+        	<dependency>
+				<groupId>org.apache.beam</groupId>
+          		<artifactId>beam-sdks-java-core</artifactId>
+          		<version>${beam.version}</version>
+        	</dependency>
+        
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <scope>import</scope>
+                <type>pom</type>
+                <version>${spring-boot.version}</version>
+            </dependency>
+
+            <!-- Next 4 are used by train-track-web-ui -->                 
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>jquery</artifactId>
+                <version>${jquery.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>leaflet</artifactId>
+                <version>${leaflet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>sockjs-client</artifactId>
+                <version>${sockjs-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>stomp-websocket</artifactId>
+                <version>${stomp-websocket.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+    <build>
+        <finalName>${project.artifactId}</finalName>
+    </build>
+
+</project>
