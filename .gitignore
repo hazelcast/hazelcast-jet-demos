@@ -54,4 +54,8 @@ hs_err_pid*
 reddit-security.properties
 twitter-security.properties
 
+beam-input
+beam-output*
+
+**/.factorypath
 **/spring-shell.log

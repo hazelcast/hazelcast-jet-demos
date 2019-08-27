@@ -1,0 +1,19 @@
+# Hazelcast server configuration
+hazelcast:
+  group:
+    name: 'frecciarossa'
+  management-center:
+    enabled: true
+    scripting-enabled: true
+    url: http://localhost:8080/hazelcast-mancenter
+  network:
+    port:
+      auto-increment: false
+      port: 8701
+    join:
+      multicast:
+        enabled: false
+      tcp-ip:
+        enabled: true
+        member-list:
+          - 127.0.0.1:8701
