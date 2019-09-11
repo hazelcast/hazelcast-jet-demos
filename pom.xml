@@ -20,6 +20,7 @@
         <module>realtime-image-recognition</module>
         <module>road-traffic-predictor</module>
         <module>train-track</module>
+        <module>tensorflow</module>
     </modules>
 
     <repositories>

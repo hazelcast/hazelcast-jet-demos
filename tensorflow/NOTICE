@@ -1,0 +1,7 @@
+The `data` directory contains data generated from the Large Movie Review
+Dataset (http://ai.stanford.edu/~amaas/data/sentiment/), as downloaded
+through TensorFlow Keras Datasets.
+
+The `imdb_review_train.py` contains code originating from TensorFlow
+tutorial:
+https://www.tensorflow.org/tutorials/keras/basic_text_classification
