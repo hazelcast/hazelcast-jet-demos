@@ -16,6 +16,7 @@ current traffic. Uses the trend from week ago to predict traffic now.
 into an IMDG map. Data is analysed as part of the upload process, calculating the moving averages to detect buy/sell indicators. Input data here is manufactured to ensure such indicators exist, but this is easy to reconnect to real input.
 * [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
 * [Train Track](./train-track) An [Apache Beam](https://beam.apache.org/) IOT example, tracking a GPS feed from a train.
+* [TensorFlow](./tensorflow) A [TensorFlow](https://www.tensorflow.org/) example showcasing a ML model execution in Hazelcast Jet pipelines.
 
 ## External Demos
 
