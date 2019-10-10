@@ -17,10 +17,12 @@ current traffic. Uses the trend from week ago to predict traffic now.
 into an IMDG map. Data is analysed as part of the upload process, calculating the moving averages to detect buy/sell indicators. Input data here is manufactured to ensure such indicators exist, but this is easy to reconnect to real input.
 * [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
 * [Train Track](./train-track) An [Apache Beam](https://beam.apache.org/) IOT example, tracking a GPS feed from a train.
+* [TensorFlow](./tensorflow) A [TensorFlow](https://www.tensorflow.org/) example showcasing a ML model execution in Hazelcast Jet pipelines.
 
 ## External Demos
 
 * [Real-Time Trade Processing](https://github.com/oliversalmon/imcs-demo) Oliver Buckley-Salmon. Reads from a Kafka topic with Jet and then storage to HBase and Hazelcast IMDG. Shows enrichment and streaming aggregations. Jet 0.4. 
+* [Transport Tycoon Collision Prevention](https://github.com/vladoschreiner/transport-tycoon-demo/) Vladimír Schreiner. Reads a vehicle telemetry data from the running [Open Transport Tycoon DeLuxe](https://www.openttd.org/) game and uses Jet to predict and prevent collisions. Jet 3.1. 
 
 ## Prerequisites
 
