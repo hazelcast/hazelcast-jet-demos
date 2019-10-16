@@ -1,25 +1,35 @@
 # Twitter Cryptocurrency Sentiment Analysis
 
-Twitter content is analyzed in real time to calculate cryptocurrency trend list with its popularity index.
+This demo takes a live stream of tweets, finds those that talk about 
+specific cryptocurrencies, and uses natural language processing to 
+determine the overall sentiment of a tweet. It aggregates the 
+sentiments into a "popularity index" of each cryptocurrency. 
 
-This demo shows how to ingest a Tweet stream and how to use streaming operations in Jet (windowing, event-time processing, streaming aggregations). It also demonstrates integrating of 3rd party NLP library into the parallel data pipeline.      
-
+The demo defines a custom data source that ingests the Twitter stream,
+a custom mapping context that accesses a 3rd party NLP library, and
+applies rolling aggregation and sliding window aggregation.
 
 ## Package Level Structure
-At the highest level, the source code is organized into four packages
 
-- com.hazelcast.jet.demo        The main class (`JetCoinTrend`) with the main method resides in this package.
-- com.hazelcast.jet.demo.core   The expert Core API version of the demo classes reside in this package.
-- com.hazelcast.jet.demo.common The common data source, NLP analyzer and lookup table classes shared in both Pipeline and Core APIs resides in this package.
-- com.hazelcast.jet.demo.util   The utility helper classes reside in this package.
+- `com.hazelcast.jet.demo` contains the entry point of the demo and the 
+  implementation of the computation in Jet's Pipeline API.
+- `com.hazelcast.jet.demo.support` contains code common to the Pipeline API
+  and Core API implementations. Most notably, the definitions of the 
+  cryptocurrencies and an adapter class for the Standford NLP library.
 
 # Data Pipeline
 
 ![](./diagram.png)
 
-The tweets are read from Twitter and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP sentimental analysis is applied to each tweet to calculate the sentiment score of the respective tweet. This score says whether the Tweet has rather positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
+The demo first selects the tweets that mention a cryptocurrency and 
+categorizes them by its type (BTC, ETC, XRP, etc). Then it applies the
+NLP sentiment analysis to each tweet to calculate the sentiment score of
+the respective tweet. This score says whether the Tweet has an overall
+positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
 
- For each cryptocurrency, Jet aggregates scores from last 30 seconds, last minute and last 5 minutes and prints the coin popularity table to the output like below: 
+For each cryptocurrency, Jet aggregates scores from last 30 seconds, last
+minute and last 5 minutes and prints the coin popularity table to the output
+like below: 
  
 ![](./output.png)
   
@@ -40,11 +50,12 @@ Please fill in the Twitter credentials into the file below.
 
 To build and package the application, run:
 
->Please note that maven may take some time to download all dependencies on the first run since the NLP libraries are hefty in file size.
-
 ```bash
 mvn clean package
 ```
+
+>Please note that maven may take some time to download all dependencies
+>on the first run since the NLP libraries are hefty in file size.
 
 ## Running the Application
 
