@@ -9,23 +9,23 @@ import static java.util.Arrays.asList;
  */
 public enum CoinType {
 
-    BTC("Bitcoin",      asList("Bitcoin", "#btc", "#bitcoin")),
-    ETH("Ethereum",     asList("Ether", "ethereum", "#eth", "#ether", "#ethereum")),
-    XRP("Ripple",       asList("Ripple", "#xrp", "#ripple")),
-    BCH("Bitcoin Cash", asList("Bitcoin Cash", "#bitcoincash", "#bch")),
-    LTC("Litecoin",     asList("Litecoin", "#ltc", "#litecoin")),
-    XLM("Stellar",      asList("Stellar", "#xlm", "#steller")),
-    EOS("EOS",          asList("EOS", "#eos"))
-//    ADA("Cardano",      asList("Cardano", "#ada", "#cardano")),
-//    XEM("NEM",          asList("NEM", "#xem", "#nem")),
+    BTC("Bitcoin", "#btc", "#bitcoin"),
+    ETH("Ether", "ethereum", "#eth", "#ether", "#ethereum"),
+    EOS("EOS", "#eos"),
+    XRP("Ripple", "#xrp", "#ripple"),
+    BCH("Bitcoin Cash", "#bitcoincash", "#bch"),
+    LTC("Litecoin", "#ltc", "#litecoin"),
+    XLM("Stellar", "#xlm", "#steller"),
+//    ADA("Cardano", "#ada", "#cardano"),
+//    XEM("NEM", "#xem", "#nem"),
     ;
 
     private final String name;
     private final List<String> markers;
 
-    CoinType(String name, List<String> markers) {
-        this.name = name;
-        this.markers = markers;
+    CoinType(String... nameAndMarkers) {
+        this.name = nameAndMarkers[0];
+        this.markers = asList(nameAndMarkers);
     }
 
     public String toString() {

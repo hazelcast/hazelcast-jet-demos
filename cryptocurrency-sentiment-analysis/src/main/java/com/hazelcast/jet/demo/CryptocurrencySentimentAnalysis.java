@@ -9,7 +9,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.support.CoinType;
 import com.hazelcast.jet.demo.support.CryptoSentimentGui;
 import com.hazelcast.jet.demo.support.SentimentAnalyzer;
-import com.hazelcast.jet.demo.support.WinSize;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -26,10 +25,11 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.demo.support.TwitterSource.twitterSource;
+import static com.hazelcast.jet.demo.support.WinSize.FIVE_MINUTES;
+import static com.hazelcast.jet.demo.support.WinSize.HALF_MINUTE;
 import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -107,7 +107,7 @@ public class CryptocurrencySentimentAnalysis {
                                             .collect(toList());
         StreamStage<String> tweets = pipeline
                 .drawFrom(twitterSource(allCoinMarkers))
-                .withNativeTimestamps(1_000);
+                .withNativeTimestamps(SECONDS.toMillis(1));
 
         StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
@@ -120,15 +120,15 @@ public class CryptocurrencySentimentAnalysis {
                 allOf(averagingDouble(Entry::getValue), counting());
 
         tweetsWithSentiment
-                .window(sliding(SECONDS.toMillis(30), 200))
+                .window(sliding(HALF_MINUTE.durationMillis(), 200))
                 .aggregate(avgAndCount)
-                .map(kwr -> entry(tuple2(kwr.getKey(), WinSize.HALF_MINUTE), kwr.getValue()))
+                .map(kwr -> entry(tuple2(kwr.getKey(), HALF_MINUTE), kwr.getValue()))
                 .drainTo(map(MAP_NAME_JET_RESULTS));
 
         tweetsWithSentiment
-                .window(sliding(MINUTES.toMillis(5), 200))
+                .window(sliding(FIVE_MINUTES.durationMillis(), 200))
                 .aggregate(avgAndCount)
-                .map(kwr -> entry(tuple2(kwr.getKey(), WinSize.FIVE_MINUTES), kwr.getValue()))
+                .map(kwr -> entry(tuple2(kwr.getKey(), FIVE_MINUTES), kwr.getValue()))
                 .drainTo(map(MAP_NAME_JET_RESULTS));
 
         return pipeline;
