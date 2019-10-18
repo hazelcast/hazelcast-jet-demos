@@ -122,13 +122,13 @@ public class CryptocurrencySentimentAnalysis {
         tweetsWithSentiment
                 .window(sliding(HALF_MINUTE.durationMillis(), 200))
                 .aggregate(avgAndCount)
-                .map(kwr -> entry(tuple2(kwr.getKey(), HALF_MINUTE), kwr.getValue()))
+                .map(windowResult -> entry(tuple2(windowResult.getKey(), HALF_MINUTE), windowResult.getValue()))
                 .drainTo(map(MAP_NAME_JET_RESULTS));
 
         tweetsWithSentiment
                 .window(sliding(FIVE_MINUTES.durationMillis(), 200))
                 .aggregate(avgAndCount)
-                .map(kwr -> entry(tuple2(kwr.getKey(), FIVE_MINUTES), kwr.getValue()))
+                .map(windowResult -> entry(tuple2(windowResult.getKey(), FIVE_MINUTES), windowResult.getValue()))
                 .drainTo(map(MAP_NAME_JET_RESULTS));
 
         return pipeline;
