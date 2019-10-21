@@ -6,7 +6,7 @@
 
     <groupId>com.hazelcast.jet.demos</groupId>
     <artifactId>hazelcast-jet-demos</artifactId>
-    <version>3.1</version>
+    <version>3.2</version>
     <packaging>pom</packaging>
     <name>Hazelcast Jet Demo Applications</name>
 
