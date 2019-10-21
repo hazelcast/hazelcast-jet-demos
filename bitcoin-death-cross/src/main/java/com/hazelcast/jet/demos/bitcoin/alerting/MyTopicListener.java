@@ -46,7 +46,12 @@ public class MyTopicListener extends JTextArea implements MessageListener<Object
 		/* MyTopicListener is a JTextArea.
 		 */
 	    this.setVisible(true);
-	    this.setText(sb.toString());
+	    String before = this.getText();
+	    if (before == null) {
+	        this.setText(sb.toString());
+	    } else {
+	        this.setText(before + sb.toString());
+	    }
 
 	}
 
