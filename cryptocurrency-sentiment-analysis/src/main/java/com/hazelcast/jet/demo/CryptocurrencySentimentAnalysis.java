@@ -6,97 +6,81 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.demo.common.CoinDefs;
-import com.hazelcast.jet.demo.common.SentimentAnalyzer;
-import com.hazelcast.jet.demo.util.Util;
+import com.hazelcast.jet.demo.support.CoinType;
+import com.hazelcast.jet.demo.support.CryptoSentimentGui;
+import com.hazelcast.jet.demo.support.SentimentAnalyzer;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
-import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
-import com.twitter.hbc.ClientBuilder;
-import com.twitter.hbc.core.Constants;
-import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
-import com.twitter.hbc.core.processor.StringDelimitedProcessor;
-import com.twitter.hbc.httpclient.BasicClient;
-import com.twitter.hbc.httpclient.auth.Authentication;
-import com.twitter.hbc.httpclient.auth.OAuth1;
-import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_1_MINUTE;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_30_SECONDS;
-import static com.hazelcast.jet.demo.util.Util.MAP_NAME_5_MINUTE;
-import static com.hazelcast.jet.demo.util.Util.isMissing;
-import static com.hazelcast.jet.demo.util.Util.loadProperties;
-import static com.hazelcast.jet.demo.util.Util.loadTerms;
-import static com.hazelcast.jet.demo.util.Util.startConsolePrinterThread;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.demo.support.TwitterSource.twitterSource;
+import static com.hazelcast.jet.demo.support.WinSize.FIVE_MINUTES;
+import static com.hazelcast.jet.demo.support.WinSize.HALF_MINUTE;
 import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 /**
- * Twitter content is analyzed in real time to calculate cryptocurrency
- * trend list with its popularity index. The tweets are read from Twitter
- * and categorized by coin type (BTC, ETC, XRP, etc). In next step, NLP
- * sentimental analysis is applied to each tweet to calculate the sentiment
- * score of the respective tweet. This score says whether the Tweet has rather
+ * This demo analyzes a live stream of tweets in real time to calculate
+ * cryptocurrency trend list with its popularity index. It categorizes the
+ * tweets by coin type (BTC, ETC, XRP, etc). Then it applies NLP sentiment
+ * analysis to each tweet. This score says whether the Tweet has an overall
  * positive or negative sentiment. Jet uses Stanford NLP lib to compute it.
+ * <p>
+ * For each cryptocurrency, Jet aggregates scores from last 30 seconds and
+ * last 5 minutes and pushes the results to an IMap. The demo starts a GUI
+ * that takes the IMap data and visualizes it.
+ * <p>
+ * Below is a diagram of the computation stages:
  *
- * For each cryptocurrency, Jet aggregates scores from last 30 seconds,
- * last minute and last 5 minutes and prints the coin popularity table.
- *
- * The DAG used to model cryptocurrency calculations can be seen below :
- *
- *                                  ┌───────────────────┐
- *                                  │Twitter Data Source│
- *                                  └──────────┬────────┘
- *                                             │
- *                                             v
- *                                 ┌──────────────────────┐
- *                                 │FlatMap Relevant Coins│
- *                                 └──────────┬───────────┘
- *                                            │
- *                                            v
- *                               ┌─────────────────────────┐
- *                               │Calculate Sentiment Score│
- *                               └─────────────┬───────────┘
- *                                             │
- *                                             v
- *                                   ┌──────────────────┐
- *                                   │Group by Coin Name│
- *                                   └────┬───┬─────┬───┘
- *                                        │   │     │
- *               ┌────────────────────────┘   │     └──────────────────────┐
- *               │                            │                            │
- *               v                            v                            v
- *  ┌────────────────────────┐   ┌────────────────────────┐   ┌────────────────────────┐
- *  │    Calculate 5min      │   │    Calculate 30sec     │   │    Calculate 1min      │
- *  │Average with Event Count│   │Average with Event Count│   │Average with Event Count│
- *  └───────────┬────────────┘   └─────────────┬──────────┘   └───────────────┬────────┘
- *              │                              │                              │
- *              v                              v                              v
- *┌───────────────────────────┐ ┌─────────────────────────────┐ ┌───────────────────────────┐
- *│Write results to IMap(5Min)│ │Write results to IMap(30secs)│ │Write results to IMap(1Min)│
- *└───────────────────────────┘ └─────────────────────────────┘ └───────────────────────────┘
+ *                  ┌───────────────────┐
+ *                  │Twitter Data Source│
+ *                  └──────────┬────────┘
+ *                             │
+ *                             v
+ *                 ┌──────────────────────┐
+ *                 │FlatMap Relevant Coins│
+ *                 └──────────┬───────────┘
+ *                            │
+ *                            v
+ *               ┌─────────────────────────┐
+ *               │Calculate Sentiment Score│
+ *               └─────────────┬───────────┘
+ *                             │
+ *                             v
+ *                   ┌──────────────────┐
+ *                   │Group by Coin Name│
+ *                   └────┬─────────┬───┘
+ *                        │         │
+ *                ┌───────┘         └─────────┐
+ *                │                           │
+ *                v                           v
+ *    ┌────────────────────────┐   ┌────────────────────────┐
+ *    │    Calculate 5min      │   │    Calculate 30sec     │
+ *    │Average with Event Count│   │Average with Event Count│
+ *    └───────────┬────────────┘   └─────────────┬──────────┘
+ *                │                              │
+ *                v                              v
+ *  ┌───────────────────────────┐ ┌─────────────────────────────┐
+ *  │  Write results to IMap    │ │  Write results to IMap      │
+ *  └───────────────────────────┘ └─────────────────────────────┘
  */
 public class CryptocurrencySentimentAnalysis {
 
-    static {
-        System.setProperty("hazelcast.logging.type", "log4j");
-    }
+    private static final String MAP_NAME_JET_RESULTS = "jetResults";
 
     public static void main(String[] args) {
         System.out.println("DISCLAIMER: This is not investment advice");
@@ -104,12 +88,10 @@ public class CryptocurrencySentimentAnalysis {
         Pipeline pipeline = buildPipeline();
         // Start Jet
         JetInstance jet = Jet.newJetInstance();
-        startConsolePrinterThread(jet);
         try {
-            // Perform the computation
+            new CryptoSentimentGui(jet.getMap(MAP_NAME_JET_RESULTS));
             jet.newJob(pipeline).join();
         } finally {
-            Util.stopConsolePrinterThread();
             Jet.shutdownAll();
         }
     }
@@ -119,41 +101,43 @@ public class CryptocurrencySentimentAnalysis {
      */
     private static Pipeline buildPipeline() {
         Pipeline pipeline = Pipeline.create();
-        Properties properties = loadProperties();
-        List<String> terms = loadTerms();
 
-        StreamStageWithKey<Entry<String, Double>, String> tweetsWithSentiment = pipeline
-                .drawFrom(twitterSource(properties, terms))
-                .withNativeTimestamps(0)
+        List<String> allCoinMarkers = Stream.of(CoinType.values())
+                                            .flatMap(ct -> ct.markers().stream())
+                                            .collect(toList());
+        StreamStage<String> tweets = pipeline
+                .drawFrom(twitterSource(allCoinMarkers))
+                .withNativeTimestamps(SECONDS.toMillis(1));
+
+        StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
-                .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e) ->
-                        entry(e.getKey(), analyzer.getSentimentScore(e.getValue())))
+                .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e1) ->
+                        entry(e1.getKey(), analyzer.getSentimentScore(e1.getValue())))
                 .filter(e -> !e.getValue().isInfinite() && !e.getValue().isNaN())
                 .groupingKey(entryKey());
 
-        AggregateOperation1<Entry<String, Double>, ?, Tuple2<Double, Long>> aggrOp =
+        AggregateOperation1<Entry<CoinType, Double>, ?, Tuple2<Double, Long>> avgAndCount =
                 allOf(averagingDouble(Entry::getValue), counting());
 
-        tweetsWithSentiment.window(sliding(30_000, 10_000))
-                .aggregate(aggrOp)
-                .drainTo(map(MAP_NAME_30_SECONDS));
+        tweetsWithSentiment
+                .window(sliding(HALF_MINUTE.durationMillis(), 200))
+                .aggregate(avgAndCount)
+                .map(windowResult -> entry(tuple2(windowResult.getKey(), HALF_MINUTE), windowResult.getValue()))
+                .drainTo(map(MAP_NAME_JET_RESULTS));
 
-        tweetsWithSentiment.window(sliding(60_000, 10_000))
-                .aggregate(aggrOp)
-                .drainTo(map(MAP_NAME_1_MINUTE));
-
-        tweetsWithSentiment.window(sliding(300_000, 10_000))
-                .aggregate(aggrOp)
-                .drainTo(map(MAP_NAME_5_MINUTE));
+        tweetsWithSentiment
+                .window(sliding(FIVE_MINUTES.durationMillis(), 200))
+                .aggregate(avgAndCount)
+                .map(windowResult -> entry(tuple2(windowResult.getKey(), FIVE_MINUTES), windowResult.getValue()))
+                .drainTo(map(MAP_NAME_JET_RESULTS));
 
         return pipeline;
     }
 
     @Nonnull
     private static ContextFactory<SentimentAnalyzer> sentimentAnalyzerContext() {
-        return ContextFactory
-                        .withCreateFn(jet -> new SentimentAnalyzer())
-                        .withLocalSharing();
+        return ContextFactory.withCreateFn(jet -> new SentimentAnalyzer())
+                             .withLocalSharing();
     }
 
     /**
@@ -162,72 +146,18 @@ public class CryptocurrencySentimentAnalysis {
      *
      * @param text content of the tweet
      */
-    private static Traverser<? extends Entry<String, String>> flatMapToRelevant(String text) {
-        AppendableTraverser<Entry<String, String>> traverser = new AppendableTraverser<>(4);
-        for (String coin : CoinDefs.COIN_MAP.keySet()) {
-            for (String keyword : CoinDefs.COIN_MAP.get(coin)) {
-                if (text.contains(keyword)) {
-                    traverser.append(entry(coin, text));
+    private static Traverser<Entry<CoinType, String>> flatMapToRelevant(String text) {
+        System.out.println(text);
+        text = text.toLowerCase();
+        AppendableTraverser<Entry<CoinType, String>> traverser = new AppendableTraverser<>(4);
+        for (CoinType ct : CoinType.values()) {
+            for (String marker : ct.markers()) {
+                if (text.contains(marker.toLowerCase())) {
+                    traverser.append(entry(ct, text));
                 }
             }
         }
         return traverser;
     }
 
-
-    private static StreamSource<String> twitterSource(Properties properties, List<String> terms) {
-        return SourceBuilder.timestampedStream("twitter", ignored -> new TwitterSource(properties, terms))
-                .fillBufferFn(TwitterSource::addToBuffer)
-                .destroyFn(TwitterSource::destroy)
-                .build();
-    }
-
-    private static class TwitterSource {
-
-        private final BlockingQueue<String> queue = new LinkedBlockingQueue<>(10000);
-        private final ArrayList<String> buffer = new ArrayList<>();
-        private final BasicClient client;
-
-        TwitterSource(Properties properties, List<String> terms) {
-            StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint().trackTerms(terms);
-
-            String consumerKey = properties.getProperty("consumerKey");
-            String consumerSecret = properties.getProperty("consumerSecret");
-            String token = properties.getProperty("token");
-            String tokenSecret = properties.getProperty("tokenSecret");
-
-            if (isMissing(consumerKey) || isMissing(consumerSecret) || isMissing(token) || isMissing(tokenSecret)) {
-                throw new IllegalArgumentException("Twitter credentials are missing!");
-            }
-
-            Authentication auth = new OAuth1(consumerKey, consumerSecret, token, tokenSecret);
-            client = new ClientBuilder()
-                    .hosts(Constants.STREAM_HOST)
-                    .endpoint(endpoint)
-                    .authentication(auth)
-                    .processor(new StringDelimitedProcessor(queue))
-                    .build();
-            client.connect();
-        }
-
-        void addToBuffer(TimestampedSourceBuffer<String> sourceBuffer) {
-            // drain everything at once for optimal performance and also naturally limit batch size
-            queue.drainTo(buffer);
-            for (String tweet : buffer) {
-                JSONObject object = new JSONObject(tweet);
-                if (object.has("text") && object.has("timestamp_ms")) {
-                    String text = object.getString("text");
-                    long timestamp = object.getLong("timestamp_ms");
-                    sourceBuffer.add(text, timestamp);
-                }
-            }
-            buffer.clear();
-        }
-
-        void destroy() {
-            if (client != null) {
-                client.stop();
-            }
-        }
-    }
 }
