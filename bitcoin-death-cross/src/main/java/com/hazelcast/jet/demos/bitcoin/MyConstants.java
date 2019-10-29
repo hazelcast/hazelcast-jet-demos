@@ -39,7 +39,8 @@ public class MyConstants {
     public static final String KEY_200_POINT = "200 Point";
 
     // For the price plotting
-    public static final String PANEL_TITLE = "Analysis " + LocalDate.now();
+    public static final String PANEL_TITLE = "Analysis " + LocalDate.now()
+    	+ " (THIS IS NOT INVESTMENT ADVICE!)";
     public static final String CHART_TITLE = "Bitcoin v US Dollar";
     public static final String CHART_X_AXIS_LEGEND = "Date";
     public static final String CHART_Y_AXIS_LEGEND = "US$";

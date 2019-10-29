@@ -13,7 +13,7 @@
     <name>Bitcoin Death Cross</name>
     <artifactId>bitcoin-death-cross</artifactId>
 
-    <description>Predicting a downward trend in Bitcoin price</description>
+    <description>Predicting trends in Bitcoin price. This is not investment advice!</description>
 
 	<properties>
 		<hazelcast-jet.version>3.2</hazelcast-jet.version>

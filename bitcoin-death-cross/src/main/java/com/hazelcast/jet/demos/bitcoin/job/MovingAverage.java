@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.demos.bitcoin.MyConstants;
 import com.hazelcast.jet.demos.bitcoin.domain.Price;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.Functions;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -30,36 +30,47 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * averages and detect when they cross. This is invoked
  * by {@link Task1}.
  * </p>
- * <p>This is sequential, the output from one step only
- * goes to subsequent steps. There are no loops, as this
- * can bring deadlock.
- * </p>
- * <p>However, unlike a Unix style pipeline, it is not
- * linear. The output from a step can be the input to
- * more than one following step.
- * </p>
  * <p>The processing looks like this:
  * </p>
  * <pre>
- *                         +-------------------+
- *                         |     priceFeed     |
- *                         |  averageOf1-noop  |
- *                         |    averageOf50    |
- *                         |    averageOf200   |
- *                         |      logSink      |
- *                         | mapSink-50 Point  |
- *                         | mapSink-200 Point |
- *                         |  mapSink-Current  |
- *                         |    streamOf50     |
- *                         |    streamOf200    |
- *                         |      joined       |
- *                         |     reformat      |
- *                         |   crossEmitter    |
- *                         |  topicSink-alert  |
- *                         +-------------------+
- * +-------------------+   +-------------------+   +-------------------+
- * +-------------------+   +-------------------+   +-------------------+
- * XXX Diagram goes here
+ *                                +---------+
+ *                                |priceFeed|
+ *                                +---------+
+ *                                    |
+ *           /------------------------+----------------------\ 
+ *           |                        |                      | 
+ *     +---------------+        +-----------+          +-------------+
+ *     |averageOf1-noop|        |averageOf50|          |averageOf200 |
+ *     +---------------+        +-----------+          +-------------+
+ *       |            |              |      |               |       | 
+ * +---------------+  |    +------------+   |      +-------------+  |
+ * |mapSink-Current|  |    |mapSink-50Pt|   |      |mapSink-200Pt|  |
+ * +---------------+  |    +------------+   |      +-------------+  |
+ *                    |                     |                       |
+ *                +-------+         +----------+          +-----------+
+ *                |logSink|         |streamOf50|          |streamof200|
+ *                +-------+         +----------+          +-----------+
+ *                                       |                     |
+ *                                        \                    / 
+ *                                         +------------------+
+ *                                         |      joined      |
+ *                                         +------------------+
+ *                                                   |
+ *                                             +-----------+
+ *                                             | fullTrios |
+ *                                             +-----------+
+ *                                                   |
+ *                                          +------------------+
+ *                                          | consecutiveTrios |
+ *                                          +------------------+
+ *                                                   |
+ *                                          +------------------+
+ *                                          |   crossEmitter   |
+ *                                          +------------------+
+ *                                                   |
+ *                                          +------------------+
+ *                                          | topicSink-alert  |
+ *                                          +------------------+
  * </pre>
  * <p>What each step does is as follows:
  * </p>
@@ -69,7 +80,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * replaces the previous, so what is stored in Hazelcast in the
  * "{@code prices-in}" map is the current price.
  * </p>
- * <p>However, Hazelcast is configured (see "{@code hazelcast.xml}") to
+ * <p>However, Hazelcast is configured (see "{@code hazelcast.yaml}") to
  * be able to create an input stream of <em>changes</em>. Each time the
  * entry is updated in the map, Hazelcast stores the new value and
  * produces an event on this infinite stream.
@@ -110,14 +121,14 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * aid understanding.
  * </p>
  * </li>
- * <li><p><b>mapSink-50 Point</b> : Save the "{@link averageOf50}"
+ * <li><p><b>mapSink-50Pt</b> : Save the "{@link averageOf50}"
  * stream to an {@link com.hazelcast.core.IMap IMap} named 
  * "{@code BTCUSD}". {@link Task2} listens to this map to capture
  * the values to plot on the graph. Each value replaces the previous
  * in the map, so this map holds the most recent 50-point average.
  * </p>
  * </li>
- * <li><p><b>mapSink-200 Point</b> : Save the stream from
+ * <li><p><b>mapSink-200Pt</b> : Save the stream from
  * "{@code averageOf200}" into the same map as we save the
  * "{@code averageOf50}". So {@link Task2} can track this value
  * too to plot on the graph, and this map stores the last
@@ -167,10 +178,19 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * 50-point and 200-point, but we take the 50-point one.
  * </p>
  * </li>
- * <li><p><b>reformat</b> : Convert the output of the "{@code joined}"
- * stage into a {@code Map.Entry}.
+ * <li><p><b>fullTrios</b> : The preceding join puts of the
+ * combination of the 50-point and 200-point for a specific date.
+ * However, the 50-point begins 50 days into the input, so has
+ * values for 150 dates before the 200-point begins. So the
+ * first 150 outputs of the join only have the 50-point value
+ * and no 200-point value. We don't care for these incomplete
+ * records so filter them out.
  * </p>
- * </li>
+ * <li><p><b>consecutiveTrios</b> : This stage produces one
+ * output for a consecutive pair of input trios. In other words,
+ * a trio of date, 50-point and 200-point, combined with another
+ * trio of the same for the next date.
+ * </p>
  * <li><p><b>crossEmitter</b> : Look for a cross on the 50-point
  * and 200-point averages.
  * </p>
@@ -180,9 +200,6 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * 50-point has move from being a lower value than the 200-point
  * to being a higher value.
  * </p>
- * <p>The detail is that this stage keeps a copy of yesterday's
- * pair of 50-point and 200-point to compare against today's. 
- * </p>
  * </li>
  * <li><p><b>topicSink-alert</b> : The "{@code crossEmitter}" stage
  * only produces output if a cross is detected. If anything gets to
@@ -191,7 +208,6 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * </p>
  * </li>
  * </ol>
- * XXX Check multi-node operation
  */
 public class MovingAverage {
 
@@ -212,18 +228,6 @@ public class MovingAverage {
 	private static final long ZERO_LAG = 0;
 
     
-    /**
-     * <p>Convenience function to make a string key from
-     * a price based on the date.
-     * </p>
-     *
-     * @return Date as string
-     */
-	private static FunctionEx<Entry<String, Price>, String> whence() {
-        return e -> e.getValue().getLocalDate().toString();
-    }
-	
-	
     /**
      * <p>Build the pipeline definition, to send to all JVMs for execution.
      * </p>
@@ -247,13 +251,102 @@ public class MovingAverage {
 		StreamStage<Entry<String,Price>> averageOf200 =
 				MovingAverage.buildAverageOfCount(200, priceFeed);
 
+		/** <p>Create a time-stamped stream from the 50-point averages.
+		 * Add a window that advances it 1 day, and therefore 1 data point,
+		 * at a time.
+		 * </p>
+		 */
+		StageWithKeyAndWindow<Entry<String, Price>, String> timestampedWindowedOf50 =
+				MovingAverage.buildKeyedTimestamped(averageOf50, 50)
+				.window(ONE_DAY_WINDOW);
+				;
+				
+		/** <p>Create a time-stamped stream from the 200-point averages.
+		 * </p>
+		 */
+		StreamStageWithKey<Entry<String, Price>, String> timestampedOf200 =
+				MovingAverage.buildKeyedTimestamped(averageOf200, 200);
+        
+		/** <p>Join the time-stamped 50-point and 200-point streams by
+		 * the timestamp. Produces a trio of the date, and the
+		 * price from each input for the matching date.
+		 * </p>
+		 */
+		StreamStage<KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>>
+			joined50point200point
+			= MovingAverage.join(timestampedWindowedOf50,timestampedOf200);
+
+		/** <p>Remove trios where the 200-point is missing, which will be the
+		 * first 150 of them.
+		 * </p>
+		 */
+		StreamStage<KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>>
+			actual50point200point
+			= joined50point200point
+				.filterStateful(Object::new, 
+				(__, item) -> {
+					return item.getValue().f2() != null;
+				})
+				.setName("fullTrios");
+
+		/** <p>Form into consecutive pairs for cross detection
+		 * </p> 
+		 */
+		StreamStage<Tuple2< 
+				Tuple3<LocalDate, BigDecimal, BigDecimal>,
+				Tuple3<LocalDate, BigDecimal, BigDecimal>
+		 	>>
+			consecutivePair50point200point
+			= actual50point200point
+				.mapStateful(
+						() -> new Object[1]
+						,(
+							Object[] tupleWrapper, 
+							KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>> current
+							) -> {
+								@SuppressWarnings("unchecked")
+								Tuple3<LocalDate, BigDecimal, BigDecimal> previous
+									= (Tuple3<LocalDate, BigDecimal, BigDecimal>) tupleWrapper[0];
+								
+								Tuple2< Tuple3<LocalDate, BigDecimal, BigDecimal>,
+										Tuple3<LocalDate, BigDecimal, BigDecimal>
+							 	> result = Tuple2.tuple2(previous, current.getValue());
+
+								tupleWrapper[0] = current.getValue();
+								
+								return result;
+				})
+				.filterStateful(Object::new, 
+						(__, tuple2) -> tuple2.f0() != null)
+				.setName("consecutiveTrios");
+
+		/** <p>Finally, the <b>Business Logic!</b></p>
+		 * <p>Compare the trio of date, 50-point and 200-point in the
+		 * stream to the previous, looking for price inflection.
+		 * </p>
+		 */
+		StreamStage<SimpleImmutableEntry<Tuple2<LocalDate, String>, Tuple2<BigDecimal, BigDecimal>>> alerts =
+			consecutivePair50point200point
+			.mapStateful(CrossDetector::new,
+				(crossDetector, tuple2) -> crossDetector.consider(tuple2))
+			.filter(item -> item != null);
+
+		/** <p>If there is anything produced by the {@link CrossEmitter}
+		 * dump it to a {@link com.hazelcast.core.ITopic ITopic} for
+		 * {@link Task3}. What comes out is a {@code Map.Entry} so we could
+		 * easily dump it to an {@link com.hazelcast.core.IMap IMap} instead
+		 * (or as well) and use a map listener.
+		 * </p>
+		 */
+		alerts
+		.drainTo(MovingAverage.buildAlertSink());
+		
 		/** <p><i>Optional: </i>Log the current price to the
 		 * screen, to help understanding.</p>
-		 *XXX
+		 */
 		averageOf1
 			.drainTo(Sinks.logger())
 			.setName("logSink");
-		*/
 		
 		/** <p>Save the latest for each average to an
 		 * {@link com.hazelcast.core.IMap IMap} for {@link Task2}.</p>
@@ -267,48 +360,6 @@ public class MovingAverage {
 		averageOf200
 			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_200_POINT);
-
-		/** <p>Create a timestamped stream from the 50-point averages.
-		 * Add a window that advances it 1 day, and therefore 1 point,
-		 * at a time.
-		 * </p>
-		 */
-		StageWithKeyAndWindow<Entry<String, Price>, String> timestampedOf50 =
-				MovingAverage.buildKeyedTimestamped(averageOf50, 50)
-				.window(ONE_DAY_WINDOW);
-		
-		/** <p>Create a timestamped stream from the 200-point averages.
-		 * </p>
-		 */
-		StreamStageWithKey<Entry<String, Price>, String> timestampedOf200 =
-				MovingAverage.buildKeyedTimestamped(averageOf200, 200);
-		
-		/** <p>Join the timestamped 50-point and 200-point streams by
-		 * the timestamped. Produces a trio of the date, and the
-		 * price from each input for the matching date.
-		 * </p>
-		 */
-		StreamStageWithKey<SimpleImmutableEntry<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>, String> 
-			joined50point200point
-			= MovingAverage.join(timestampedOf50,timestampedOf200);
-			
-		/** <p>Business logic!</p>
-		 * <p>Compare the trio of date, 50-point and 200-point in the
-		 * stream to the previous, looking for price inflection.
-		 * </p>
-		 */
-		StreamStage<Entry<?,?>> alerts =
-			joined50point200point
-			.customTransform("crossEmitter", CrossEmitter::new);
-
-		/** <p>If there is anything produced by the {@link CrossEmitter}
-		 * dump it to a {@link com.hazelcast.core.ITopic ITopic} for
-		 * {@link Task3}. What comes out is a {@code Map.Entry} so we could
-		 * easily dump it to an {@link com.hazelcast.core.IMap IMap} instead
-		 * (or as well) and use a map listener.
-		 * </p>
-		 */
-		alerts.drainTo(MovingAverage.buildAlertSink());
 		
 		return pipeline;
 	}
@@ -387,15 +438,15 @@ public class MovingAverage {
 	 *
 	 * @param averageOfSomething Average of 50 points or the average of 200 points
 	 * @param count For building the stage name
-	 * @return A timestamped stream on this input
+	 * @return A time-stamped stream on this input
 	 */
 	private static StreamStageWithKey<Entry<String, Price>, String> 
 		buildKeyedTimestamped(StreamStage<Entry<String, Price>> averageOfSomething, int count) {
-
+		
 		return averageOfSomething
 				.addTimestamps(e -> e.getValue().getTimestamp(), ZERO_LAG)
 				.setName("streamOf" + count)
-				.groupingKey(MovingAverage.whence())
+				.groupingKey(__ -> MyConstants.BTCUSD)
 				;
 	}
 	
@@ -448,6 +499,10 @@ public class MovingAverage {
 			    		 (MyPriceAccumulator myPriceAccumulator, Entry<String, Price> entry)
 			    		 -> myPriceAccumulator.setRight(entry.getValue())
 			    		 )
+			     .andCombine(
+			    		 (MyPriceAccumulator left, MyPriceAccumulator right)
+			    		 -> left.combine(right)
+			    		 )
 			     .andExportFinish(MyPriceAccumulator::result);
 	}
 
@@ -469,15 +524,12 @@ public class MovingAverage {
 	 * We could suppress them here, but instead we let the next stage do
 	 * this.
 	 * </p>
-	 * <p>As a bonus, reformat this output into a map entry, as this is a
-	 * more convenient format for us.
-	 * </p>
 	 * 
 	 * @param windowOf50 The current price on the 50-point average stream
 	 * @param windowOf200 The current price on the 200-point average stream
 	 * @return A trio of current from 50-point and 200-point and the date
 	 */
-	private static StreamStageWithKey<SimpleImmutableEntry<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>, String> join(
+	private static StreamStage<KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>> join(
 			StageWithKeyAndWindow<Entry<String, Price>, String> windowOf50,
 			StreamStageWithKey<Entry<String, Price>, String> windowOf200) {
 
@@ -485,22 +537,12 @@ public class MovingAverage {
 		AggregateOperation2<Entry<String, Price>, Entry<String, Price>, 
 			MyPriceAccumulator, Tuple3<LocalDate, BigDecimal, BigDecimal>> 
 			myAggregateOperation = MovingAverage.buildAggregateOperation();
-
-		// Do the join
-		StreamStage<KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>>
-			joined = windowOf50
-					.aggregate2(windowOf200,myAggregateOperation)
-					.setName("joined");
 		
-		// Reformat to a Map.Entry
-		return joined
-				.map(
-					(KeyedWindowResult<String, Tuple3<LocalDate, BigDecimal, BigDecimal>> entry) 
-					->
-					new SimpleImmutableEntry<String, Tuple3<LocalDate, BigDecimal, BigDecimal>>
-						(MyConstants.BTCUSD, entry.getValue()))
-				.setName("reformat")
-				.groupingKey(Functions.entryKey());
+		// Do the join
+		return windowOf50
+					.aggregate2(windowOf200, myAggregateOperation)
+					.setName("joined")
+					;
 	}
 
 	
