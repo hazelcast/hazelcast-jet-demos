@@ -60,12 +60,12 @@
         <dependency>
             <groupId>org.boofcv</groupId>
             <artifactId>boofcv-core</artifactId>
-            <version>0.28</version>
+            <version>0.34</version>
         </dependency>
         <dependency>
             <groupId>org.boofcv</groupId>
             <artifactId>boofcv-WebcamCapture</artifactId>
-            <version>0.28</version>
+            <version>0.34</version>
         </dependency>
     </dependencies>
 
