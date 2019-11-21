@@ -444,6 +444,7 @@ public class MovingAverage {
 		buildKeyedTimestamped(StreamStage<Entry<String, Price>> averageOfSomething, int count) {
 		
 		return averageOfSomething
+				.setLocalParallelism(1)
 				.addTimestamps(e -> e.getValue().getTimestamp(), ZERO_LAG)
 				.setName("streamOf" + count)
 				.groupingKey(__ -> MyConstants.BTCUSD)
