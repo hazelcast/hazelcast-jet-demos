@@ -11,7 +11,6 @@ import com.hazelcast.jet.demos.bitcoin.job.MovingAverage;
 public class MyConstants {
 
 	// For ordering execution of tasks
-	public static final int PRIORITY_ZERO = 0;
 	public static final int PRIORITY_ONE = 1;
 	public static final int PRIORITY_TWO = 2;
 	public static final int PRIORITY_THREE = 3;
