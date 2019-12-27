@@ -46,16 +46,16 @@ public class Task1JetJob implements CommandLineRunner {
 		String prefix = this.getClass().getSimpleName() + " -";
 		
 		Pipeline pipeline = MovingAverage.build();
-    	JobConfig jobConfig = new JobConfig();
-    	jobConfig.setName(MyConstants.JOB_NAME);
+    		JobConfig jobConfig = new JobConfig();
+    		jobConfig.setName(MyConstants.JOB_NAME);
 
-    	// Run job if not already present
+    		// Run job if not already present
 		Job job = this.jetInstance.getJob(jobConfig.getName());
-    	if (job == null) {
-        	job = this.jetInstance.newJobIfAbsent(pipeline, jobConfig);
-    	}
+    		if (job == null) {
+        	    job = this.jetInstance.newJobIfAbsent(pipeline, jobConfig);
+    		}
 
-    	log.info("{} Job '{}', status '{}'.",
+    		log.info("{} Job '{}', status '{}'.",
             		prefix, job.getName(), job.getStatus());
 	}
 
