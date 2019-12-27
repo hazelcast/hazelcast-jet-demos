@@ -14,15 +14,15 @@ import com.hazelcast.jet.demos.bitcoin.domain.Price;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>This is {@code Task2}. The use of the "{@code @Order}"
+ * <p>This is {@code Task2ChartPanel}. The use of the "{@code @Order}"
  * annotation tells Spring the order to run these tasks.
  * </p>
- * <p>{@code Task2} initiates a graphic panel that is painted
- * in reaction to data being written by the Jet job {@code Task1}.
+ * <p>{@code Task2ChartPanel} initiates a graphic panel that is painted
+ * in reaction to data being written by the Jet job {@code Task1JetJob}.
  * It plots the points that Jet calculates.
  * </p>
- * <p><b>Note:</b> {@code Task1}, {@code Task2} and {@code Task3}
- * are ordered to run before {@code Task4}. The first three can
+ * <p><b>Note:</b> {@code Task1JetJob}, {@code Task2ChartPanel} and {@code Task3TopicListener}
+ * are ordered to run before {@code Task4PriceFeed}. The first three can
  * be run in any order, all will appear to do nothing until the
  * fourth starts producing data.
  * </p>
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Order(MyConstants.PRIORITY_TWO)
 @Slf4j
-public class Task2 implements CommandLineRunner {
+public class Task2ChartPanel implements CommandLineRunner {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;

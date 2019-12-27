@@ -14,16 +14,16 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>This is {@code Task1}. The use of the "{@code @Order}"
+ * <p>This is {@code Task1JetJob}. The use of the "{@code @Order}"
  * annotation tells Spring the order to run these tasks.
  * </p>
- * <p>{@code Task1} initiates the Jet job to process Moving
+ * <p>{@code Task1JetJob} initiates the Jet job to process Moving
  * Averages. The Jet job sits waiting for input, which is
- * produced by a later task ({@code Task4}) simulating a 
+ * produced by a later task ({@code Task4PriceFeed}) simulating a 
  * real-world feed.
  * </p>
- * <p><b>Note:</b> {@code Task1}, {@code Task2} and {@code Task3}
- * are ordered to run before {@code Task4}. The first three can
+ * <p><b>Note:</b> {@code Task1JetJob}, {@code Task2ChartPanel} and {@code Task3TopicListener}
+ * are ordered to run before {@code Task4PriceFeed}. The first three can
  * be run in any order, all will appear to do nothing until the
  * fourth starts producing data.
  * </p>
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Order(MyConstants.PRIORITY_ONE)
 @Slf4j
-public class Task1 implements CommandLineRunner {
+public class Task1JetJob implements CommandLineRunner {
 
 	@Autowired
 	private JetInstance jetInstance;

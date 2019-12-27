@@ -25,18 +25,18 @@ import com.hazelcast.jet.demos.bitcoin.domain.Price;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>This is {@code Task4}. The use of the "{@code @Order}"
+ * <p>This is {@code Task4PriceFeed}. The use of the "{@code @Order}"
  * annotation tells Spring the order to run these tasks.
  * </p>
- * <p>{@code Task4} inserts the Bitcoin prices into a map.
+ * <p>{@code Task4PriceFeed} inserts the Bitcoin prices into a map.
  * Each new price overwrites the previous one, as all we
  * are concerned with is storing the current price. Jet
  * has access to the
  * <a href="https://docs.hazelcast.org/docs/3.12/javadoc/com/hazelcast/map/impl/journal/MapEventJournal.html">MapEventJournal</a>
  * so has the history of change to the price.
  * </p>
- * <p><b>Note:</b> {@code Task1}, {@code Task2} and {@code Task3}
- * are ordered to run before {@code Task4}. The first three can
+ * <p><b>Note:</b> {@code Task1JetJob}, {@code Task2ChartPanel} and {@code Task3TopicListener}
+ * are ordered to run before {@code Task4PriceFeed}. The first three can
  * be run in any order, all will appear to do nothing until the
  * fourth starts producing data.
  * </p>
@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Order(MyConstants.PRIORITY_FOUR)
 @Slf4j
-public class Task4 implements CommandLineRunner {
+public class Task4PriceFeed implements CommandLineRunner {
 
 	@Autowired
 	private ApplicationContext applicationContext;
@@ -135,7 +135,7 @@ public class Task4 implements CommandLineRunner {
 				while ((line = bufferedReader.readLine()) != null) {
 					if (line.length()>0 && !line.startsWith("#")) {
 						try {
-							prices.add(Task4.parse(line));
+							prices.add(Task4PriceFeed.parse(line));
 						} catch (Exception e) {
 							String message =
 									String.format("Problem with '%s%' : %s",

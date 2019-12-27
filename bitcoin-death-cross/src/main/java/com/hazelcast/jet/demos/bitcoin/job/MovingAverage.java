@@ -28,7 +28,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 /**
  * <p>Creates a processing pipeline to calculate moving
  * averages and detect when they cross. This is invoked
- * by {@link Task1}.
+ * by {@link Task1JetJob}.
  * </p>
  * <p>The processing looks like this:
  * </p>
@@ -75,7 +75,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * <p>What each step does is as follows:
  * </p>
  * <ol>
- * <li><p><b>priceFeed</b> : {@link Task4} writes Bitcoin / US Dollar
+ * <li><p><b>priceFeed</b> : {@link Task4PriceFeed} writes Bitcoin / US Dollar
  * prices into an {@code com.hazelcast.core.IMap IMap}. Each new price
  * replaces the previous, so what is stored in Hazelcast in the
  * "{@code prices-in}" map is the current price.
@@ -123,21 +123,21 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * </li>
  * <li><p><b>mapSink-50Pt</b> : Save the "{@link averageOf50}"
  * stream to an {@link com.hazelcast.core.IMap IMap} named 
- * "{@code BTCUSD}". {@link Task2} listens to this map to capture
+ * "{@code BTCUSD}". {@link Task2ChartPanel} listens to this map to capture
  * the values to plot on the graph. Each value replaces the previous
  * in the map, so this map holds the most recent 50-point average.
  * </p>
  * </li>
  * <li><p><b>mapSink-200Pt</b> : Save the stream from
  * "{@code averageOf200}" into the same map as we save the
- * "{@code averageOf50}". So {@link Task2} can track this value
+ * "{@code averageOf50}". So {@link Task2ChartPanel} can track this value
  * too to plot on the graph, and this map stores the last
  * 200-point average.
  * </p>
  * </li>
  * <li><p><b>mapSink-Current</b> : Save the stream of unaltered
  * prices into the map named "{@code BTCUSD}". This is primarily
- * for {@link Task2}.</p>
+ * for {@link Task2ChartPanel}.</p>
  * <p>So map "{@code BTCUSD}" holds the latest values for the
  * 50-point average, 200-point average and unaltered original
  * price conveniently together. The unaltered price came from
@@ -204,7 +204,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * <li><p><b>topicSink-alert</b> : The "{@code crossEmitter}" stage
  * only produces output if a cross is detected. If anything gets to
  * this stage, send it to a {@link com.hazelcast.core.ITopic ITopic}
- * so that {@link Task3} which is subscribed to the topic is aware.
+ * so that {@link Task3TopicListener} which is subscribed to the topic is aware.
  * </p>
  * </li>
  * </ol>
@@ -333,7 +333,7 @@ public class MovingAverage {
 
 		/** <p>If there is anything produced by the {@link CrossEmitter}
 		 * dump it to a {@link com.hazelcast.core.ITopic ITopic} for
-		 * {@link Task3}. What comes out is a {@code Map.Entry} so we could
+		 * {@link Task3TopicListener}. What comes out is a {@code Map.Entry} so we could
 		 * easily dump it to an {@link com.hazelcast.core.IMap IMap} instead
 		 * (or as well) and use a map listener.
 		 * </p>
@@ -349,7 +349,7 @@ public class MovingAverage {
 			.setName("logSink");
 		
 		/** <p>Save the latest for each average to an
-		 * {@link com.hazelcast.core.IMap IMap} for {@link Task2}.</p>
+		 * {@link com.hazelcast.core.IMap IMap} for {@link Task2ChartPanel}.</p>
 		 */
 		averageOf1
 			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
@@ -366,7 +366,7 @@ public class MovingAverage {
 
 
 	/**
-	 * <p>{@link com.hazelcast.jet.demos.bitcoin.Task4 Task4} writes
+	 * <p>{@link com.hazelcast.jet.demos.bitcoin.Task4PriceFeed Task4PriceFeed} writes
 	 * the current price of Bitcoin into an
 	 * {@link com.hazelcast.core.IMap IMap}. This
 	 * {@link com.hazelcast.core.IMap IMap} is defined with a

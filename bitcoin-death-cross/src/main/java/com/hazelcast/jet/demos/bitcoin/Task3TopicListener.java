@@ -12,16 +12,16 @@ import com.hazelcast.jet.demos.bitcoin.alerting.MyTopicListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>This is {@code Task3}. The use of the "{@code @Order}"
+ * <p>This is {@code Task3TopicListener}. The use of the "{@code @Order}"
  * annotation tells Spring the order to run these tasks.
  * </p>
- * <p>{@code Task3} adds a broadcast listener on a 
+ * <p>{@code Task3TopicListener} adds a broadcast listener on a 
  * {@link com.hazelcast.core.ITopic ITopic}, so all members
  * in the cluster are alerted if the price of Bitcoin
  * does something interesting.
  * </p>
- * <p><b>Note:</b> {@code Task1}, {@code Task2} and {@code Task3}
- * are ordered to run before {@code Task4}. The first three can
+ * <p><b>Note:</b> {@code Task1JetJob}, {@code Task2ChartPanel} and {@code Task3TopicListener}
+ * are ordered to run before {@code Task4PriceFeed}. The first three can
  * be run in any order, all will appear to do nothing until the
  * fourth starts producing data.
  * </p>
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Order(MyConstants.PRIORITY_THREE)
 @Slf4j
-public class Task3 implements CommandLineRunner {
+public class Task3TopicListener implements CommandLineRunner {
 
 	@Autowired
 	private HazelcastInstance hazelcastInstance;
