@@ -105,6 +105,15 @@ public class RealTimeImageRecognition {
     }
 
     public static void main(String[] args) {
+        //TODO https://github.com/hazelcast/hazelcast-jet-demos/issues/88
+        String osName = System.getProperty("os.name", "");
+        String osVersion = System.getProperty("os.version", "");
+        if (osName.startsWith("Mac") && osVersion.startsWith("10.15")) {
+            System.err.println("Demo doesn't currently work for os.version=" + osVersion);
+            System.err.println("See https://github.com/hazelcast/hazelcast-jet-demos/issues/88");
+            System.exit(1);
+        }
+
         if (args.length != 1) {
             System.err.println("Missing command-line argument: <model path>");
             System.exit(1);
