@@ -5,6 +5,7 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 ## Application Demos
 
+* [Bitcoin Death Cross](./bitcoin-death-cross) - Predicting 2018's downward trend for Bitcoin.
 * [Real-time Image Recognition](./realtime-image-recognition) - Recognizes images present in the webcam video input with a model trained with CIFAR-10 dataset.
 * [Twitter Cryptocurrency Sentiment Analysis](./cryptocurrency-sentiment-analysis) - Twitter content is analyzed in real time to 
 calculate cryptocurrency trend list with popularity index.                                                                   
@@ -21,7 +22,7 @@ into an IMDG map. Data is analysed as part of the upload process, calculating th
 ## External Demos
 
 * [Real-Time Trade Processing](https://github.com/oliversalmon/imcs-demo) Oliver Buckley-Salmon. Reads from a Kafka topic with Jet and then storage to HBase and Hazelcast IMDG. Shows enrichment and streaming aggregations. Jet 0.4. 
-* [Transport Tycoon Collision Prevention](https://github.com/vladoschreiner/transport-tycoon-demo/) Vladimír Schreiner. Reads a vehicle telemetry data from the running [Open Transport Tycoon DeLuxe](https://www.openttd.org/) game and uses Jet to predict and prevent collisions. Jet 3.1. 
+* [Transport Tycoon Collision Prevention](https://github.com/vladoschreiner/transport-tycoon-demo/) Vladimír Schreiner. Reads a vehicle telemetry data from the running [Open Transport Tycoon DeLuxe](https://www.openttd.org/) game and uses Jet to predict and prevent collisions.
 
 ## Prerequisites
 

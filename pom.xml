@@ -12,6 +12,7 @@
 
     <modules>
         <!--<module>customer-churn-predictor</module>-->
+        <module>bitcoin-death-cross</module>
         <module>cryptocurrency-sentiment-analysis</module>
         <module>flight-telemetry</module>
         <module>jetleopard</module>
