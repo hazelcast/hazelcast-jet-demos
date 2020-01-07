@@ -8,7 +8,7 @@ The idea here is that we could automatically analyze stock market prices and use
 <h2>Disclaimer</h2>
 This is a code example, <b>not trading advice</b>. Do not use it to make investment decisions. Please!
 <h2>Background</h2>
-In the graph at the top of this post, the price of Bitcoin is shown as a <span style="color: blue;">blue line</span>.
+In the graph at the top of this post, the price of Bitcoin is shown as a <font color="blue">blue line</font>.
 
 The price goes up and down, and to the human eye, it's relatively clear that it peaked in December 2017.
 
@@ -18,7 +18,7 @@ To confidently buy/sell Bitcoin, we need to study the overall price trend. Is th
 <h3>Moving Averages</h3>
 What we calculate are moving averages to smooth out the variation in the price.
 
-The <span style="color: red;">red line</span> is the "<i>50-Point Moving Average.</i>"
+The <font color="red">red line</font> is the "<i>50-Point Moving Average.</i>"
 
 The idea for the 50-point moving average is to take 50 input points and calculate the average, then move 1 point forward and repeat.
 
@@ -28,7 +28,7 @@ The next 50 points to average are January 2nd, 2017 to February 20th, 2017. We h
 
 The price of Bitcoin from February 19th-20th, 2017 was a move from $1048 to $1077. The 50 point average has gone from $951 to $952, recognizing an upward trend but a reduction in volatility.
 
-The <span style="color: purple;">purple line</span> is the "<i>200-Point Moving Average.</i>" The idea is the same, except it uses 200 points, so it doesn't begin producing output until July 19th, 2017.
+The <font color="purple">purple line</font> is the "<i>200-Point Moving Average.</i>" The idea is the same, except it uses 200 points, so it doesn't begin producing output until July 19th, 2017.
 
 50 and 200 are standard ranges used in investment. The 50-point range gives the short-term trend, while the 200-point range gives the long-term trend.
 <h3>Death Cross and Golden Cross</h3>
@@ -154,7 +154,7 @@ From a technical standpoint, the most interesting stage is the join.
 
 The 50-point moving average stream is producing pairs of dates and prices. The 200-point moving average stream is also producing pairs of dates and prices.
 
-What we want to do is join these on the date, to produce a trio—the date, the 50-point price, and the 200-point price. <span style="font-size: 1.125rem; letter-spacing: 0px; font-family: 'Akkurat Std', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;">So our input to the join is two streams.</span>
+What we want to do is join these on the date, to produce a trio—the date, the 50-point price, and the 200-point price. So our input to the join is two streams.
 <pre><code>
 StageWithKeyAndWindow&lt;Entry, String&gt; timestampedWindowedOf50;
 StreamStageWithKey&lt;Entry, String&gt; timestampedOf200;
