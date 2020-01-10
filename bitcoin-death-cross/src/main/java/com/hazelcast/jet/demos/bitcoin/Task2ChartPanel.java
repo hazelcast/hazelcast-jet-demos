@@ -6,7 +6,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.demos.bitcoin.alerting.MyTopicListener;
 import com.hazelcast.jet.demos.bitcoin.charting.PricePanelListener;
 import com.hazelcast.jet.demos.bitcoin.domain.Price;

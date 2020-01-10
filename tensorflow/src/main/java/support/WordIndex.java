@@ -37,8 +37,7 @@ public class WordIndex implements Serializable {
     private static final int UNKNOWN = 2;
     private final Map<String, Integer> wordIndex;
 
-    public WordIndex(String path) {
-        File dir = new File(path);
+    public WordIndex(File dir) {
         if (!dir.exists()) {
             System.err.println("The directory " + dir.getAbsolutePath() + " doesn't exist.\n"
                     + "To create the models, run the `bin/imdb_review_train.py` script.");

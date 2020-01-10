@@ -4,11 +4,11 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
@@ -19,7 +19,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Polls the <a href="https://www.adsbexchange.com">ADS-B Exchange</a> HTTP API

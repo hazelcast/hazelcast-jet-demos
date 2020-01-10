@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -25,6 +24,7 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -105,14 +105,14 @@ public class MarkovChainGenerator {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
         // Reads files line-by-line
-        BatchStage<String> lines = p.drawFrom(Sources.<String>files(INPUT_FILE));
+        BatchStage<String> lines = p.readFrom(Sources.<String>files(INPUT_FILE));
         Pattern twoWords = Pattern.compile("(\\.|\\w+)\\s(\\.|\\w+)");
         // Calculates probabilities by flatmapping lines into two-word consecutive pairs using regular expressions
         // and aggregates them into an IMap.
         lines.flatMap(e -> traverseMatcher(twoWords.matcher(e.toLowerCase()), m -> tuple2(m.group(1), m.group(2))))
              .groupingKey(Tuple2::f0)
              .aggregate(buildAggregateOp())
-             .drainTo(Sinks.map("stateTransitions"));
+             .writeTo(Sinks.map("stateTransitions"));
         return p;
     }
 
@@ -120,7 +120,7 @@ public class MarkovChainGenerator {
      * Prints state transitions from IMap, generates the markov chain and prints it
      */
     private static void printTransitionsAndMarkovChain(JetInstance jet) {
-        IMapJet<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
+        IMap<String, SortedMap<Double, String>> transitions = jet.getMap("stateTransitions");
         printTransitions(transitions);
         String chain = generateMarkovChain(1000, transitions);
         System.out.println(chain);

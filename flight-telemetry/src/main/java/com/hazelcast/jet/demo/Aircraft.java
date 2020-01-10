@@ -1,7 +1,6 @@
 package com.hazelcast.jet.demo;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.jet.demo.types.EngineMount;
 import com.hazelcast.jet.demo.types.EngineTypes;
 import com.hazelcast.jet.demo.types.Species;
@@ -9,6 +8,8 @@ import com.hazelcast.jet.demo.types.SpeedType;
 import com.hazelcast.jet.demo.types.VerticalSpeedType;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.json.internal.JsonSerializable;
+
 import java.io.Serializable;
 import java.util.Arrays;
 

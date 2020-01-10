@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
         <artifactId>hazelcast-jet-demos</artifactId>
-        <version>3.2.1</version>
+        <version>4.0-SNAPSHOT</version>
     </parent>
 
     <name>Markov Chain Generator</name>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 
 import java.util.List;
 

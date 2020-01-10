@@ -1,5 +1,16 @@
 package com.hazelcast.jet.demos.bitcoin;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.demos.bitcoin.domain.Price;
+import com.hazelcast.map.IMap;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,19 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.annotation.Order;
-import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.jet.demos.bitcoin.domain.Price;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>This is {@code Task4PriceFeed}. The use of the "{@code @Order}"

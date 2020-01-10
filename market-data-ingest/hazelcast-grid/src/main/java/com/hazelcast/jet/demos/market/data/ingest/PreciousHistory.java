@@ -11,13 +11,12 @@ public class PreciousHistory {
         Pipeline p = Pipeline.create();
 
         // Palladium and Platinum only
-        p.drawFrom(Sources.<String, Object>mapJournal(
+        p.readFrom(Sources.<String, Object>mapJournal(
                 Constants.IMAP_NAME_PRECIOUS, JournalInitialPosition.START_FROM_OLDEST)
         ).withoutTimestamps()
          .map(e -> e.getKey() + "==" + e.getValue())
          .filter(str -> str.toLowerCase().startsWith("p"))
-         .drainTo(Sinks.logger())
-        ;
+         .writeTo(Sinks.logger());
 
         return p;
     }

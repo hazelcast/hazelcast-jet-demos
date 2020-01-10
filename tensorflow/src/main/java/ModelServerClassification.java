@@ -18,13 +18,15 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.Int64Value;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.checkerframework.checker.nullness.compatqual.NullableDecl;
@@ -49,23 +51,24 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
  */
 public class ModelServerClassification {
 
-    private static Pipeline buildPipeline(String dataPath, String serverAddress, IMap<Long, String> reviewsMap) {
-        WordIndex wordIndex = new WordIndex(dataPath);
-        ContextFactory<PredictionServiceFutureStub> tfServingContext = ContextFactory
-                .withCreateFn(jet -> {
+    private static Pipeline buildPipeline(String serverAddress, IMap<Long, String> reviewsMap) {
+        ServiceFactory<Tuple2<PredictionServiceFutureStub, WordIndex>, Tuple2<PredictionServiceFutureStub, WordIndex>>
+                tfServingContext = ServiceFactory
+                .withCreateContextFn(context -> {
+                    WordIndex wordIndex = new WordIndex(context.attachedDirectory("data"));
                     ManagedChannel channel = ManagedChannelBuilder.forTarget(serverAddress)
                                                                   .usePlaintext().build();
-                    return PredictionServiceGrpc.newFutureStub(channel);
+                    return Tuple2.tuple2(PredictionServiceGrpc.newFutureStub(channel), wordIndex);
                 })
-                .withDestroyFn(stub -> ((ManagedChannel) stub.getChannel()).shutdownNow())
-                .withLocalSharing()
+                .withDestroyContextFn(t -> ((ManagedChannel) t.f0().getChannel()).shutdownNow())
+                .withCreateServiceFn((context, tuple2) -> tuple2)
                 .withMaxPendingCallsPerProcessor(16);
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(reviewsMap))
+        p.readFrom(Sources.map(reviewsMap))
          .map(Map.Entry::getValue)
-         .mapUsingContextAsync(tfServingContext, (stub, review) -> {
-             float[][] featuresTensorData = wordIndex.createTensorInput(review);
+         .mapUsingServiceAsync(tfServingContext, (t, review) -> {
+             float[][] featuresTensorData = t.f1().createTensorInput(review);
              TensorProto.Builder featuresTensorBuilder = TensorProto.newBuilder();
              for (float[] featuresTensorDatum : featuresTensorData) {
                  for (float v : featuresTensorDatum) {
@@ -91,7 +94,7 @@ public class ModelServerClassification {
                                                                     .putInputs("input_review", featuresTensorProto)
                                                                     .build();
 
-             return toCompletableFuture(stub.predict(request))
+             return toCompletableFuture(t.f0().predict(request))
                      .thenApply(response -> {
                          float classification = response
                                  .getOutputsOrThrow("dense_1/Sigmoid:0")
@@ -101,7 +104,7 @@ public class ModelServerClassification {
                      });
          })
          .setLocalParallelism(1) // one worker is enough to drive they async calls
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 
@@ -114,14 +117,18 @@ public class ModelServerClassification {
         }
         String dataPath = args[0];
         String serverAddress = args[1];
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachDirectory(dataPath, "data");
+
         JetInstance instance = Jet.newJetInstance();
         try {
             IMap<Long, String> reviewsMap = instance.getMap("reviewsMap");
             SampleReviews.populateReviewsMap(reviewsMap);
 
-            Pipeline p = buildPipeline(dataPath, serverAddress, reviewsMap);
+            Pipeline p = buildPipeline(serverAddress, reviewsMap);
 
-            instance.newJob(p).join();
+            instance.newJob(p, jobConfig).join();
         } finally {
             instance.shutdown();
         }

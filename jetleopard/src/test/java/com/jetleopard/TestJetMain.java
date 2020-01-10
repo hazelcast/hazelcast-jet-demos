@@ -13,16 +13,17 @@ import com.betleopard.domain.User;
 import com.betleopard.hazelcast.HazelcastFactory;
 import com.betleopard.hazelcast.HazelcastHorseFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.map.IMap;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
 
 import static com.jetleopard.JetBetMain.WORST_ID;
 import static java.time.temporal.TemporalAdjusters.next;
@@ -55,7 +56,7 @@ public class TestJetMain {
         u.addBet(b);
         assertNotNull(b);
         try {
-            IMapJet<String, ?> ism = jet.getMap(WORST_ID);
+            IMap<String, ?> ism = jet.getMap(WORST_ID);
             System.out.println(ism);
             System.out.println("Size: " + ism.size());
             for (String s : ism.keySet()) {

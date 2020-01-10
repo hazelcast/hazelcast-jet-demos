@@ -1,17 +1,15 @@
 package com.hazelcast.jet.demos.bitcoin.alerting;
 
-import javax.swing.JTextArea;
-
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.swing.*;
 
 /**
  * <p>Handle a message received from Hazelcast
- * {@link com.hazelcast.core.ITopic ITopic}.
+ * {@link com.hazelcast.topic.ITopic ITopic}.
  * Here we just display the content.
  * </p>
  */

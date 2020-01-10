@@ -1,6 +1,5 @@
 package com.hazelcast.jet.demo;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -9,14 +8,14 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.demo.Aircraft.VerticalDirection;
 import com.hazelcast.jet.demo.types.WakeTurbulanceCategory;
-import com.hazelcast.jet.function.ComparatorEx;
+import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
-import com.hazelcast.jet.server.JetBootstrap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import org.python.core.PyFloat;
 import org.python.core.PyInteger;
@@ -33,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.function.Consumer;
 
+import static com.hazelcast.function.ComparatorEx.comparingInt;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
@@ -185,7 +185,7 @@ public class FlightTelemetry {
         // Filter aircraft whose altitude is less then 3000ft, calculate linear trend of their altitudes
         // and assign vertical directions to the them.
         StreamStage<KeyedWindowResult<Long, Aircraft>> flights = p
-                .drawFrom(flightDataSource(SOURCE_URL, 10000))
+                .readFrom(flightDataSource(SOURCE_URL, 10000))
                 .withNativeTimestamps(SECONDS.toMillis(15))
                 .filter(a -> !a.isGnd() && a.getAlt() > 0 && a.getAlt() < 3000).setName("Filter aircraft in low altitudes")
                 .map(FlightTelemetry::assignAirport).setName("Assign airport")
@@ -205,14 +205,14 @@ public class FlightTelemetry {
                 .filter(e -> e.getValue().getVerticalDirection() == ASCENDING)
                 .setName("Filter ascending aircraft");
         // Write ascending flights to an IMap
-        takingOffFlights.drainTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
+        takingOffFlights.writeTo(Sinks.map(TAKE_OFF_MAP)); // (aircraft_id, aircraft)
 
         //Filter descending flights
         StreamStage<KeyedWindowResult<Long, Aircraft>> landingFlights = flights
                 .filter(e -> e.getValue().getVerticalDirection() == DESCENDING)
                 .setName("Filter descending aircraft");
         // Write descending flights to an IMap
-        landingFlights.drainTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
+        landingFlights.writeTo(Sinks.map(LANDING_MAP)); // (aircraft_id, aircraft)
 
         // Enrich aircraft with the noise info and calculate max noise
         // in 60secs windows sliding by 30secs.
@@ -221,7 +221,7 @@ public class FlightTelemetry {
                 .setName("Enrich with noise info")// (aircraft, noise)
                 .window(slidingWindow)
                 .groupingKey(e -> e.getKey().getAirport() + "_AVG_NOISE")
-                .aggregate(maxBy(ComparatorEx.comparingInt(Entry<Aircraft, Integer>::getValue)).andThen(Entry::getValue))
+                .aggregate(maxBy(comparingInt(Entry<Aircraft, Integer>::getValue)).andThen(Entry::getValue))
                 .setName("Calculate max noise level");
         // (airport, max_noise)
 
@@ -240,7 +240,7 @@ public class FlightTelemetry {
         Sink<KeyedWindowResult> graphiteSink = buildGraphiteSink(SINK_HOST, SINK_PORT);
 
         // Drain all results to the Graphite sink
-        p.drainTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
+        p.writeTo(graphiteSink, co2Emission, maxNoise, landingFlights, takingOffFlights)
          .setName("graphiteSink");
         return p;
     }
@@ -383,12 +383,12 @@ public class FlightTelemetry {
     }
 
     /**
-     * Attaches a listener to {@link IMapJet} which passes added items to the specified consumer
+     * Attaches a listener to {@link IMap} which passes added items to the specified consumer
      *
      * @param map      map instance which the listener will be added
      * @param consumer aircraft consumer that the added items will be passed on.
      */
-    private static void addListener(IMapJet<Long, Aircraft> map, Consumer<Aircraft> consumer) {
+    private static void addListener(IMap<Long, Aircraft> map, Consumer<Aircraft> consumer) {
         map.addEntryListener((EntryAddedListener<Long, Aircraft>) event ->
                 consumer.accept(event.getValue()), true);
     }
