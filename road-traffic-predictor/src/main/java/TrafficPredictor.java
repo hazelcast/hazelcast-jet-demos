@@ -17,8 +17,8 @@
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
-import com.hazelcast.jet.pipeline.ContextFactories;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 
@@ -129,7 +129,7 @@ public class TrafficPredictor {
         Pipeline pipeline = Pipeline.create();
 
         // Calculate car counts from the file.
-        StreamStage<CarCount> carCounts = pipeline.drawFrom(
+        StreamStage<CarCount> carCounts = pipeline.readFrom(
                 filesBuilder(sourceFile.getParent().toString())
                         .glob(sourceFile.getFileName().toString())
                         .build((filename, line) -> {
@@ -151,11 +151,11 @@ public class TrafficPredictor {
                 .aggregate(linearTrend(CarCount::getTime, CarCount::getCount))
                 .map((KeyedWindowResult<String, Double> e) ->
                         entry(new TrendKey(e.getKey(), e.end()), e.getValue()))
-                .drainTo(Sinks.map("trends"));
+                .writeTo(Sinks.map("trends"));
 
         // Makes predictions using the trends calculated above from an IMap and writes them to a file
         carCounts
-                .mapUsingContext(ContextFactories.<TrendKey, Double>iMapContext("trends"),
+                .mapUsingService(ServiceFactories.<TrendKey, Double>iMapService("trends"),
                         (trendMap, cc) -> {
                             int[] counts = new int[NUM_PREDICTIONS];
                             double trend = 0.0;
@@ -169,7 +169,7 @@ public class TrafficPredictor {
                             }
                             return new Prediction(cc.location, cc.time + GRANULARITY_STEP_MS, counts);
                         })
-                .drainTo(Sinks.files(targetDirectory));
+                .writeTo(Sinks.files(targetDirectory));
         return pipeline;
     }
 

@@ -23,11 +23,11 @@ import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.Planar;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.datamodel.WindowResult;
-import com.hazelcast.jet.function.ComparatorEx;
-import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sink;
 
 import javax.swing.*;
@@ -41,10 +41,10 @@ import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.Map.Entry;
 
+import static com.hazelcast.function.ComparatorEx.comparingDouble;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.ComparatorEx.comparingDouble;
 import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.Collections.singletonList;
@@ -82,17 +82,17 @@ import static java.util.Collections.singletonList;
 public class RealTimeImageRecognition {
 
     static {
-        System.setProperty("hazelcast.logging.type", "slf4j");
+        System.setProperty("hazelcast.logging.type", "log4j");
     }
 
     /**
      * Builds and returns the Pipeline which represents the actual computation.
      */
-    private static Pipeline buildPipeline(String modelPath) {
+    private static Pipeline buildPipeline() {
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(WebcamSource.webcam(500))
+        pipeline.readFrom(WebcamSource.webcam(500))
                 .withIngestionTimestamps()
-                .mapUsingContext(classifierContext(modelPath),
+                .mapUsingService(classifierContext(),
                         (ctx, img) -> {
                             Entry<String, Double> classification = classifyWithModel(ctx, img);
                             return tuple3(img, classification.getKey(), classification.getValue());
@@ -100,7 +100,7 @@ public class RealTimeImageRecognition {
                 )
                 .window(tumbling(1000))
                 .aggregate(maxBy(comparingDouble(Tuple3::f2)))
-                .drainTo(buildGUISink());
+                .writeTo(buildGUISink());
         return pipeline;
     }
 
@@ -117,11 +117,14 @@ public class RealTimeImageRecognition {
             System.exit(1);
         }
 
-        Pipeline pipeline = buildPipeline(modelPath.toString());
+        Pipeline pipeline = buildPipeline();
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachDirectory(modelPath.toString(), "model");
 
         JetInstance jet = Jet.newJetInstance();
         try {
-            jet.newJob(pipeline).join();
+            jet.newJob(pipeline, jobConfig).join();
         } finally {
             Jet.shutdownAll();
         }
@@ -183,21 +186,20 @@ public class RealTimeImageRecognition {
         ConvertBufferedImage.convertFromPlanar(image, planar, true, GrayF32.class);
         classifier.classify(planar);
         return classifier.getAllResults().stream()
-                .map(score -> entry(classifier.getCategories().get(score.category), score.score))
-                .max(Comparator.comparing(Entry::getValue)).get();
+                         .map(score -> entry(classifier.getCategories().get(score.category), score.score))
+                         .max(Comparator.comparing(Entry::getValue)).get();
     }
 
     /**
-     * Loads the pre-trained model from the specified path
-     *
-     * @param modelPath path of the model
+     * Loads the pre-trained model from the job resources
      */
-    private static ContextFactory<ImageClassifierVggCifar10> classifierContext(String modelPath) {
-        return ContextFactory.withCreateFn(jet -> {
-            ImageClassifierVggCifar10 classifier = new ImageClassifierVggCifar10();
-            classifier.loadModel(new File(modelPath));
-            return classifier;
-        });
+    private static ServiceFactory<?, ImageClassifierVggCifar10> classifierContext() {
+        return ServiceFactory.withCreateContextFn(ctx -> {
+            File file = ctx.attachedDirectory("model");
+            ImageClassifierVggCifar10 classifierVggCifar10 = new ImageClassifierVggCifar10();
+            classifierVggCifar10.loadModel(file);
+            return classifierVggCifar10;
+        }).withCreateServiceFn((context, classifier) -> classifier);
     }
 
     /**

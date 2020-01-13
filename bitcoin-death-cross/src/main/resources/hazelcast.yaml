@@ -1,6 +1,5 @@
 hazelcast:
-  group:
-    name: 'bitcoin'
+  cluster-name: 'bitcoin'
   properties:
     # If you have Jet Management Center, this property allows you to view the map statistics
     hazelcast.diagnostics.metric.distributed.datastructures: true

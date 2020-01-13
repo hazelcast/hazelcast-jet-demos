@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Tensor;
 import org.tensorflow.Tensors;
 import support.WordIndex;
 
+import java.io.File;
 import java.util.Map;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -39,22 +41,24 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
  */
 public class InProcessClassification {
 
-    private static Pipeline buildPipeline(String dataPath, IMap<Long, String> reviewsMap) {
-        WordIndex wordIndex = new WordIndex(dataPath);
+    private static Pipeline buildPipeline(IMap<Long, String> reviewsMap) {
         // Set up the mapping context that loads the model on each member, shared
-        // by all parallel processors on that member. The path must be available on
-        // all members.
-        ContextFactory<SavedModelBundle> modelContext = ContextFactory
-                .withCreateFn(jet -> SavedModelBundle.load(dataPath + "/model/1", "serve"))
-                .withLocalSharing()
-                .withDestroyFn(SavedModelBundle::close);
+        // by all parallel processors on that member.
+        ServiceFactory<Tuple2<SavedModelBundle, WordIndex>, Tuple2<SavedModelBundle, WordIndex>> modelContext = ServiceFactory
+                .withCreateContextFn(context -> {
+                    File data = context.attachedDirectory("data");
+                    SavedModelBundle bundle = SavedModelBundle.load(data.toPath().resolve("model/1").toString(), "serve");
+                    return tuple2(bundle, new WordIndex(data));
+                })
+                .withDestroyContextFn(t -> t.f0().close())
+                .withCreateServiceFn((context, tuple2) -> tuple2);
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(reviewsMap))
+        p.readFrom(Sources.map(reviewsMap))
          .map(Map.Entry::getValue)
-         .mapUsingContext(modelContext, (model, review) -> classify(review, model, wordIndex))
+         .mapUsingService(modelContext, (tuple, review) -> classify(review, tuple.f0(), tuple.f1()))
          // TensorFlow executes models in parallel, we'll use 2 local threads to maximize throughput.
          .setLocalParallelism(2)
-         .drainTo(Sinks.logger(t -> String.format("Sentiment rating for review \"%s\" is %.2f", t.f0(), t.f1())));
+         .writeTo(Sinks.logger(t -> String.format("Sentiment rating for review \"%s\" is %.2f", t.f0(), t.f1())));
         return p;
     }
 
@@ -66,11 +70,15 @@ public class InProcessClassification {
             System.exit(1);
         }
 
+        String dataPath = args[0];
         JetInstance instance = Jet.newJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachDirectory(dataPath, "data");
+
         try {
             IMap<Long, String> reviewsMap = instance.getMap("reviewsMap");
             SampleReviews.populateReviewsMap(reviewsMap);
-            instance.newJob(buildPipeline(args[0], reviewsMap)).join();
+            instance.newJob(buildPipeline(reviewsMap), jobConfig).join();
         } finally {
             instance.shutdown();
         }

@@ -1,11 +1,6 @@
 package com.hazelcast.jet.demos.bitcoin.job;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
+import com.hazelcast.function.Functions;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
@@ -13,7 +8,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.demos.bitcoin.MyConstants;
 import com.hazelcast.jet.demos.bitcoin.domain.Price;
-import com.hazelcast.jet.function.Functions;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -24,6 +18,12 @@ import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Creates a processing pipeline to calculate moving
@@ -122,7 +122,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * </p>
  * </li>
  * <li><p><b>mapSink-50Pt</b> : Save the "{@link averageOf50}"
- * stream to an {@link com.hazelcast.core.IMap IMap} named 
+ * stream to an {@link com.hazelcast.map.IMap IMap} named
  * "{@code BTCUSD}". {@link Task2ChartPanel} listens to this map to capture
  * the values to plot on the graph. Each value replaces the previous
  * in the map, so this map holds the most recent 50-point average.
@@ -203,7 +203,7 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
  * </li>
  * <li><p><b>topicSink-alert</b> : The "{@code crossEmitter}" stage
  * only produces output if a cross is detected. If anything gets to
- * this stage, send it to a {@link com.hazelcast.core.ITopic ITopic}
+ * this stage, send it to a {@link com.hazelcast.topic.ITopic ITopic}
  * so that {@link Task3TopicListener} which is subscribed to the topic is aware.
  * </p>
  * </li>
@@ -339,26 +339,26 @@ public class MovingAverage {
 		 * </p>
 		 */
 		alerts
-		.drainTo(MovingAverage.buildAlertSink());
+		.writeTo(MovingAverage.buildAlertSink());
 		
 		/** <p><i>Optional: </i>Log the current price to the
 		 * screen, to help understanding.</p>
 		 */
 		averageOf1
-			.drainTo(Sinks.logger())
+			.writeTo(Sinks.logger())
 			.setName("logSink");
 		
 		/** <p>Save the latest for each average to an
 		 * {@link com.hazelcast.core.IMap IMap} for {@link Task2ChartPanel}.</p>
 		 */
 		averageOf1
-			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
+			.writeTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_CURRENT);
 		averageOf50
-			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
+			.writeTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_50_POINT);
 		averageOf200
-			.drainTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
+			.writeTo(Sinks.map(MyConstants.IMAP_NAME_PRICES_OUT_BTCUSD))
 			.setName("mapSink-" + MyConstants.KEY_200_POINT);
 		
 		return pipeline;
@@ -368,8 +368,8 @@ public class MovingAverage {
 	/**
 	 * <p>{@link com.hazelcast.jet.demos.bitcoin.Task4PriceFeed Task4PriceFeed} writes
 	 * the current price of Bitcoin into an
-	 * {@link com.hazelcast.core.IMap IMap}. This
-	 * {@link com.hazelcast.core.IMap IMap} is defined with a
+	 * {@link com.hazelcast.map.IMap IMap}. This
+	 * {@link com.hazelcast.map.IMap IMap} is defined with a
 	 * {@link com.hazelcast.map.impl.journal.MapEventJournal MapEventJournal}
 	 * that allows Jet to track the history of changes. Use this as a
 	 * source to stream in.
@@ -388,7 +388,7 @@ public class MovingAverage {
 	protected static StreamStageWithKey<Entry<String, Price>, String> 
 		buildPriceFeed(Pipeline pipeline) {
 
-		return pipeline.drawFrom(
+		return pipeline.readFrom(
 				Sources.<String,Price>mapJournal(
 					MyConstants.IMAP_NAME_PRICES_IN,
 					JournalInitialPosition.START_FROM_OLDEST)

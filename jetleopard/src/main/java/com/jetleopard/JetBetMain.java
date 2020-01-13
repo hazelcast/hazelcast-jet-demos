@@ -12,7 +12,6 @@ import com.betleopard.hazelcast.HazelcastFactory;
 import com.betleopard.hazelcast.HazelcastHorseFactory;
 import com.betleopard.hazelcast.RandomSimulator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -24,6 +23,8 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -124,7 +125,7 @@ public final class JetBetMain implements RandomSimulator {
         final Pipeline pipeline = Pipeline.create();
 
         // Draw users from the Hazelcast IMDG source
-        BatchStage<User> users = pipeline.drawFrom(Sources.<User, Long, User>map(USER_ID, e -> true, Entry::getValue));
+        BatchStage<User> users = pipeline.readFrom(Sources.<User, Long, User>map(USER_ID, e -> true, Entry::getValue));
 
         // All bet legs which are single
         BatchStage<Tuple3<Race, Horse, Bet>> bets = users.flatMap(user -> traverseStream(
@@ -144,7 +145,7 @@ public final class JetBetMain implements RandomSimulator {
         );
 
         // Write out: (r : (h : losses))
-        betsByRace.drainTo(Sinks.map(WORST_ID));
+        betsByRace.writeTo(Sinks.map(WORST_ID));
 
         return pipeline;
     }

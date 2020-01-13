@@ -9,8 +9,8 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.support.CoinType;
 import com.hazelcast.jet.demo.support.CryptoSentimentGui;
 import com.hazelcast.jet.demo.support.SentimentAnalyzer;
-import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
@@ -27,7 +28,6 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.demo.support.TwitterSource.twitterSource;
 import static com.hazelcast.jet.demo.support.WinSize.FIVE_MINUTES;
 import static com.hazelcast.jet.demo.support.WinSize.HALF_MINUTE;
-import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.pipeline.Sinks.map;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -106,12 +106,12 @@ public class CryptocurrencySentimentAnalysis {
                                             .flatMap(ct -> ct.markers().stream())
                                             .collect(toList());
         StreamStage<String> tweets = pipeline
-                .drawFrom(twitterSource(allCoinMarkers))
+                .readFrom(twitterSource(allCoinMarkers))
                 .withNativeTimestamps(SECONDS.toMillis(1));
 
         StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
-                .mapUsingContext(sentimentAnalyzerContext(), (analyzer, e1) ->
+                .mapUsingService(sentimentAnalyzerContext(), (analyzer, e1) ->
                         entry(e1.getKey(), analyzer.getSentimentScore(e1.getValue())))
                 .filter(e -> !e.getValue().isInfinite() && !e.getValue().isNaN())
                 .groupingKey(entryKey());
@@ -123,21 +123,21 @@ public class CryptocurrencySentimentAnalysis {
                 .window(sliding(HALF_MINUTE.durationMillis(), 200))
                 .aggregate(avgAndCount)
                 .map(windowResult -> entry(tuple2(windowResult.getKey(), HALF_MINUTE), windowResult.getValue()))
-                .drainTo(map(MAP_NAME_JET_RESULTS));
+                .writeTo(map(MAP_NAME_JET_RESULTS));
 
         tweetsWithSentiment
                 .window(sliding(FIVE_MINUTES.durationMillis(), 200))
                 .aggregate(avgAndCount)
                 .map(windowResult -> entry(tuple2(windowResult.getKey(), FIVE_MINUTES), windowResult.getValue()))
-                .drainTo(map(MAP_NAME_JET_RESULTS));
+                .writeTo(map(MAP_NAME_JET_RESULTS));
 
         return pipeline;
     }
 
     @Nonnull
-    private static ContextFactory<SentimentAnalyzer> sentimentAnalyzerContext() {
-        return ContextFactory.withCreateFn(jet -> new SentimentAnalyzer())
-                             .withLocalSharing();
+    private static ServiceFactory<SentimentAnalyzer,SentimentAnalyzer> sentimentAnalyzerContext() {
+        return ServiceFactory.withCreateContextFn(jet -> new SentimentAnalyzer())
+                             .withCreateServiceFn((context, sentimentAnalyzer) -> sentimentAnalyzer);
     }
 
     /**

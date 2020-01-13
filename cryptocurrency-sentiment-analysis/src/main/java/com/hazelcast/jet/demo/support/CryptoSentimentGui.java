@@ -1,8 +1,8 @@
 package com.hazelcast.jet.demo.support;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import org.jfree.chart.ChartFactory;

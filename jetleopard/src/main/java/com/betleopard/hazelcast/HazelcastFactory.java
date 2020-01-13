@@ -1,10 +1,10 @@
 package com.betleopard.hazelcast;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IMap;
 import com.betleopard.DomainFactory;
 import com.betleopard.LongIndexed;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.map.IMap;
 
 /**
  * A simple base class that backs the domain factories with Hazelcast IMDG,
@@ -25,7 +25,7 @@ public class HazelcastFactory<T extends LongIndexed> implements DomainFactory<T>
     public HazelcastFactory(final HazelcastInstance instance, final Class<T> classOfT) {
         hz = instance;
         cache = hz.getMap("cache-" + classOfT);
-        id = hz.getAtomicLong("counter-" + classOfT);
+        id = hz.getCPSubsystem().getAtomicLong("counter-" + classOfT);
     }
 
     @Override
