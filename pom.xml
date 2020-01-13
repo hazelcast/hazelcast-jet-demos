@@ -21,6 +21,7 @@
         <module>road-traffic-predictor</module>
         <module>train-track</module>
         <module>tensorflow</module>
+        <module>h2o-breast-cancer-classification</module>
     </modules>
 
     <repositories>
