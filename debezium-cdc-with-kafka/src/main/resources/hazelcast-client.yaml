@@ -1,0 +1,5 @@
+hazelcast-client:
+  cluster-name: cdc-demo-with-kafka
+  network:
+    cluster-members:
+      - hazelcast-jet # docker-compose hostname

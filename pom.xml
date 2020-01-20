@@ -22,6 +22,8 @@
         <module>train-track</module>
         <module>tensorflow</module>
         <module>h2o-breast-cancer-classification</module>
+        <module>debezium-cdc-with-kafka</module>
+        <module>debezium-cdc-without-kafka</module>
     </modules>
 
     <repositories>

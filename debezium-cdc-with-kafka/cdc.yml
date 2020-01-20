@@ -1,0 +1,75 @@
+version: '2.1'
+services:
+  mysql:
+    image: debezium/example-mysql
+    ports:
+        - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
+      - MYSQL_ROOT_PASSWORD=mysqlpw
+
+  hazelcast-jet:
+    image: hazelcast/hazelcast-jet:latest-snapshot
+    volumes:
+        - ./src/main/resources:/tmp/config/ #mount local config files to the container
+    environment:
+        - JAVA_OPTS=-Dhazelcast.config=/tmp/config/hazelcast.yaml
+    depends_on:
+      - mysql
+      - kafka-connect
+
+  hazelcast-jet-submit:
+    image: hazelcast/hazelcast-jet:latest-snapshot
+    volumes:
+        - ./src/main/resources:/tmp/config/ #mount local config files to the container
+        - ./jars/:/jars/                    #mount local JAR files to the container
+    environment:
+        - JAVA_OPTS=-Dhazelcast.client.config=/tmp/config/hazelcast-client.yaml
+        - JOB_JAR=${JOB_JAR}
+    depends_on:
+        - hazelcast-jet
+    container_name: hazelcast-jet-submit
+    working_dir: /opt/hazelcast-jet/
+    entrypoint: jet -v submit $JOB_JAR
+
+  zoo:
+    image: debezium/zookeeper
+    hostname: zoo
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    environment:
+      SERVER_ID: 1
+
+  kafka:
+    image: debezium/kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      BROKER_ID: 1
+      ZOOKEEPER_CONNECT: "zoo:2181"
+    depends_on:
+      - zoo
+
+  kafka-connect:
+    image: debezium/connect
+    hostname: kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: docker-connect-configs
+      OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    depends_on:
+      - zoo
+      - kafka

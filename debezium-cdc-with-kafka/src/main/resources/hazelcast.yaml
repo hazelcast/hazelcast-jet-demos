@@ -1,0 +1,2 @@
+hazelcast:
+  cluster-name: cdc-demo-with-kafka

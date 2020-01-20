@@ -1,0 +1,35 @@
+version: '2'
+services:
+  mysql:
+    image: debezium/example-mysql
+    ports:
+        - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
+      - MYSQL_ROOT_PASSWORD=mysqlpw
+
+  hazelcast-jet:
+    image: hazelcast/hazelcast-jet:latest-snapshot
+    volumes:
+        - ./src/main/resources:/tmp/config/ #mount local config files to the container
+    environment:
+        - JAVA_OPTS=-Dhazelcast.config=/tmp/config/hazelcast.yaml
+    depends_on:
+      - mysql
+
+  hazelcast-jet-submit:
+    image: hazelcast/hazelcast-jet:latest-snapshot
+    volumes:
+        - ./src/main/resources:/tmp/config/ #mount local config files to the container
+        - ./jars/:/jars/                    #mount local JAR files to the container
+    environment:
+        - JAVA_OPTS=-Dhazelcast.client.config=/tmp/config/hazelcast-client.yaml
+        - JOB_JAR=${JOB_JAR}
+    depends_on:
+        - hazelcast-jet
+    container_name: hazelcast-jet-submit
+    working_dir: /opt/hazelcast-jet/
+    entrypoint: jet -v submit $JOB_JAR
+
