@@ -10,9 +10,6 @@ data = h2o.import_file(local_url)
 train, test = data.split_frame([0.8])
 train.summary()
 
-print ("Rows for training: ", train.nrows)
-print ("Rows for testing : ", test.nrows)
-
 from h2o.estimators.gbm import H2OGradientBoostingEstimator
 
 y = 'diagnosis'

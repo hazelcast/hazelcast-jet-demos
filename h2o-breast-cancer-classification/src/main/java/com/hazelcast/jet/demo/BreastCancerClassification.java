@@ -42,7 +42,7 @@ public class BreastCancerClassification {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setName("h2o Breast Cancer Classification");
         jobConfig.attachFile(modelFile.toString(), "model");
-        jobConfig.addJar(modelFile.toString());
+
         Job job = jet.newJob(buildPipeline(inputFile), jobConfig);
 
         try {
