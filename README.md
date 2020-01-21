@@ -18,6 +18,8 @@ into an IMDG map. Data is analysed as part of the upload process, calculating th
 * [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.
 * [Train Track](./train-track) An [Apache Beam](https://beam.apache.org/) IOT example, tracking a GPS feed from a train.
 * [TensorFlow](./tensorflow) A [TensorFlow](https://www.tensorflow.org/) example showcasing a ML model execution in Hazelcast Jet pipelines.
+* [Debezium Change Data Capture with Apache Kafka](./debezium-cdc-with-kafka) A [Debezium](http://www.debezium.io) example showcasing consumption of CDC events from Apache Kafka in Hazelcast Jet pipelines.
+* [Debezium Change Data Capture without Apache Kafka](./debezium-cdc-without-kafka) A [Debezium](http://www.debezium.io) example showcasing consumption of CDC events directly from Debezium using Kafka Connect source in Hazelcast Jet pipelines.
 
 ## External Demos
 
