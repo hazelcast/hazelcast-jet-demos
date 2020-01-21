@@ -18,7 +18,7 @@ incorporate the MOJO into a Jet Pipeline.
 ## Building the MOJO
 
 You will find a pre-built MOJO in the 'model' directory of this repository. 
-For further exploration, they Python code used to build the included MOJO is 
+For further exploration, the Python code used to build the included MOJO is 
 found in the 'bin' directory (h2o-generate-model.py). H2O MOJO's are packaged 
 in 'zip' format and should be left in this state. It can be unzipped to explore 
 the model details if desired.

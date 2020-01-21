@@ -82,10 +82,10 @@ public class BreastCancerClassification {
             BinomialModelPrediction p = modelWrapper.predictBinomial(diagnostic.asRow());
             TumorType predictedTumorType = TumorType.fromString(p.label);
             if (diagnostic.getDiagnosis() == predictedTumorType) {
-                return "Match: " + "Actual: " + String.format("%1$-" + 15 + "s", diagnostic.getDiagnosis()) + "Prediction: "
+                return String.format("Match: Actual: %1$-" + 15 + "s", diagnostic.getDiagnosis()) + "Prediction: "
                         + formatPrediction(p, predictedTumorType);
             } else {
-                return "Miss:  " + "Actual: " + String.format("%1$-" + 15 + "s", diagnostic.getDiagnosis()) + "Prediction: "
+                return String.format("Miss: Actual: %1$-" + 15 + "s", diagnostic.getDiagnosis()) + "Prediction: "
                         + formatPrediction(p, predictedTumorType);
             }
         }).setName("Apply H2O classification from loaded MOJO");
