@@ -36,7 +36,8 @@ public class BreastCancerDiagnostic {
     private double symmetryWorst;
     private double fractalDimensionWorst;
 
-    public BreastCancerDiagnostic(String[] split) {
+    public BreastCancerDiagnostic(String line) {
+        String[] split = line.split(",");
         this.id = Long.parseLong(split[0]);
         this.diagnosis = TumorType.fromString(split[1].replace('"',' ').trim());
         this.radiusMean = Double.parseDouble(split[2]);

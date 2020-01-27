@@ -4,7 +4,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.demo.model.BreastCancerDiagnostic;
 import com.hazelcast.jet.demo.model.TumorType;
@@ -65,14 +64,12 @@ public class BreastCancerClassification {
     private static Pipeline buildPipeline(Path sourceFile) {
         Pipeline pipeline = Pipeline.create();
 
-        BatchStage<String> fileSource = pipeline.readFrom(filesBuilder(sourceFile.getParent().toString())
+        BatchStage<BreastCancerDiagnostic> fileSource = pipeline.readFrom(filesBuilder(sourceFile.getParent().toString())
                 .glob(sourceFile.getFileName().toString())
-                .build())
-                .setName("Read from CSV input file");
+                .build(path -> Files.lines(path).skip(1).map(BreastCancerDiagnostic::new)))
+                                                                .setName("Read from CSV input file");
 
-        fileSource.apply(skipHeaderLine())
-                  .apply(mapToPOJO())
-                  .apply(applyPredictionFromModelFile())
+        fileSource.apply(applyPredictionFromModelFile())
                   .writeTo(Sinks.logger()).setName("Write to standard out");
         return pipeline;
     }
@@ -89,23 +86,6 @@ public class BreastCancerClassification {
                         + formatPrediction(p, predictedTumorType);
             }
         }).setName("Apply H2O classification from loaded MOJO");
-    }
-
-    private static FunctionEx<BatchStage<String>, BatchStage<BreastCancerDiagnostic>> mapToPOJO() {
-        return stage -> stage.map(line -> {
-            String[] split = line.split(",");
-            return new BreastCancerDiagnostic(split);
-        }).setName("Map CSV text line to Java object");
-    }
-
-    private static FunctionEx<BatchStage<String>, BatchStage<String>> skipHeaderLine() {
-        return stage -> stage.filterStateful(() -> new MutableReference<>(false), (headerSeen, line) -> {
-            if (!headerSeen.get()) {
-                headerSeen.set(true);
-                return false;
-            }
-            return true;
-        }).setName("Skip CSV header row");
     }
 
     private static ServiceFactory<EasyPredictModelWrapper, EasyPredictModelWrapper> modelContext() {
