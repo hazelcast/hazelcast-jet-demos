@@ -51,38 +51,38 @@ import static java.util.stream.Collectors.toList;
  * that takes the IMap data and visualizes it.
  * <p>
  * Below is a diagram of the computation stages:
- * <p>
- * ┌───────────────────┐
- * │Twitter Data Source│
- * └──────────┬────────┘
- * │
- * v
- * ┌──────────────────────┐
- * │FlatMap Relevant Coins│
- * └──────────┬───────────┘
- * │
- * v
- * ┌─────────────────────────┐
- * │Calculate Sentiment Score│
- * └─────────────┬───────────┘
- * │
- * v
- * ┌──────────────────┐
- * │Group by Coin Name│
- * └────┬─────────┬───┘
- * │         │
- * ┌───────┘         └─────────┐
- * │                           │
- * v                           v
- * ┌────────────────────────┐   ┌────────────────────────┐
- * │    Calculate 5min      │   │    Calculate 30sec     │
- * │Average with Event Count│   │Average with Event Count│
- * └───────────┬────────────┘   └─────────────┬──────────┘
- * │                              │
- * v                              v
- * ┌───────────────────────────┐ ┌─────────────────────────────┐
- * │  Write results to IMap    │ │  Write results to IMap      │
- * └───────────────────────────┘ └─────────────────────────────┘
+ *
+ *                  ┌───────────────────┐
+ *                  │Twitter Data Source│
+ *                  └──────────┬────────┘
+ *                             │
+ *                             v
+ *                 ┌──────────────────────┐
+ *                 │FlatMap Relevant Coins│
+ *                 └──────────┬───────────┘
+ *                            │
+ *                            v
+ *               ┌─────────────────────────┐
+ *               │Calculate Sentiment Score│
+ *               └─────────────┬───────────┘
+ *                             │
+ *                             v
+ *                   ┌──────────────────┐
+ *                   │Group by Coin Name│
+ *                   └────┬─────────┬───┘
+ *                        │         │
+ *                ┌───────┘         └─────────┐
+ *                │                           │
+ *                v                           v
+ *    ┌────────────────────────┐   ┌────────────────────────┐
+ *    │    Calculate 5min      │   │    Calculate 30sec     │
+ *    │Average with Event Count│   │Average with Event Count│
+ *    └───────────┬────────────┘   └─────────────┬──────────┘
+ *                │                              │
+ *                v                              v
+ *  ┌───────────────────────────┐ ┌─────────────────────────────┐
+ *  │  Write results to IMap    │ │  Write results to IMap      │
+ *  └───────────────────────────┘ └─────────────────────────────┘
  */
 public class CryptocurrencySentimentAnalysis {
 
