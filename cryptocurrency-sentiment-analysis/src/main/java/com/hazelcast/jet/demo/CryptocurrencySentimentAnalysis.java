@@ -14,6 +14,11 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 
+import com.hazelcast.jet.contrib.twitter.TwitterSources;
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
@@ -25,7 +30,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.demo.support.TwitterSource.twitterSource;
+import static com.hazelcast.jet.demo.support.Util.loadCredentials;
 import static com.hazelcast.jet.demo.support.WinSize.FIVE_MINUTES;
 import static com.hazelcast.jet.demo.support.WinSize.HALF_MINUTE;
 import static com.hazelcast.jet.pipeline.Sinks.map;
@@ -45,38 +50,38 @@ import static java.util.stream.Collectors.toList;
  * that takes the IMap data and visualizes it.
  * <p>
  * Below is a diagram of the computation stages:
- *
- *                  ┌───────────────────┐
- *                  │Twitter Data Source│
- *                  └──────────┬────────┘
- *                             │
- *                             v
- *                 ┌──────────────────────┐
- *                 │FlatMap Relevant Coins│
- *                 └──────────┬───────────┘
- *                            │
- *                            v
- *               ┌─────────────────────────┐
- *               │Calculate Sentiment Score│
- *               └─────────────┬───────────┘
- *                             │
- *                             v
- *                   ┌──────────────────┐
- *                   │Group by Coin Name│
- *                   └────┬─────────┬───┘
- *                        │         │
- *                ┌───────┘         └─────────┐
- *                │                           │
- *                v                           v
- *    ┌────────────────────────┐   ┌────────────────────────┐
- *    │    Calculate 5min      │   │    Calculate 30sec     │
- *    │Average with Event Count│   │Average with Event Count│
- *    └───────────┬────────────┘   └─────────────┬──────────┘
- *                │                              │
- *                v                              v
- *  ┌───────────────────────────┐ ┌─────────────────────────────┐
- *  │  Write results to IMap    │ │  Write results to IMap      │
- *  └───────────────────────────┘ └─────────────────────────────┘
+ * <p>
+ * ┌───────────────────┐
+ * │Twitter Data Source│
+ * └──────────┬────────┘
+ * │
+ * v
+ * ┌──────────────────────┐
+ * │FlatMap Relevant Coins│
+ * └──────────┬───────────┘
+ * │
+ * v
+ * ┌─────────────────────────┐
+ * │Calculate Sentiment Score│
+ * └─────────────┬───────────┘
+ * │
+ * v
+ * ┌──────────────────┐
+ * │Group by Coin Name│
+ * └────┬─────────┬───┘
+ * │         │
+ * ┌───────┘         └─────────┐
+ * │                           │
+ * v                           v
+ * ┌────────────────────────┐   ┌────────────────────────┐
+ * │    Calculate 5min      │   │    Calculate 30sec     │
+ * │Average with Event Count│   │Average with Event Count│
+ * └───────────┬────────────┘   └─────────────┬──────────┘
+ * │                              │
+ * v                              v
+ * ┌───────────────────────────┐ ┌─────────────────────────────┐
+ * │  Write results to IMap    │ │  Write results to IMap      │
+ * └───────────────────────────┘ └─────────────────────────────┘
  */
 public class CryptocurrencySentimentAnalysis {
 
@@ -106,10 +111,20 @@ public class CryptocurrencySentimentAnalysis {
                                             .flatMap(ct -> ct.markers().stream())
                                             .collect(toList());
         StreamStage<String> tweets = pipeline
-                .readFrom(twitterSource(allCoinMarkers))
+                .readFrom(TwitterSources.timestampedStream(
+                        loadCredentials(),
+                        () -> new StatusesFilterEndpoint()
+                                .trackTerms(allCoinMarkers)))
                 .withNativeTimestamps(SECONDS.toMillis(1));
-
         StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
+                .map(rawTweet -> {
+                    try {
+                        return new JSONObject(rawTweet).getString("text");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                })
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
                 .mapUsingService(sentimentAnalyzerContext(), (analyzer, e1) ->
                         entry(e1.getKey(), analyzer.getSentimentScore(e1.getValue())))
@@ -135,7 +150,7 @@ public class CryptocurrencySentimentAnalysis {
     }
 
     @Nonnull
-    private static ServiceFactory<SentimentAnalyzer,SentimentAnalyzer> sentimentAnalyzerContext() {
+    private static ServiceFactory<SentimentAnalyzer, SentimentAnalyzer> sentimentAnalyzerContext() {
         return ServiceFactory.withCreateContextFn(jet -> new SentimentAnalyzer())
                              .withCreateServiceFn((context, sentimentAnalyzer) -> sentimentAnalyzer);
     }
@@ -159,5 +174,4 @@ public class CryptocurrencySentimentAnalysis {
         }
         return traverser;
     }
-
 }
