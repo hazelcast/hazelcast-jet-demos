@@ -4,6 +4,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.contrib.twitter.TwitterSources;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.support.CoinType;
@@ -14,15 +15,15 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 
-import com.hazelcast.jet.contrib.twitter.TwitterSources;
 import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.Util.entry;
