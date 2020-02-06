@@ -61,13 +61,12 @@ public class ModelServerClassification {
                     return Tuple2.tuple2(PredictionServiceGrpc.newFutureStub(channel), wordIndex);
                 })
                 .withDestroyContextFn(t -> ((ManagedChannel) t.f0().getChannel()).shutdownNow())
-                .withCreateServiceFn((context, tuple2) -> tuple2)
-                .withMaxPendingCallsPerProcessor(16);
+                .withCreateServiceFn((context, tuple2) -> tuple2);
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(reviewsMap))
          .map(Map.Entry::getValue)
-         .mapUsingServiceAsync(tfServingContext, (t, review) -> {
+         .mapUsingServiceAsync(tfServingContext, 16, true, (t, review) -> {
              float[][] featuresTensorData = t.f1().createTensorInput(review);
              TensorProto.Builder featuresTensorBuilder = TensorProto.newBuilder();
              for (float[] featuresTensorDatum : featuresTensorData) {
