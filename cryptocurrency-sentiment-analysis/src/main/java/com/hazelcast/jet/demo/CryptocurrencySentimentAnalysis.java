@@ -118,14 +118,7 @@ public class CryptocurrencySentimentAnalysis {
                                 .trackTerms(allCoinMarkers)))
                 .withNativeTimestamps(SECONDS.toMillis(1));
         StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
-                .map(rawTweet -> {
-                    try {
-                        return new JSONObject(rawTweet).getString("text");
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
+                .map(rawTweet -> new JSONObject(rawTweet).getString("text"))
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
                 .mapUsingService(sentimentAnalyzerContext(), (analyzer, e1) ->
                         entry(e1.getKey(), analyzer.getSentimentScore(e1.getValue())))
