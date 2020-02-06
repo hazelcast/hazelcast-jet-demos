@@ -4,6 +4,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.contrib.twitter.TwitterSources;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.demo.support.CoinType;
@@ -14,10 +15,15 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
 
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.Util.entry;
@@ -25,7 +31,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.demo.support.TwitterSource.twitterSource;
+import static com.hazelcast.jet.demo.support.Util.loadCredentials;
 import static com.hazelcast.jet.demo.support.WinSize.FIVE_MINUTES;
 import static com.hazelcast.jet.demo.support.WinSize.HALF_MINUTE;
 import static com.hazelcast.jet.pipeline.Sinks.map;
@@ -106,10 +112,13 @@ public class CryptocurrencySentimentAnalysis {
                                             .flatMap(ct -> ct.markers().stream())
                                             .collect(toList());
         StreamStage<String> tweets = pipeline
-                .readFrom(twitterSource(allCoinMarkers))
+                .readFrom(TwitterSources.timestampedStream(
+                        loadCredentials(),
+                        () -> new StatusesFilterEndpoint()
+                                .trackTerms(allCoinMarkers)))
                 .withNativeTimestamps(SECONDS.toMillis(1));
-
         StreamStageWithKey<Entry<CoinType, Double>, CoinType> tweetsWithSentiment = tweets
+                .map(rawTweet -> new JSONObject(rawTweet).getString("text"))
                 .flatMap(CryptocurrencySentimentAnalysis::flatMapToRelevant)
                 .mapUsingService(sentimentAnalyzerContext(), (analyzer, e1) ->
                         entry(e1.getKey(), analyzer.getSentimentScore(e1.getValue())))
@@ -135,7 +144,7 @@ public class CryptocurrencySentimentAnalysis {
     }
 
     @Nonnull
-    private static ServiceFactory<SentimentAnalyzer,SentimentAnalyzer> sentimentAnalyzerContext() {
+    private static ServiceFactory<SentimentAnalyzer, SentimentAnalyzer> sentimentAnalyzerContext() {
         return ServiceFactory.withCreateContextFn(jet -> new SentimentAnalyzer())
                              .withCreateServiceFn((context, sentimentAnalyzer) -> sentimentAnalyzer);
     }
@@ -159,5 +168,4 @@ public class CryptocurrencySentimentAnalysis {
         }
         return traverser;
     }
-
 }
