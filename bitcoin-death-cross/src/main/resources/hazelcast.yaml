@@ -16,9 +16,9 @@ hazelcast:
       multicast:
         enabled: false
   # Keep history of changes to the named Map available to Jet -->
-  event-journal:
-    map:
-      prices-in:
+  map:
+    'prices-in':
+      event-journal:
         enabled: true
         # Keep 10000 per partition
         capacity: 2710000
