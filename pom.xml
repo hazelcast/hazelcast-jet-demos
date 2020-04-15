@@ -39,11 +39,11 @@
         </repository>
         <repository>
             <id>main-repo</id>
-            <url>http://repo1.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
+            <url>https://repo2.maven.org/maven2/</url>
         </repository>
     </repositories>
 
