@@ -1,8 +1,6 @@
 package com.hazelcast.jet.demo.cdc;
 
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.kafka.KafkaSources;
