@@ -43,7 +43,7 @@
         </repository>
         <repository>
             <id>backup-repo</id>
-            <url>https://repo2.maven.org/maven2/</url>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
