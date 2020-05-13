@@ -5,8 +5,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 
 import lombok.extern.slf4j.Slf4j;
 

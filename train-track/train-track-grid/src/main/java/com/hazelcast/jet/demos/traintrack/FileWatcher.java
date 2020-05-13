@@ -24,10 +24,10 @@ public class FileWatcher {
 		Pipeline pipeline = Pipeline.create();
 		
 		StreamStage<String> source = pipeline
-				.readFrom(FileWatcher.buildFileWatcherSource()).withoutTimestamps().setName("fileSource");
+				.drawFrom(FileWatcher.buildFileWatcherSource()).withoutTimestamps().setName("fileSource");
 
-		source.writeTo(FileWatcher.buildTopicSink());
-		source.writeTo(Sinks.logger()).setName("loggerSink");
+		source.drainTo(FileWatcher.buildTopicSink());
+		source.drainTo(Sinks.logger()).setName("loggerSink");
 
 		return pipeline;
 	}
