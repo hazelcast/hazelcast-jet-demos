@@ -14,8 +14,6 @@
         <module>bitcoin-death-cross</module>
         <module>cryptocurrency-sentiment-analysis</module>
         <module>flight-telemetry</module>
-        <module>jetleopard</module>
-        <module>market-data-ingest</module>
         <module>markov-chain-generator</module>
         <module>realtime-image-recognition</module>
         <module>road-traffic-predictor</module>
