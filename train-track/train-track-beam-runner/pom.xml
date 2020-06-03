@@ -23,7 +23,7 @@
 		<!-- Jet specific Beam runner -->
 		<dependency>
 			<groupId>org.apache.beam</groupId>
-          	<artifactId>beam-runners-jet-experimental</artifactId>
+          	<artifactId>beam-runners-jet</artifactId>
     	</dependency>
     </dependencies>
 

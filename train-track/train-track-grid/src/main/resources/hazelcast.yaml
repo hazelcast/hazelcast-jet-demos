@@ -1,7 +1,6 @@
 # Hazelcast server configuration
 hazelcast:
-  group:
-    name: 'frecciarossa'
+  cluster-name: 'frecciarossa'
   management-center:
     enabled: true
     scripting-enabled: true

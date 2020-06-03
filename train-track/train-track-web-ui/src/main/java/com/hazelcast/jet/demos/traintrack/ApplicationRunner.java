@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.topic.ITopic;
 
 /**
  * <p>Some plumbing. Attach a listener to a specific Hazelcast
