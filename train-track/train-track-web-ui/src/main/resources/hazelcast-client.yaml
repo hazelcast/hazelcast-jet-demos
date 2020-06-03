@@ -1,7 +1,6 @@
 # Hazelcast client configuration
 hazelcast-client:
-  group:
-    name: 'frecciarossa'
+  cluster-name: 'frecciarossa'
   instance-name: '@project.artifactId@'
   properties:
     hazelcast.client.statistics.enabled: true
