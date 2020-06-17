@@ -6,6 +6,7 @@
 
     <packaging>jar</packaging>
     <artifactId>webapp</artifactId>
+    <name>${label}: Web Application</name>
 
     <parent>
         <groupId>com.hazelcast.jet.demos.monitor</groupId>
