@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.hazelcast.jet.demos</groupId>
+        <artifactId>hazelcast-jet-demos</artifactId>
+        <version>4.1</version>
+    </parent>
+
+    <groupId>com.hazelcast.jet.demos.monitor</groupId>
+    <artifactId>realtime-trade-monitor</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>${label}</name>
+
+    <packaging>pom</packaging>
+    <properties>
+        <label>Real-time Trade Monitor</label>
+    </properties>
+
+    <description>Real-Time dto.Trade Monitoring with Jet</description>
+
+    <modules>
+        <module>jet-server</module>
+        <module>trade-producer</module>
+        <module>trade-queries</module>
+        <module>webapp</module>
+    </modules>
+</project>
