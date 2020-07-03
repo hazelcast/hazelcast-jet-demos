@@ -29,7 +29,8 @@ public final class LoadSymbols {
             long start = System.nanoTime();
             symbols.putAll(map);
             long elapsed = System.nanoTime() - start;
-            System.out.println("Loaded " + map.size() + " symbols into map '" + symbols.getName() + "' in " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
+            System.out.println("Loaded " + map.size() + " symbols into map '" +
+                    symbols.getName() + "' in " + TimeUnit.NANOSECONDS.toMillis(elapsed) + "ms");
         }
     }
 }

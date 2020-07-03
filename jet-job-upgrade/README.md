@@ -67,10 +67,9 @@ automatically restores the data and resumes the jobs.
 ### Management Center and Jet CLI
 
 [Management
- Center](https://docs.hazelcast.org/docs/jet/latest/manual/#management-center)
- is an UI to monitor and manage Jet. `Jet CLI` is a [command-line
- tool](https://docs.hazelcast.org/docs/jet/latest/manual/#command-line)
- to deploy and manage jobs.
+ Center](https://jet-start.sh/docs/enterprise/management-center)
+ is an UI to monitor and manage Jet. `Jet CLI` is a command-line
+ tool to deploy and manage jobs.
 
 We'll use both to deploy and upgrade new jobs and control the cluster.
 
@@ -286,7 +285,7 @@ Shutdown the cluster gracefully. Graceful shutdown waits for cluster
 state to be saved to the disk.
 
 ```bash
-${JET_HOME}/bin/jet-cluster-admin -o shutdown -g jet -P jet-pass
+${JET_HOME}/bin/jet-cluster-admin -o shutdown -c jet -P jet-pass
 ```
 
 Alternatively, you can shutdown the cluster using the Jet Management
@@ -329,5 +328,5 @@ ADDRESS                  UUID
 ```
 
 Now you can remove a cluster member by simply killing one of the Jet
-cluster processes. The fault-tolerance mechanism kicks in and the
+cluster processes by `CTRL-C`. The fault-tolerance mechanism kicks in and the
 computation continues without data loss.

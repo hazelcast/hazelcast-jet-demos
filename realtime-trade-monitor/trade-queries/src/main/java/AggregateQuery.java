@@ -25,43 +25,11 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 
-/**
- *
- */
 
 /**
- *
  * The job consumes the stream of trade events from Kafka and then performs
- * an aggregation over these
- * the stream .
- * <p>
- * Second-worth of frames will be aggregated to find the classification with
- * maximum score that will be sent to a GUI sink to be shown on the screen.
- *
- * The DAG used to model image recognition calculations can be seen below :
- *
- *              ┌───────────────────┐
- *              │Webcam Video Source│
- *              └─────────┬─────────┘
- *                        │
- *                        v
- *        ┌────────────────────────────────┐
- *        │Classify Images with pre-trained│
- *        │     machine learning model     │
- *        └───────────────┬────────────────┘
- *                        │
- *                        v
- *            ┌───────────────────────┐
- *            │Calculate maximum score│
- *            │    in 1 sec windows   │
- *            └───────────┬───────────┘
- *                        │
- *                        v
- *              ┌───────────────────┐
- *              │Show results on GUI│
- *              └───────────────────┘
+ * an aggregation over this stream of trade events.
  */
-
 public class AggregateQuery {
 
     public static final String TOPIC = "trades";
