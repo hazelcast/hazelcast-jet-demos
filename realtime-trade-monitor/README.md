@@ -1,16 +1,16 @@
 # Real-time dto.Trade Monitor
 
-This demo shows how one can generate a structured view of real-time
-trades via using aggregations of the Jet. Hazelcast Jet computes complex
-analytical and ad hoc queries with a rapid execution time. In this
-example, we run 3 different jobs that performs followings:
+Hazelcast Jet computes complex analytical queries with a rapid execution
+time. This demo benefits from this feature of Jet and shows how one can generate a structured view of
+real-time trades via using aggregation of the Jet. In this example, we
+run 3 different jobs on the cluster that perform:
 
 * Load static business data into IMap.
-* Ingests trades from Apache Kafka into a distributed map.
-* Performs an aggregation on the trades, storing the results into a
+* Ingest trades from Apache Kafka into a distributed map.
+* Perform an aggregation on the trades, storing the results into a
   separate map.
 
-These two maps are utilized by a live dashboard which offers drill down
+These maps are utilized by a live dashboard which offers drill down
 functionality into viewing individual trades that make up the
 aggregation.
 
@@ -26,15 +26,32 @@ mvn package
 
 ### Prepare The Environment
 
-After building the application, prepare the dependencies for running the demo.
+After building the application, prepare the environment including Kafka.
 
-#### Create A Kafka Topic
+#### Kafka
 
-Create a topic named "trades" with four partitions and one replica:
+Install [Apache Kafka](https://kafka.apache.org/) 1.x or 2.x.
+
+Kafka uses ZooKeeper so you have to launch a ZooKeeper server first:
+
+```bash
+ bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+After that, Start the Kafka server with its default properties:
+
+```bash
+bin/kafka-server-start.sh config/server.properties
+```
+
+Create a topic named `trades` with four partitions and one replica in Kafka:
 
 ```bash
 kafka-topics --create --replication-factor 1 --partitions 4 --topic trades --bootstrap-server localhost:9092
 ```
+
+For additional information about starting a Kafka server and creating a
+Kafka topic look at [this](https://kafka.apache.org/quickstart)
 
 #### Start The Kafka Producer
 
@@ -46,7 +63,7 @@ java -jar trade-producer/target/trade-producer-1.0-SNAPSHOT.jar <bootstrap serve
 
 #### Start the Jet cluster
 
-Start a jet cluster by running embedded jet server:
+Start a jet cluster by running the java application having embedded jet server:
 
 ```bash
 java -jar jet-server/target/jet-server-1.0-SNAPSHOT.jar

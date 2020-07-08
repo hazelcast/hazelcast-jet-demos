@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * A web app is created by using Javalin. It
+ * A web app is created by using Javalin.
  */
 public class WebServer {
 

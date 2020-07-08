@@ -144,7 +144,13 @@ Navigate your web browser to the Management Center
 
 Install [Apache Kafka](https://kafka.apache.org/) 1.x or 2.x.
 
-Start the Kafka server with its default properties:
+Since Kafka uses ZooKeeper, you have to launch a ZooKeeper server first:
+
+```bash
+ bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+Then, Start the Kafka server with its default properties:
 
 ```bash
 bin/kafka-server-start.sh config/server.properties
@@ -328,5 +334,5 @@ ADDRESS                  UUID
 ```
 
 Now you can remove a cluster member by simply killing one of the Jet
-cluster processes by `CTRL-C`. The fault-tolerance mechanism kicks in and the
-computation continues without data loss.
+cluster processes by `CTRL-C`. The fault-tolerance mechanism kicks in
+and the computation continues without data loss.
