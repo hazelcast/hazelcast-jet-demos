@@ -10,4 +10,4 @@ See [Beam Capability Matrix](https://beam.apache.org/documentation/runners/capab
 
 ## Application Demos
 
-* [Train Track](./train-track) An [Apache Beam](https://beam.apache.org/) IOT example, tracking a GPS feed from a train.
+* [Train Track](./train-track) An IOT example, tracking a GPS feed from a train.
