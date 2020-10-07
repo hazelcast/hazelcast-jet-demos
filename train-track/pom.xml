@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
         <artifactId>hazelcast-jet-demos</artifactId>
-        <version>4.1</version>
+        <version>4.2</version>
     </parent>
 
     <groupId>com.hazelcast.jet.demos.train-track</groupId>
@@ -21,7 +21,8 @@
     <properties>
         <label>Train Track (BEAM)</label>
 
-        <beam.version>2.16.0</beam.version>
+        <beam.version>2.21.0</beam.version>
+	<hazelcast-jet.version>4.1</hazelcast-jet.version>
 
         <!-- These 4 for web UI -->
         <jquery.version>3.4.1</jquery.version>
@@ -29,7 +30,7 @@
         <sockjs-client.version>1.1.2</sockjs-client.version>
         <stomp-websocket.version>2.3.3-1</stomp-websocket.version>
 
-        <spring-boot.version>2.2.2.RELEASE</spring-boot.version>
+        <spring-boot.version>2.3.0.RELEASE</spring-boot.version>
     </properties>
     
     <modules>
@@ -69,7 +70,7 @@
         	<!-- For Jet as Beam Runner -->
         	<dependency>
 				<groupId>org.apache.beam</groupId>
-          		<artifactId>beam-runners-jet-experimental</artifactId>
+          		<artifactId>beam-runners-jet</artifactId>
           		<version>${beam.version}</version>
         	</dependency>
         	<!-- For Beam without Jet -->

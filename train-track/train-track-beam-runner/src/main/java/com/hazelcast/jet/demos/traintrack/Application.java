@@ -53,7 +53,7 @@ public class Application {
 		
 	    jetPipelineOptions.setCodeJarPathname("train-track-beam-runner/target/train-track-beam-runner-shaded.jar");
 	    jetPipelineOptions.setJetDefaultParallelism(1);
-		jetPipelineOptions.setJetGroupName("frecciarossa");
+	    jetPipelineOptions.setClusterName("frecciarossa");
 		jetPipelineOptions.setJetServers("127.0.0.1:8701");
 	    jetPipelineOptions.setJobName(MyBeamJob.class.getSimpleName()); // Needs Beam 2.15
 	    jetPipelineOptions.setRunner(JetRunner.class);

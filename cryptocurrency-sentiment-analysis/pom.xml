@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.hazelcast.jet.demos</groupId>
         <artifactId>hazelcast-jet-demos</artifactId>
-        <version>4.1</version>
+        <version>4.2</version>
     </parent>
 
     <name>Twitter Cryptocurrency Sentiment Analysis</name>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.hazelcast.jet.contrib</groupId>
             <artifactId>twitter</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>org.jfree</groupId>
@@ -86,11 +86,11 @@
         </repository>
         <repository>
             <id>main-repo</id>
-            <url>http://repo1.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
         <repository>
             <id>release-repository</id>

@@ -6,7 +6,7 @@
 
     <groupId>com.hazelcast.jet.demos</groupId>
     <artifactId>hazelcast-jet-demos</artifactId>
-    <version>4.1</version>
+    <version>4.2</version>
     <packaging>pom</packaging>
     <name>Hazelcast Jet Demo Applications</name>
 
@@ -14,6 +14,8 @@
         <module>bitcoin-death-cross</module>
         <module>cryptocurrency-sentiment-analysis</module>
         <module>flight-telemetry</module>
+        <module>jetleopard</module>
+        <module>market-data-ingest</module>
         <module>markov-chain-generator</module>
         <module>realtime-image-recognition</module>
         <module>road-traffic-predictor</module>
@@ -22,8 +24,6 @@
         <module>h2o-breast-cancer-classification</module>
         <module>debezium-cdc-with-kafka</module>
         <module>debezium-cdc-without-kafka</module>
-        <module>jet-job-upgrade</module>
-        <module>realtime-trade-monitor</module>
     </modules>
 
     <repositories>
@@ -43,13 +43,13 @@
         </repository>
         <repository>
             <id>backup-repo</id>
-            <url>https://repo2.maven.org/maven2/</url>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
     <properties>
         <jdk.version>1.8</jdk.version>
-        <hazelcast-jet.version>4.1.1</hazelcast-jet.version>
+        <hazelcast-jet.version>4.2</hazelcast-jet.version>
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>

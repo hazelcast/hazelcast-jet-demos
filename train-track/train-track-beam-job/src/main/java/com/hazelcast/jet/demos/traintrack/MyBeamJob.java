@@ -8,6 +8,7 @@ import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.windowing.AfterProcessingTime;
 import org.apache.beam.sdk.transforms.windowing.FixedWindows;
+import org.apache.beam.sdk.transforms.windowing.Repeatedly;
 import org.apache.beam.sdk.transforms.windowing.Window;
 import org.joda.time.Duration;
 
@@ -37,7 +38,7 @@ public class MyBeamJob {
 	    		ParDo.of(new MyEnrichAndReformatFn()))
 		.apply("window",
 				 Window.<String>into(FixedWindows.of(ONE_SECOND))
-				 .triggering(AfterProcessingTime.pastFirstElementInPane())
+				 .triggering(Repeatedly.forever(AfterProcessingTime.pastFirstElementInPane()))
 				 .discardingFiredPanes()
 				 .withAllowedLateness(ONE_SECOND)
 				)
