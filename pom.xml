@@ -85,4 +85,11 @@
         </pluginManagement>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet</artifactId>
+            <version>${hazelcast-jet.version}</version>
+        </dependency>
+    </dependencies>
 </project>
