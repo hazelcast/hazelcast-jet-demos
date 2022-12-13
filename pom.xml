@@ -11,9 +11,7 @@
     <name>Hazelcast Jet Demo Applications</name>
 
     <modules>
-        <module>bitcoin-death-cross</module>
         <module>cryptocurrency-sentiment-analysis</module>
-        <module>flight-telemetry</module>
         <module>jetleopard</module>
         <module>market-data-ingest</module>
         <module>markov-chain-generator</module>

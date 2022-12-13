@@ -5,14 +5,14 @@ For smaller, feature specific samples see https://github.com/hazelcast/hazelcast
 
 ## Application Demos
 
-* [Bitcoin Death Cross](./bitcoin-death-cross) - Predicting 2018's downward trend for Bitcoin.
+* [Bitcoin Death Cross](https://github.com/hazelcast-guides) - See Hazelcast Guides
 * [Real-time Image Recognition](./realtime-image-recognition) - Recognizes images present in the webcam video input with a model trained with CIFAR-10 dataset.
 * [Twitter Cryptocurrency Sentiment Analysis](./cryptocurrency-sentiment-analysis) - Twitter content is analyzed in real time to 
 calculate cryptocurrency trend list with popularity index.                                                                   
 * [Real-Time Road Traffic Analysis and Prediction](./road-traffic-predictor) - Continuously computes linear regression models from 
 current traffic. Uses the trend from week ago to predict traffic now.
 * [Real-time Sports Betting Engine](./jetleopard) - This is a simple example of a sports book and is a good introduction to the Pipeline API. It also uses Hazelcast IMDG as an in-memory data store.
-* [Flight Telemetry](./flight-telemetry) - Reads a stream of telemetry data from ADB-S on all commercial aircraft flying anywhere in the world. There is typically 5,000 - 6,000 aircraft at any point in time. This is then filtered, aggregated and certain features are enriched and displayed in Grafana.
+* [Flight Telemetry](https://github.com/hazelcast-guides) - See Hazelcast Guides
 * [Market Data Ingestion](./market-data-ingest) - Uploads a stream of stock market data (prices) from a Kafka topic 
 into an IMDG map. Data is analysed as part of the upload process, calculating the moving averages to detect buy/sell indicators. Input data here is manufactured to ensure such indicators exist, but this is easy to reconnect to real input.
 * [Markov Chain Generator](./markov-chain-generator) Generates a Markov Chain with probabilities based on supplied classical books.

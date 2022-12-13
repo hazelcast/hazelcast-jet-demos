@@ -1,8 +1,0 @@
-The files:
-docker-compose.yml
-
-and the scripts:
-Makefile
-
-contain code originating from the StatsD + Graphite + Grafana 4 + Kamon Dashboards project
-(https://github.com/kamon-io/docker-grafana-graphite).
