@@ -1,15 +1,15 @@
 # Real-time Image Recognition
 This demonstration application uses the webcam video stream of the laptop computer as a source and recognizes 
 the images in each frame.
-The recognition done with a model pre-tranied with CIFAR-10 dataset. The model is read from the filesystem and loaded into the Jet processors which are making the recognition.
+The recognition done with a model pre-trained with CIFAR-10 dataset. The model is read from the filesystem and loaded into the Jet processors which are making the recognition.
 The recognitions along with recognition scores are aggregated in 1 second windows and 
 frame with the maximum score will be shown in a GUI application.
 
-This application shows how you can implement a custom streaming source and sink and how to make streaming aggregations in Hazelast Jet.
+This application shows how you can implement a custom streaming source and sink and how to make streaming aggregations in Hazelcast Jet.
 
 ## Package Level Structure
 
-The main class (`RealTimeImageRecognition`) with the main method, webcam data source (`WebcamSource`) and serialiable version of the buffered image(`SerializableBufferedImage`) classes resides in the default package.
+The main class (`RealTimeImageRecognition`) with the main method, webcam data source (`WebcamSource`) and serializable version of the buffered image(`SerializableBufferedImage`) classes resides in the default package.
 
 ## Prerequisites
 
