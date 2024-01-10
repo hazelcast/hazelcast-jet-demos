@@ -3,7 +3,7 @@
 In this code sample we will show how would you implement a Change Data Capture scenario
 with MySQL and a Hazelcast Jet cluster inside Docker environment with Docker Compose.
 
-The Docker Compose file (`hazelcast.yml`) contains following services:
+The Docker Compose file (`hazelcast.yml`) contains the following services:
 
 - `mysql` - This image starts a MySQL server with example data and necessary 
 configuration for Debezium.
@@ -67,14 +67,14 @@ Optionally if you would like to see the logs for other services use the followin
     make tailDb
     ```
 
-- For Hazelast Jet Bootstrap Application
+- For Hazelcast Jet Bootstrap Application
 
     ```
     make tailClient
     ```
 
 # Inserting data to MySQL
-We will insert a new row to one of the tables that we are listening and see that
+We will insert a new row to one of the tables that we are listening to and see that
 a new event will be propagated by the Debezium source and logged in the Jet pipeline.
 
 To make changes, log into the database by using the command below:
@@ -115,7 +115,7 @@ Rows matched: 1  Changed: 1  Warnings: 0
 ```     
 
 Switching back to the Hazelcast Jet logs, we should see the update record like 
-following:
+the following:
 
 ```   
 make tailServer
@@ -158,7 +158,7 @@ hazelcast-jet_1 | 2020-01-07 16:32:19,871  INFO [loggerSink#0] [hz.elated_clarke
 })
 ```  
 
-We could also insert a record like following:
+We could also insert a record like the following:
 
 ```
 mysql> INSERT INTO customers (id, first_name, last_name, email) VALUES (1005, 'Jane', 'Doe', 'jane@foo.com');
